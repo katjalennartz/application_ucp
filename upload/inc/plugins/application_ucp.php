@@ -561,6 +561,16 @@ function application_ucp_deactivate()
   find_replace_templatesets("member_profile", "#" . preg_quote('{$exportbtn}') . "#i", '');
   find_replace_templatesets("showthread", "#" . preg_quote('{$give_wob}') . "#i", '');
   find_replace_templatesets("postbit", "#" . preg_quote('{$post[\'aucp_fields\']}') . "#i", '');
+
+  //My alerts wieder löschen
+    if (class_exists('MybbStuff_MyAlerts_AlertTypeManager')) {
+      $alertTypeManager = MybbStuff_MyAlerts_AlertTypeManager::getInstance();
+  
+      if (!$alertTypeManager) {
+        $alertTypeManager = MybbStuff_MyAlerts_AlertTypeManager::createInstance($db, $cache);
+      }
+      $alertTypeManager->deleteByCode('application_ucp_affected');
+    }
 }
 
 /**
