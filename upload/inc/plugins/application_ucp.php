@@ -1983,7 +1983,7 @@ function application_ucp_usercp()
         }
         // das letzte Komma und leertase entfernen
         $affectedusers = (substr($affectedusers, 0, -2));
-        $affected = $lang->application_ucp_affected . " <br/> {$affectedusers}";
+        $affected = $lang->application_ucp_affected_label . " <br/> {$affectedusers}";
       }
 
       //Die admin cp message holen und die variable $wanted ersetzen
@@ -2648,10 +2648,10 @@ function application_ucp_affected_alert($charakter, $touid, $tid, $editflag)
     $user = get_user($charakter);
     $userprofil = build_profile_link($user['username'], $charakter);
     $steckilink = get_thread_link($tid);
-    $message = "Der Steckbrief({$steckilink}) von {$userprofil} betrifft dich. Bitte gib dein Okay.";
+    $alertmsg = "Der Steckbrief({$steckilink}) von {$userprofil} betrifft dich. Bitte gib dein Okay.";
     $pm = array(
       'subject' => "Charakter der dich betrifft",
-      'message' => $message,
+      'message' => $alertmsg,
       'touid' => $touid,
     );
     send_pm($pm, -1, true);
