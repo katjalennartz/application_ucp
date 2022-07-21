@@ -408,7 +408,47 @@ function application_ucp_install()
     'tid' => 1,
     'attachedto' => '',
     "stylesheet" =>    '
-    
+    /*showthread*/
+.aucp_showthread-wob {
+    margin: 10px;
+    display: flex;
+    align-items: start;
+    justify-content: center;
+    gap: 20px;
+}
+
+.aucp_showthread-wob__item:last-child {
+    align-self: center;
+}
+
+/*Benutzer CP */
+.applucp-con {
+    display: grid;
+    width: 80%;
+    grid-template-columns: 1fr 80%;
+    margin: auto;
+    gap: 19px 15px;
+}
+
+.app_ucp_label {
+    font-weight: 600;
+    text-align: right;
+}
+
+.applucp-con__item.applucp-buttons {
+    grid-column: 1 / -1;
+}
+
+/*Display Profil and Postbit */
+.aucp_fieldContainer {
+    display: grid;
+    grid-template-columns: 1fr;
+}
+
+.aucp_fieldContainer__item {
+    display: flex;
+    gap: 10px;
+}
     ',
     'cachefile' => $db->escape_string(str_replace('/', '', 'application_ucp.css')),
     'lastmodified' => time()
