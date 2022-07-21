@@ -11,8 +11,8 @@
  */
 
 //Fehleranzeige bei Bedarf anschalten, in dem die folgenden 2 Zeilen einkommentiert werden
-// error_reporting(-1);
-// ini_set('display_errors', true);
+error_reporting(-1);
+ini_set('display_errors', true);
 
 // Disallow direct access to this file for security reasons
 if (!defined("IN_MYBB")) {
@@ -507,7 +507,7 @@ function application_ucp_activate()
     $alertTypeAucpAffected->setCanBeUserDisabled(true);
     $alertTypeAucpAffected->setCode("application_ucp_affected");
     $alertTypeAucpAffected->setEnabled(true);
-    $alertTypeAucpAffected->add($alertTypeSceneNew);
+    $alertTypeManager->add($alertTypeAucpAffected);
   }
 }
 
