@@ -11,8 +11,8 @@
  */
 
 //Fehleranzeige bei Bedarf anschalten, in dem die folgenden 2 Zeilen einkommentiert werden
-error_reporting(-1);
-ini_set('display_errors', true);
+// error_reporting(-1);
+// ini_set('display_errors', true);
 
 // Disallow direct access to this file for security reasons
 if (!defined("IN_MYBB")) {
@@ -637,23 +637,27 @@ function application_ucp_admin_load()
 
         if ($field['postbit'] || $field['profile']) {
           $view = "";
-          if ($field['postbit']) {
+          if ($field['postbit'] && $mybb->settings['application_ucp_postbit_view'] == 0) {
             $view_postbit = "<ul>
-            <li><b>Anzeige im Postbit:</b> <br/>
+            <li><b>Anzeige im Postbit:</b> </li>>
             <li>Label & Value: &#x007B;&dollar;post['labelvalue_{$field['fieldname']}']&#x007D;
             <li>Label: &#x007B;&dollar;post['label_{$field['fieldname']}']&#x007D;
             <li>Value: &#x007B;&dollar;post['value_{$field['fieldname']}']&#x007D;	</ul>";
           } else {
-            $view_postbit = "";
+            $view_postbit = "<ul>
+            <li><b>Anzeige im Postbit:</b> automatisch</li>
+            </uL>";
           }
-          if ($field['profile']) {
+          if ($field['profile'] && $mybb->settings['application_ucp_profile_view'] == 0) {
             $view_profile = "<ul>
-            <li><b>Anzeige im Profil:</b> <br/>
+            <li><b>Anzeige im Profil:</b> </li>
             <li>Label & Value: &#x007B;&dollar;fields['labelvalue_{$field['fieldname']}']&#x007D;
             <li>Label: &#x007B;&dollar;fields['label_{$field['fieldname']}']&#x007D;
             <li>Value: &#x007B;&dollar;fields['value_{$field['fieldname']}']&#x007D;	</ul>";
           } else {
-            $view_profile = "";
+            $view_profile = "<ul>
+            <li><b>Anzeige im Profile:</b> automatisch</li>
+            </ul>";
           }
           $view .= $view_postbit . $view_profile;
         } else {
@@ -2188,9 +2192,13 @@ function application_ucp_misc()
 
   // Steckbrief als PDF speichern
   if ($mybb->input['action'] == "exp_app" && $mybb->user['uid'] != 0) {
+    //Userinformationen bekommen
+    $uid = (int)$mybb->input['uid'];
+    $user = get_user($uid);
+
     require(MYBB_ROOT . 'inc/3rdparty/tfpdf.php');
     //PDF aufsetzen
-    class finalPDF extends tFPDF
+    class FPDF extends tFPDF
     {
       // Footer vom PDF
       function Footer()
@@ -2200,24 +2208,13 @@ function application_ucp_misc()
         $this->Cell(0, 10, 'Seite ' . $this->PageNo() . '/{nb}', 0, 0, 'R');
       }
     }
-    //Userinformationen bekommen
-    $uid = (int)$mybb->input['uid'];
-    $user = get_user($uid);
 
-    //PDF Generieren
-    $pdf = new finalPDF();
-    $pdf->AliasNbPages();
-
-    // Titel 
-    // content pages
-    $pdf->username = $user['username'];
+    $title =  $user['username'];
+    $pdf = new FPDF();
     $pdf->AddPage();
+    $pdf->AliasNbPages();
     $pdf->AddFont('Arial', '', 'ARIAL.TTF', true);
-    $pdf->AddFont('Arialb', 'B', 'ARIALBD.TTF', true);
-    $pdf->AddFont('Calibri', '', 'CALIBRI.TTF', true);
-    $pdf->AddFont('Calibrib', 'B', 'CALIBRIB.TTF', true);
-    $pdf->SetFont('Arial', 'B', 20);
-    $pdf->SetY(20);
+    $pdf->SetFont('Arial', 'B', 16);
 
     $pdf->MultiCell(0, 5, $user['username'], 0, 'C');
 
@@ -2228,13 +2225,14 @@ function application_ucp_misc()
       if (substr($key, 0, 10) == "labelvalue") {
         //Label und Value auslesen und in PDF packen
         $y = $y + 15;
-        $pdf->SetFont('Calibrib', 'B', 12);
+        $pdf->SetFont('Arial', '', 12);
         $pdf->SetX(20);
-        $pdf->Cell(20, $y, $field);
+        //die html codes rauswerfen
+        $clean = html_entity_decode($field);
+        $clean = strip_tags($clean);
+        $pdf->Cell(20, $y, $clean);
       }
     }
-
-    $title =  $user['username'];
     $pdf->Output('I', $title . '.pdf');
   }
 }
@@ -2501,7 +2499,7 @@ function application_ucp_build_view($uid, $location, $kind)
         " . TABLE_PREFIX . "application_ucp_fields f 
         ON f.id = uf.fieldid 
         and uid = {$uid} AND {$location} = 1 
-        AND fieldid > 0");
+        AND fieldid > 0 AND active = 1");
 
     while ($field = $db->fetch_array($fieldquery)) {
       //parser options
@@ -2512,8 +2510,13 @@ function application_ucp_build_view($uid, $location, $kind)
         "allow_imgcode" => $field['allow_img'],
         "allow_videocode" => $field['allow_video']
       );
+      if ($field['fieldtyp'] == "date") {
+        $fieldvalue = date("d.m.Y", strtotime($field['value']));
+      } else {
+        $fieldvalue = $field['value'];
+      }
       $buildhtml .= "<div class=\"aucp_fieldContainer__item\"><div class=\"aucp_fieldContainer__field label\">{$field['label']}:</div>
-    <div class=\"aucp_fieldContainer__field field {$field['fieldname}']}\">" . $parser->parse_message($field['value'], $parser_options) . "</div>
+    <div class=\"aucp_fieldContainer__field field {$field['fieldname}']}\">" . $parser->parse_message($fieldvalue, $parser_options) . "</div>
     </div>
     ";
     }
@@ -2540,9 +2543,14 @@ function application_ucp_build_view($uid, $location, $kind)
         "allow_imgcode" => $field['allow_img'],
         "allow_videocode" => $field['allow_video']
       );
+      if ($field['fieldtyp'] == "date") {
+        $fieldvalue = date("d.m.Y", strtotime($field['value']));
+      } else {
+        $fieldvalue = $field['value'];
+      }
       //   Label & Value: {$application['labelvalue_vorname']}
       $arrayfieldlabelvalue = "labelvalue_{$field['fieldname']}";
-      $array[$arrayfieldlabelvalue] = $field['label'] . ": " . $parser->parse_message($field['value'], $parser_options);
+      $array[$arrayfieldlabelvalue] = $field['label'] . ": " . $parser->parse_message($fieldvalue, $parser_options);
 
       // Label: {$application['label_vorname']}
       $arraylabel = "label_{$field['fieldname']}";
@@ -2550,7 +2558,7 @@ function application_ucp_build_view($uid, $location, $kind)
 
       // Value: {$application['value_vorname']}
       $arraylabel = "value_{$field['fieldname']}";
-      $array[$arraylabel] = $parser->parse_message($field['value'], $parser_options);
+      $array[$arraylabel] = $parser->parse_message($fieldvalue, $parser_options);
     }
 
     return $array;
@@ -2651,7 +2659,7 @@ function application_ucp_myalert()
    * Wir brauchen unseren MyAlert Formatter
    * Alert für betroffene User
    */
-  class MybbStuff_MyAlerts_Formatter_ScenetrackerNewSceneFormatter extends MybbStuff_MyAlerts_Formatter_AbstractFormatter
+  class MybbStuff_MyAlerts_Formatter_ApplicationUcpAffectedFormatter extends MybbStuff_MyAlerts_Formatter_AbstractFormatter
   {
     /**
      * Build the output string for listing page and the popup.
@@ -2696,7 +2704,7 @@ function application_ucp_myalert()
       $formatterManager = MybbStuff_MyAlerts_AlertFormatterManager::createInstance($mybb, $lang);
     }
     $formatterManager->registerFormatter(
-      new MybbStuff_MyAlerts_Formatter_ScenetrackerNewSceneFormatter($mybb, $lang, 'application_ucp_affected')
+      new MybbStuff_MyAlerts_Formatter_ApplicationUcpAffectedFormatter($mybb, $lang, 'application_ucp_affected')
     );
   }
 }
