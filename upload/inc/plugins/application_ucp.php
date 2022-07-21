@@ -340,20 +340,20 @@ function application_ucp_install()
          <input type="hidden" name="uid" value="{$thread[\\\'uid\\\']}" />
           <input type="hidden" name="tid" value="{$thread[\\\'tid\\\']}" />
           <input type="hidden" name="fid" value="{$thread[\\\'fid\\\']}" />
-      <label for="usergroups">Primäre Benutzergruppe *</label><br />
+          <label for="usergroups">{$lang->application_ucp_wobgroups}</label><br />
           <select name="usergroups" id="usergroups" required>
              {$usergroups_bit}
           </select>
       </div>
       <div class="aucp_showthread-wob__item">
-      <label for="usergroups">Sekundäre Benutzergruppe</label><br />
+      <label for="usergroups">{$lang->application_ucp_wobgroups2}</label><br />
           <select name="additionalgroups[]" id="additionalgroups[]" size="3" multiple="multiple">
               <option value="">Keine sekundäre Gruppe</option>
               {$additionalgroups_bit}
           </select>
       </div>
         <div class="aucp_showthread-wob__item">
-            <input type="submit" name="wob" value="WOB" class="button" />
+        <input type="submit" name="wob" value="{$lang->application_ucp_wobbtn}" class="button" />
       </div>
       </div>    
   </form>',
@@ -366,7 +366,7 @@ function application_ucp_install()
     "title" => 'application_ucp_ucp_main',
     "template" => '<html>
       <head>
-      <title>{$mybb->settings[\\\'bbname\\\']} - {$lang->drafts}</title>
+      <title>{$mybb->settings[\\\'bbname\\\']} - Steckbrief ausfüllen</title>
       {$headerinclude}
       </head>
       <body>
@@ -380,10 +380,9 @@ function application_ucp_install()
         <div class="applucp-con">
           {$fields}
         <div align="center" class="applucp-con__item applucp-buttons">
-        <!--	<input type="hidden" name="action" value="do_drafts" />-->
          {$extend_button}
-          <input type="submit" class="button" name="application_ucp_save" value="speichern"  />
-          <input type="submit" class="button" name="application_ucp_ready" value="Speichern & zur Kontrolle"/>
+         <input type="submit" class="button" name="application_ucp_save" value="{$lang->application_ucp_save}" />
+         <input type="submit" class="button" name="application_ucp_ready" value="{$lang->application_ucp_readybtn}"/>
         </div>
         </div>
       </td>
@@ -1930,7 +1929,7 @@ function application_ucp_usercp()
         }
         // das letzte Komma und leertase entfernen
         $affectedusers = (substr($affectedusers, 0, -2));
-        $affected = $lang->application_ucp_affected." <br/> {$affectedusers}";
+        $affected = $lang->application_ucp_affected . " <br/> {$affectedusers}";
       }
 
       //Die admin cp message holen und die variable $wanted ersetzen
@@ -2047,7 +2046,7 @@ function application_ucp_showinprofile()
     $exportbtn = "
     <form action=\"misc.php?action=exp_app\" method=\"post\">
     <input type=\"hidden\" name=\"uid\" value=\"{$mybb->input['uid']}\" id=\"uid\" />
-    <input type=\"submit\" name=\"exp_app\" value=\"".$lang->application_ucp_export."\" id=\"exp_app\" />
+    <input type=\"submit\" name=\"exp_app\" value=\"" . $lang->application_ucp_export . "\" id=\"exp_app\" />
     </form>";
   }
 }
@@ -2076,6 +2075,8 @@ $plugins->add_hook("showthread_start", "application_ucp_showthread");
 function application_ucp_showthread()
 {
   global $lang, $db, $mybb, $templates, $thread, $give_wob;
+  //Sprachvariable laden
+  $lang->load('application_ucp');
 
   // Gruppen holen und sortieren
   $usergroups_query = $db->query("SELECT * FROM " . TABLE_PREFIX . "usergroups ORDER by usertitle ASC");
