@@ -15,7 +15,7 @@ $l['application_ucp_wobgroups'] = 'primary usergroup *';
 $l['application_ucp_wobgroups2'] = 'secundary usergroup';
 $l['application_ucp_wobbtn'] = 'WOB';
 
-$l['application_ucp_affected'] = 'affected characters:';
+$l['application_ucp_affected_label'] = 'affected characters:';
 
 //My Alert
 $l['myalerts_setting_application_ucp_affected'] = 'Applications: Alert if a Application of a new character affects you.';
