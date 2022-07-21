@@ -1,5 +1,7 @@
 <?php
-
+//Infos
+$l['application_ucp_info_name'] = 'Bewerbung im UCP von Risuena';
+$l['application_ucp_info_descr'] = 'Möglichkeit im UCP einen eigenen Ausfüllbereich für Steckbriefe/Charakterinfos zu haben';
 
 
 $l['application_ucp_permission'] = 'Steckbrief Benachrichtigungen';
@@ -18,6 +20,16 @@ $l['application_ucp_activate'] = 'aktiviert';
 $l['application_ucp_delete_ask'] = "Soll das Feld wirklich gelöscht werden? Achtung, auch die Inhalte der User werden gelöscht! Sonst das Feld einfach deaktivieren.";
 $l['application_ucp_deactivate_ask'] = "Soll das Feld wirklich deaktiviert werden? Die Inhalte werden nicht gelöscht und die Daten werden behalten.";
 $l['application_ucp_activate_ask'] = "Soll das Feld wirklich aktiviert werden? Die vorher ausgeblendeten Inhalte werden wieder angezeigt.";
+
+$l['application_ucp_manageusers'] = 'Steckbriefe verwalten';
+$l['application_ucp_manageusers_dscr'] = 'Steckbriefe der User verwalten und bearbeiten';
+$l['application_ucp_manageusers_all'] = 'Übersicht aller User und die Möglichkeit ihre Steckbriefe zu verwalten.';
+
+$l['application_ucp_manageusers_manage'] = 'Verwalten';
+$l['application_ucp_manageusers_application'] = 'Steckbrief verwalten';
+
+
+$l['application_ucp_edituser'] = 'Steckbrief bearbeiten.';
 
 
 $l['application_ucp_createfieldtype'] = 'Steckbrieffeld erstellen';
