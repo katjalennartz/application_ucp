@@ -1987,13 +1987,13 @@ function application_ucp_usercp()
       }
 
       //Die admin cp message holen und die variable $wanted ersetzen
-      $message = str_replace("\$wanted", $wanted, $mybb->settings['application_ucp_stecki_message']);
+      $threadmessage = str_replace("\$wanted", $wanted, $mybb->settings['application_ucp_stecki_message']);
 
       //Die Variable affected ersetzen
-      $message = str_replace("\$affected", $affected, $message);
+      $threadmessage = str_replace("\$affected", $affected, $threadmessage);
 
       //Den usernamen ersetzen
-      $message = str_replace("\$username", $mybb->user['username'], $message);
+      $threadmessage = str_replace("\$username", $mybb->user['username'], $threadmessage);
 
       // Kopiert aus newthread.php
       // Set up posthandler. (Wir nutzen hier einfach komplett die funktion aus newthread.php)
@@ -2010,7 +2010,7 @@ function application_ucp_usercp()
         "subject" => $db->escape_string($mybb->user['username']),
         "uid" => $mybb->user['uid'],
         "username" => $db->escape_string($mybb->user['username']),
-        "message" => $message,
+        "message" => $threadmessage,
         "ipaddress" => $session->packedip,
         "posthash" => $mybb->get_input('posthash')
       );
