@@ -13,6 +13,7 @@ $l['application_ucp_export'] = 'Steckbrief exportieren';
 
 $l['application_ucp_wobgroups'] = 'Primäre Benutzergruppe *';
 $l['application_ucp_wobgroups2'] = 'Sekundäre Benutzergruppe';
+$l['application_ucp_wobbtn'] = 'WOB';
 
 $l['application_ucp_affected'] = 'Betroffene Charaktere:';
 
