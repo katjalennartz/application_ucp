@@ -1925,7 +1925,7 @@ function application_ucp_usercp()
           //user war nicht im alten, also muss er informiert werden
           if (!in_array($user, $old_field)) {
             $touid = get_user_by_username($user);
-            application_ucp_affected_alert($fetch_management['uid'], $touid, $fetch_management['tid'], 1);
+            application_ucp_affected_alert($managmentdata['uid'], $touid, $managmentdata['tid'], 1);
           }
         }
       }
