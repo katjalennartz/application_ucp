@@ -90,6 +90,7 @@ function application_ucp_install()
   `submission_time` datetime NOT NULL DEFAULT NOW(),
   `modcorrection_time` datetime,
   `usercorrection_time` datetime,
+  `correctioncnt` int(10) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM CHARACTER SET utf8 COLLATE utf8_general_ci;");
 
