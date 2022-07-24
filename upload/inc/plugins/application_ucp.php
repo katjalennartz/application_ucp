@@ -690,7 +690,7 @@ function application_ucp_admin_load()
           $view = "";
           if ($field['postbit'] && $mybb->settings['application_ucp_postbit_view'] == 0) {
             $view_postbit = "<ul>
-            <li><b>Anzeige im Postbit:</b> </li>>
+            <li><b>Anzeige im Postbit:</b> </li>
             <li>Label & Value: &#x007B;&dollar;post['labelvalue_{$field['fieldname']}']&#x007D;
             <li>Label: &#x007B;&dollar;post['label_{$field['fieldname']}']&#x007D;
             <li>Value: &#x007B;&dollar;post['value_{$field['fieldname']}']&#x007D;	</ul>";
