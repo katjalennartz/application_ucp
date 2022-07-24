@@ -564,14 +564,14 @@ function application_ucp_deactivate()
   find_replace_templatesets("postbit", "#" . preg_quote('{$post[\'aucp_fields\']}') . "#i", '');
 
   //My alerts wieder löschen
-    if (class_exists('MybbStuff_MyAlerts_AlertTypeManager')) {
-      $alertTypeManager = MybbStuff_MyAlerts_AlertTypeManager::getInstance();
-  
-      if (!$alertTypeManager) {
-        $alertTypeManager = MybbStuff_MyAlerts_AlertTypeManager::createInstance($db, $cache);
-      }
-      $alertTypeManager->deleteByCode('application_ucp_affected');
+  if (class_exists('MybbStuff_MyAlerts_AlertTypeManager')) {
+    $alertTypeManager = MybbStuff_MyAlerts_AlertTypeManager::getInstance();
+
+    if (!$alertTypeManager) {
+      $alertTypeManager = MybbStuff_MyAlerts_AlertTypeManager::createInstance($db, $cache);
     }
+    $alertTypeManager->deleteByCode('application_ucp_affected');
+  }
 }
 
 /**
@@ -1641,7 +1641,6 @@ function application_ucp_usercp()
             }
           
             if($('#" . $type['dependency'] . "'+checked+'').val() == '" . $type['dependency_value'] . "') {
-              console.log($('#" . $type['dependency'] . "'+checked+'').val());
                 $('#hideinfo_" . $type['fieldname'] . "').val('true');
                 $('#" . $type['fieldname'] . "').show(); 
                 $('#label_{$type['fieldname']}').show(); 
@@ -1761,6 +1760,11 @@ function application_ucp_usercp()
       if ($required != "" && $typ == "checkbox") {
         $application_ucp_js .= "
         var checkboxes = $('." . $type['fieldname'] . "_check');
+        if($('." . $type['fieldname'] . "_check:checked').length > 0) {
+          checkboxes.removeAttr('required');
+        } else {
+          checkboxes.attr('required', 'required');
+        }
         checkboxes.change(function(){
         if($('." . $type['fieldname'] . "_check:checked').length > 0) {
           checkboxes.removeAttr('required');
@@ -2053,6 +2057,7 @@ function application_ucp_usercp()
         //betroffene user informieren
         application_ucp_affected_alert($mybb->user['uid'], $user['uid'], $tid, 0);
       }
+    
 
       //und jetzt noch einen eintrag in der Management Tabelle
       $insert = array(
@@ -2647,17 +2652,19 @@ function application_ucp_affected_alert($charakter, $touid, $tid, $editflag)
   $alerttype = $mybb->settings['application_ucp_stecki_affected_alert'];
   if ($alerttype == 0) { //private message
     $user = get_user($charakter);
+
     $userprofil = build_profile_link($user['username'], $charakter);
+
     $steckilink = get_thread_link($tid);
     $alertmsg = "Der Steckbrief({$steckilink}) von {$userprofil} betrifft dich. Bitte gib dein Okay.";
     $pm = array(
       'subject' => "Charakter der dich betrifft",
       'message' => $alertmsg,
       'touid' => $touid,
+      'from_user' => $charakter,
     );
     send_pm($pm, -1, true);
   } else if ($alerttype == 1) { // MyAlert
-
     if (class_exists('MybbStuff_MyAlerts_AlertTypeManager')) {
       $alertType = MybbStuff_MyAlerts_AlertTypeManager::getInstance()->getByCode('application_ucp_affected');
       if ($alertType != NULL && $alertType->getEnabled()) {
@@ -2722,7 +2729,7 @@ function application_ucp_myalert()
       $alertContent = $alert->getExtraDetails();
       return $this->lang->sprintf(
         $this->lang->application_ucp_affected,
-        $outputAlert['from_user'],
+        $outputAlert['touid'],
         $alertContent['tid'],
         $outputAlert['dateline']
       );
