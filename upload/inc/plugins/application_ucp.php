@@ -2089,7 +2089,7 @@ function application_ucp_usercp()
 $plugins->add_hook("member_profile_end", "application_ucp_showinprofile");
 function application_ucp_showinprofile()
 {
-  global $db, $mybb, $memprofile, $templates, $aucp_fields, $exportbtn, $lang;
+  global $db, $mybb, $memprofile, $templates, $aucp_fields, $exportbtn, $lang, $fields;
   $lang->load('application_ucp');
   $userprofil = $memprofile['uid'];
   // Sollen die Felder automatisch zusammengebaut werden
@@ -2636,6 +2636,7 @@ function application_ucp_savefields($fields, $uid)
     //Weil wir nur infofelder haben, wir wollen nur die Felder mit einem numerischen wert, also einer ID und somit einem Steckbrieffeld absspeichern
     if (is_numeric($key)) {
       //Füge den Wert neu ein, wenn er noch nicht existiert
+      $value = $db->escape_string($value);
       $db->write_query("
         INSERT INTO " . TABLE_PREFIX . "application_ucp_userfields (uid, value, fieldid) 
         VALUES('{$uid}', '{$value}', {$key}) ON 
