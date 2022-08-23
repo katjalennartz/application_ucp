@@ -63,6 +63,7 @@ function application_ucp_install()
     `dependency_value` varchar(500) NOT NULL DEFAULT '',
     `postbit` int(1) NOT NULL DEFAULT 0,
     `profile` int(1) NOT NULL DEFAULT 0,
+    `memberlist` int(1) NOT NULL DEFAULT 0,
     `template` varchar(2500) NOT NULL DEFAULT '',
     `sorting` int(10) NOT NULL DEFAULT 0,
     `active` int(1) NOT NULL DEFAULT 1,
@@ -205,6 +206,13 @@ function application_ucp_install()
     ),
     'application_ucp_postbit_view' => array(
       'title' => 'Anzeige im Postbit',
+      'description' => 'Soll die Anzeige automatisch gebaut werden? Wenn ja, werden alle Felder mit einer Variable ($aucp_fields) ausgegeben. Wenn nein, müssen die Variablen für die Felder selbst eingefügt werden. (Bennenung findet ihr in der Übersicht).',
+      'optionscode' => 'yesno',
+      'value' => '1', // Default
+      'disporder' => 13
+    ),
+    'application_ucp_memberlist_view' => array(
+      'title' => 'Anzeige in der Memberlist',
       'description' => 'Soll die Anzeige automatisch gebaut werden? Wenn ja, werden alle Felder mit einer Variable ($aucp_fields) ausgegeben. Wenn nein, müssen die Variablen für die Felder selbst eingefügt werden. (Bennenung findet ihr in der Übersicht).',
       'optionscode' => 'yesno',
       'value' => '1', // Default
@@ -644,7 +652,7 @@ function application_ucp_admin_load()
 
       //Hier erstellen wir jetzt eine Übersicht über unsere ganzen Felder
       //erst brauchen wir einen Container und ein Formular - für delete, die Sortierung etc.
-      $form = new Form("index.php?module=config-application_ucp", "post");
+      $form = new Form("index.php?module=config-application_ucp&amp;action=update_order", "post");
       $form_container = new FormContainer($lang->application_ucp_overview);
       $form_container->output_row_header($lang->application_ucp_overview_appl);
       $form_container->output_row_header($lang->application_ucp_overview_sort);
@@ -686,7 +694,7 @@ function application_ucp_admin_load()
           $activ_end = "</i></s>";
         }
 
-        if ($field['postbit'] || $field['profile']) {
+        if ($field['postbit'] || $field['profile'] || $field['memberlist']) {
           $view = "";
           if ($field['postbit'] && $mybb->settings['application_ucp_postbit_view'] == 0) {
             $view_postbit = "<ul>
@@ -710,7 +718,18 @@ function application_ucp_admin_load()
             <li><b>Anzeige im Profile:</b> automatisch</li>
             </ul>";
           }
-          $view .= $view_postbit . $view_profile;
+          if ($field['profile'] && $mybb->settings['application_ucp_profile_view'] == 0) {
+            $view_memberlist = "<ul>
+            <li><b>Anzeige in der Memberlist:</b> </li>
+            <li>Label & Value: &#x007B;&dollar;user['labelvalue_{$field['fieldname']}']&#x007D;
+            <li>Label: &#x007B;&dollar;user['label_{$field['fieldname']}']&#x007D;
+            <li>Value: &#x007B;&dollar;user['value_{$field['fieldname']}']&#x007D;	</ul>";
+          } else {
+            $view_memberlist = "<ul>
+            <li><b>Anzeige im Profile:</b> automatisch</li>
+            </ul>";
+          }
+          $view .= $view_postbit . $view_profile . $view_memberlist;
         } else {
           $view = "";
         }
@@ -722,12 +741,15 @@ function application_ucp_admin_load()
         {$options}
         {$mandatory}
         {$dependency}
+        <div class=\"appacp_con\" style=\"display: grid; grid-template-columns: 1fr 1fr 1fr;\">
         {$view}
+        </div>
         <br/>Alle Elemente(textfeld, das zugehörige label etc) bekommen die Klasse \"{$field['fieldname']}\", die zum stylen verwenden werden kann.
         " . $activ_end);
 
         //spalte reihenfolge
-        $form_container->output_cell($form->generate_text_box('sorting', $field['sorting'], array('style' => "width: 25px;")));
+        $form_container->output_cell($form->generate_text_box("sorting[{$field['id']}]", $field['sorting'], array('id' => 'sorting', 'style' => "width: 25px;", 'min' => 0)));
+        // $form_container->output_cell($form->generate_numeric_field("disporder[{$calendar['cid']}]", $calendar['disporder'], array('id' => 'disporder', 'style' => 'width: 80%', 'class' => 'align_center', 'min' => 0)));
 
         //spalte für options
         //erst pop up dafür bauen
@@ -760,9 +782,23 @@ function application_ucp_admin_load()
         $form_container->construct_row();
       }
       $form_container->end();
+      $buttons[] = $form->generate_submit_button("Sortierung speichern");
+      $form_container->output_cell($form->output_submit_wrapper($buttons));
+
+
       $form->end();
       $page->output_footer();
       die();
+    }
+    if ($mybb->input['action'] == "update_order" && $mybb->request_method == "post") {
+
+      foreach ($mybb->input['sorting'] as $id => $order) {
+        $update_query = array(
+          "sorting" => (int)$order
+        );
+        $db->update_query("application_ucp_fields", $update_query, "id='" . (int)$id . "'");
+      }
+      admin_redirect("index.php?module=config-application_ucp");
     }
 
     //Hier werden jetzt die Felder im ACP erstellt
@@ -869,7 +905,8 @@ function application_ucp_admin_load()
         "checkbox" => "Checkbox",
         "radio" => "Radiobuttons",
         "date" => "Datum",
-        "datetime-local" => "Datum und Uhrzeit"
+        "datetime-local" => "Datum und Uhrzeit",
+        "url" => "URL"
       );
 
       //Formular bauen 
@@ -1186,8 +1223,8 @@ function application_ucp_admin_load()
             $radios
           );
         }
-        //für date gibt es keine mybbfunktion, also bauen wir selber
-        if ($field['fieldtyp'] == "date" or $field['fieldtyp'] == "date-local") {
+        //für date und url gibt es keine mybbfunktion, also bauen wir selber
+        if ($field['fieldtyp'] == "date" or $field['fieldtyp'] == "date-local" or $field['fieldtyp'] == 'url') {
           $form_container->output_row(
             $label,
             $descr,
@@ -1319,7 +1356,8 @@ function application_ucp_admin_load()
         "checkbox" => "Checkbox",
         "radio" => "Radiobuttons",
         "date" => "Datum",
-        "datetime-local" => "Datum und Uhrzeit"
+        "datetime-local" => "Datum und Uhrzeit",
+        "url" => "url"
       );
       $form_container->output_row(
         $lang->application_ucp_add_fieldtyp,
@@ -1598,7 +1636,8 @@ function application_ucp_usercp()
     $get_value = $db->fetch_array($db->simple_select("application_ucp_userfields", "*", "uid = {$thisuser} AND fieldid={$type['id']}"));
     //wenn nein, gibt es eine vorlage für das feld?
     if ($type['template'] != "") {
-      if ($get_value['value'] != "") {
+      
+      if ($get_value['value'] == "") {
         //Es gibt eine Vorlage und der user hat das Feld noch nicht bearbeitet
         $get_value['value'] = $type['template'];
       } else {
@@ -1669,7 +1708,7 @@ function application_ucp_usercp()
     }
 
     //Feld ist einfaches Textfeld, Datum oder Datum mit Zeit
-    if ($typ == "text" || $typ == "date" || $typ == "datetime-local") {
+    if ($typ == "text" || $typ == "date" || $typ == "datetime-local" || $typ == "url") {
       $fields .= "<label  class=\"app_ucp_label\" for=\"{$type['fieldname']}\" style=\"{$hidden}\" id=\"label_{$type['fieldname']}\">{$type['label']}{$requiredstar}:</label> 
       <input type=\"{$typ}\" class=\"{$type['fieldname']}\" value=\"{$get_value['value']}\" name=\"{$type['id']}\" id=\"{$type['fieldname']}\" style=\"{$hidden}\" {$required} {$readonly}/>
       ";
@@ -1783,7 +1822,7 @@ function application_ucp_usercp()
   $setting_wanted = $mybb->settings['application_ucp_stecki_wanted'];
   $setting_affected = $mybb->settings['application_ucp_stecki_affected'];
 
-  //Es soll asugewählt werden können, ob es sich um ein Gesuch handelt
+  //Es soll ausgewählt werden können, ob es sich um ein Gesuch handelt
   if ($setting_wanted) {
     //Die Angabe ist Pflicht
     $requiredstar = "<span class=\"app_ucp_star\">" . $lang->application_ucp_mandatory . "</span>";
@@ -2057,7 +2096,7 @@ function application_ucp_usercp()
         //betroffene user informieren
         application_ucp_affected_alert($mybb->user['uid'], $user['uid'], $tid, 0);
       }
-    
+
 
       //und jetzt noch einen eintrag in der Management Tabelle
       $insert = array(
@@ -2108,6 +2147,28 @@ function application_ucp_showinprofile()
     <input type=\"hidden\" name=\"uid\" value=\"{$mybb->input['uid']}\" id=\"uid\" />
     <input type=\"submit\" name=\"exp_app\" value=\"" . $lang->application_ucp_export . "\" id=\"exp_app\" />
     </form>";
+  }
+}
+
+/**
+ * automatische Anzeige von den Feldern im Profil
+ * + Export Steckbrief
+ */
+$plugins->add_hook("memberlist_user", "application_ucp_showinmemberlist");
+function application_ucp_showinmemberlist(&$user)
+{
+  global $db, $mybb, $memprofile, $templates, $aucp_fields, $exportbtn, $lang, $fields;
+  $lang->load('application_ucp');
+
+  $uid = $user['uid'];
+  // die Felder sollen automatisch zusammengebaut werden
+  if ($mybb->settings['application_ucp_postbit_view']) {
+    $post['aucp_fields'] = application_ucp_build_view($uid, "memberlist", "html");
+  } else {
+    // nicht automatisch -> wir basteln ein array, damit man auf die einzelnen sachen zugreifen kann
+    // Wir stellen uns ein Array zusammen
+    $fields = application_ucp_build_view($uid, "postbit", "array");
+    $user = array_merge($user, $fields);
   }
 }
 
@@ -2564,7 +2625,8 @@ function application_ucp_build_view($uid, $location, $kind)
         "allow_mycode" => $field['allow_mybb'],
         "allow_smilies" => 0,
         "allow_imgcode" => $field['allow_img'],
-        "allow_videocode" => $field['allow_video']
+        "allow_videocode" => $field['allow_video'],
+        "nl2br" => 1
       );
       if ($field['fieldtyp'] == "date") {
         $fieldvalue = date("d.m.Y", strtotime($field['value']));
