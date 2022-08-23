@@ -14,16 +14,18 @@
 * Bewerbergruppe
 * Steckbrief Frist
 * Korrektur Frist
-* Korrektur Frist
 * Fristverlängerung (Tage)
+* Fristverlängerung (Häufigkeit)
 * Exportfunktion
 * Area für die Steckbriefe
 * Steckbriefthread (Vorlage)
 * Charakter ein Gesuch? 
 * Charakter betrifft andere?
+* Art der Benachrichtigung
 * Moderatoren Gruppen
 * Anzeige im Profil
 * Anzeige im Postbit
+* Anzeige in der Memberlist
 * Antworttext WoB 
 * Antworttext WoB Inhalt
 
