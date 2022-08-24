@@ -206,14 +206,14 @@ function application_ucp_install()
     ),
     'application_ucp_postbit_view' => array(
       'title' => 'Anzeige im Postbit',
-      'description' => 'Soll die Anzeige automatisch gebaut werden? Wenn ja, werden alle Felder mit einer Variable ($aucp_fields) ausgegeben. Wenn nein, müssen die Variablen für die Felder selbst eingefügt werden. (Bennenung findet ihr in der Übersicht).',
+      'description' => 'Soll die Anzeige automatisch gebaut werden? Wenn ja, werden alle Felder mit einer Variable ($post[\'aucp_fields\']) ausgegeben. Wenn nein, müssen die Variablen für die Felder selbst eingefügt werden. (Bennenung findet ihr in der Übersicht).',
       'optionscode' => 'yesno',
       'value' => '1', // Default
       'disporder' => 13
     ),
     'application_ucp_memberlist_view' => array(
       'title' => 'Anzeige in der Memberlist',
-      'description' => 'Soll die Anzeige automatisch gebaut werden? Wenn ja, werden alle Felder mit einer Variable ($aucp_fields) ausgegeben. Wenn nein, müssen die Variablen für die Felder selbst eingefügt werden. (Bennenung findet ihr in der Übersicht).',
+      'description' => 'Soll die Anzeige automatisch gebaut werden? Wenn ja, werden alle Felder mit einer Variable ($user[\'aucp_fields\']) ausgegeben. Wenn nein, müssen die Variablen für die Felder selbst eingefügt werden. (Bennenung findet ihr in der Übersicht).',
       'optionscode' => 'yesno',
       'value' => '1', // Default
       'disporder' => 13
@@ -676,7 +676,7 @@ function application_ucp_admin_load()
         } else {
           $mandatory = "";
         }
-        if ($field['dependency']) {
+        if ($field['dependency'] != "none") {
           $dependency = "Nur wenn {$field['dependency']} = {$field['dependency_value']}|";
         } else {
           $dependency = "";
@@ -1636,7 +1636,7 @@ function application_ucp_usercp()
     $get_value = $db->fetch_array($db->simple_select("application_ucp_userfields", "*", "uid = {$thisuser} AND fieldid={$type['id']}"));
     //wenn nein, gibt es eine vorlage für das feld?
     if ($type['template'] != "") {
-      
+
       if ($get_value['value'] == "") {
         //Es gibt eine Vorlage und der user hat das Feld noch nicht bearbeitet
         $get_value['value'] = $type['template'];
@@ -2163,7 +2163,7 @@ function application_ucp_showinmemberlist(&$user)
   $uid = $user['uid'];
   // die Felder sollen automatisch zusammengebaut werden
   if ($mybb->settings['application_ucp_postbit_view']) {
-    $post['aucp_fields'] = application_ucp_build_view($uid, "memberlist", "html");
+    $user['aucp_fields'] = application_ucp_build_view($uid, "memberlist", "html");
   } else {
     // nicht automatisch -> wir basteln ein array, damit man auf die einzelnen sachen zugreifen kann
     // Wir stellen uns ein Array zusammen
@@ -2340,14 +2340,21 @@ function application_ucp_misc()
 
     foreach ($fields as $key => $field) {
       if (substr($key, 0, 10) == "labelvalue") {
-        //Label und Value auslesen und in PDF packen
-        $y = $y + 15;
-        $pdf->SetFont('Arial', '', 12);
-        $pdf->SetX(20);
-        //die html codes rauswerfen
-        $clean = html_entity_decode($field);
-        $clean = strip_tags($clean);
-        $pdf->Cell(20, $y, $clean);
+
+        if (strpos($field, "bild")) {
+          
+        } else {
+          //Label und Value auslesen und in PDF packen
+          $y = $y + 15;
+          $pdf->SetFont('Arial', '', 12);
+          $pdf->SetX(20);
+          //die html codes rauswerfen
+          $clean = html_entity_decode($field);
+          $clean = strip_tags($clean);
+          // {"$"}this->MultiCell(0,5,{"$"}txt);
+          $pdf->MultiCell(0, 5, $clean);
+          $pdf->MultiCell(0, 5, "");
+        }
       }
     }
     $pdf->Output('I', $title . '.pdf');
