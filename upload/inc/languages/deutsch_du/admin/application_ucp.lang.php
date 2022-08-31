@@ -71,6 +71,9 @@ $l['application_ucp_add_fieldpostbit_descr'] = 'Soll das Feld im Postbit anzeigb
 $l['application_ucp_add_fieldprofile'] = 'Anzeige Profil?';
 $l['application_ucp_add_fieldprofile_descr'] = 'Soll das Feld im Profil anzeigbar sein?';
 
+$l['application_ucp_add_fieldmember'] = 'Anzeige Memberlist?';
+$l['application_ucp_add_fieldmember_descr'] = 'Soll das Feld in der Memberlist anzeigbar sein?';
+
 $l['application_ucp_add_fieldtemplate'] = 'Vorlage/Template?';
 $l['application_ucp_add_fieldtemplate_descr'] = 'Hier könnt ihr ein Template für das Feld erstellen. Z.B. den Code für eine Timeline.';
 
