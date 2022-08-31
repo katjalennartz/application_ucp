@@ -872,6 +872,7 @@ function application_ucp_admin_load()
             "dependency_value" => $db->escape_string($mybb->input['dependency_value']),
             "postbit" => intval($mybb->input['fieldpostbit']),
             "profile" => intval($mybb->input['fieldprofile']),
+            "memberlist" => intval($mybb->input['fieldmember']),
             "template" => $db->escape_string($mybb->input['fieldtemplate']),
             "sorting" => intval($mybb->input['fieldsort']),
             "allow_html" => intval($mybb->input['fieldhtml']),
@@ -978,6 +979,12 @@ function application_ucp_admin_load()
         $lang->application_ucp_add_fieldprofile,
         $lang->application_ucp_add_fieldprofile_descr,
         $form->generate_yes_no_radio('fieldprofile', "1")
+      );
+      //anzeige in der Mitgliederliste
+      $form_container->output_row(
+        $lang->application_ucp_add_fieldmember,
+        $lang->application_ucp_add_fieldmember_descr,
+        $form->generate_yes_no_radio('fieldmember', "1")
       );
       //Vorlage im Feld? 
       $form_container->output_row(
@@ -1310,6 +1317,7 @@ function application_ucp_admin_load()
           "dependency_value" => $db->escape_string($mybb->input['dependency_value']),
           "postbit" => intval($mybb->input['fieldpostbit']),
           "profile" => intval($mybb->input['fieldprofile']),
+          "memberlist" => intval($mybb->input['fieldmember']),
           "template" => $db->escape_string($mybb->input['fieldtemplate']),
           "sorting" => intval($mybb->input['fieldsort']),
           "allow_html" => intval($mybb->input['fieldhtml']),
@@ -1413,6 +1421,12 @@ function application_ucp_admin_load()
         $lang->application_ucp_add_fieldprofile,
         $lang->application_ucp_add_fieldprofile_descr,
         $form->generate_yes_no_radio('fieldprofile', $field_data['profile'])
+      );
+
+      $form_container->output_row(
+        $lang->application_ucp_add_fieldmember,
+        $lang->application_ucp_add_fieldmember_descr,
+        $form->generate_yes_no_radio('fieldmember', $field_data['memberlist'])
       );
 
       $form_container->output_row(
@@ -2342,7 +2356,6 @@ function application_ucp_misc()
       if (substr($key, 0, 10) == "labelvalue") {
 
         if (strpos($field, "bild")) {
-          
         } else {
           //Label und Value auslesen und in PDF packen
           $y = $y + 15;
