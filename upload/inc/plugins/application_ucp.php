@@ -41,7 +41,7 @@ function application_ucp_is_installed()
 {
   global $db;
   if ($db->table_exists("application_ucp_fields")) {
-    return false;
+    return true;
   }
   return false;
 }
@@ -2229,9 +2229,13 @@ function application_ucp_showthread()
   while ($additionalgroups = $db->fetch_array($additionalgroups_query)) {
     $additionalgroups_bit .= "<option value=\"{$additionalgroups['gid']}\">{$additionalgroups['title']}</option>";
   }
-
+  // var_dump($thread);
+  // echo "fid".$mybb->setting['application_ucp_steckiarea'];
   // application_ucp_wobbutton
-  eval("\$give_wob .= \"" . $templates->get("application_ucp_wobbutton") . "\";");
+  if ($thread['fid'] == $mybb->settings['application_ucp_steckiarea'])
+  {
+    eval("\$give_wob .= \"" . $templates->get("application_ucp_wobbutton") . "\";");
+  }
 }
 
 /**
