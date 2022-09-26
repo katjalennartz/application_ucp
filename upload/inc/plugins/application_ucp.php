@@ -55,6 +55,7 @@ function application_ucp_install()
     `id` int(10) NOT NULL AUTO_INCREMENT,
     `fieldtyp` varchar(100) NOT NULL,
     `fieldname` varchar(100) NOT NULL,
+    `fielddescr` varchar(500) NOT NULL,
     `label` varchar(100) NOT NULL,
     `options` varchar(500) NOT NULL DEFAULT '',
     `editable` int(1) NOT NULL DEFAULT 0,
@@ -864,6 +865,7 @@ function application_ucp_admin_load()
           $insert = [
             "fieldname" => $db->escape_string($mybb->input['fieldname']),
             "fieldtyp" => $db->escape_string($mybb->input['fieldtyp']),
+            "fielddescr" => $db->escape_string($mybb->input['fielddescr']),
             "label" => $db->escape_string($mybb->input['fieldlabel']),
             "options" => $db->escape_string($mybb->input['fieldoptions']),
             "editable" => intval($mybb->input['fieldeditable']),
@@ -930,6 +932,12 @@ function application_ucp_admin_load()
         $lang->application_ucp_add_fieldtyp,
         $lang->application_ucp_add_fieldtyp_descr,
         $form->generate_select_box('fieldtyp', $select, array(), array('id' => 'fieldtype'))
+      );
+      //Feldbeschreibung
+      $form_container->output_row(
+        $lang->application_ucp_add_descr,
+        $lang->application_ucp_add_descr_descr,
+        $form->generate_text_box('fielddescr', "")
       );
       //Auswahloptionen 
       $form_container->output_row(
@@ -1310,6 +1318,7 @@ function application_ucp_admin_load()
           "fieldname" => $db->escape_string($mybb->input['fieldname']),
           "fieldtyp" => $db->escape_string($mybb->input['fieldtyp']),
           "label" => $db->escape_string($mybb->input['fieldlabel']),
+          "fielddescr" => $db->escape_string($mybb->input['fielddescr']),
           "options" => $db->escape_string($mybb->input['fieldoptions']),
           "editable" => intval($mybb->input['fieldeditable']),
           "mandatory" => intval($mybb->input['fieldmandatory']),
@@ -1354,6 +1363,12 @@ function application_ucp_admin_load()
         $lang->application_ucp_add_fieldlabel,
         $lang->application_ucp_add_fieldlabel_descr,
         $form->generate_text_box('fieldlabel', $field_data['label'])
+      );
+
+      $form_container->output_row(
+        $lang->application_ucp_add_descr,
+        $lang->application_ucp_add_descr_descr,
+        $form->generate_text_box('fielddescr', $field_data['fielddescr'])
       );
 
       $select = array(
@@ -1720,16 +1735,25 @@ function application_ucp_usercp()
     if ($hide == true) {
       $fields .= "<input type=\"hidden\" id=\"hideinfo_{$type['fieldname']}\" name=\"hideinfo_{$type['id']}\" value=\"false\" />";
     }
+    //Beschreibung falls vorhanden
+    if ($type['fielddescr'] != "") {
+      $fielddescr = "<span class=\"descr_{$type['fieldname']}\">{$type['fielddescr']}</span>";
+    } else {
+      $fielddescr = "";
+    }
 
     //Feld ist einfaches Textfeld, Datum oder Datum mit Zeit
+
     if ($typ == "text" || $typ == "date" || $typ == "datetime-local" || $typ == "url") {
       $fields .= "<label  class=\"app_ucp_label\" for=\"{$type['fieldname']}\" style=\"{$hidden}\" id=\"label_{$type['fieldname']}\">{$type['label']}{$requiredstar}:</label> 
+      " . $fielddescr . "
       <input type=\"{$typ}\" class=\"{$type['fieldname']}\" value=\"{$get_value['value']}\" name=\"{$type['id']}\" id=\"{$type['fieldname']}\" style=\"{$hidden}\" {$required} {$readonly}/>
       ";
     }
     //Feld ist Textarea
     else if ($typ == "textarea") {
       $fields .= "<label for=\"{$type['fieldname']}\" class=\"app_ucp_label\" style=\"{$hidden}\" id=\"label_{$type['fieldname']}\">{$type['label']}{$requiredstar}:</label>
+      " . $fielddescr . "
       <textarea class=\"{$type['fieldname']}\" name=\"{$type['id']}\"  id=\"{$type['fieldname']}\" rows=\"4\" cols=\"50\" style=\"{$hidden}\" {$readonly} {$required} >{$get_value['value']}</textarea>";
     }
     //Feld ist Select
@@ -1769,6 +1793,7 @@ function application_ucp_usercp()
       //hier bauen wir das feld und packen die optionen rein
       $fields .= " <label class=\"app_ucp_label {$type['fieldname']}\" for=\"{$type['fieldname']}\"  style=\"{$hidden}\" id=\"label_{$type['fieldname']}\">
       {$type['label']}{$requiredstar}:</label>
+      " . $fielddescr . "
       <select name=\"{$type['id']}[]\" id=\"{$type['fieldname']}\" style=\"{$hidden}\"  {$multiple} {$required} {$disabled}>
       {$selects} 
       </select>";
@@ -1802,6 +1827,7 @@ function application_ucp_usercp()
       $fields .= "
       <label class=\"app_ucp_label {$type['fieldname']}\" style=\"{$hidden}\" id=\"label_{$type['fieldname']}\">
       {$type['label']}{$requiredstar}:</label>
+      " . $fielddescr . "
       <div class=\"application_ucp_checkboxes\"  style=\"{$hidden}\" id=\"{$type['fieldname']}\">
         {$inner}
       </div>
@@ -2232,8 +2258,7 @@ function application_ucp_showthread()
   // var_dump($thread);
   // echo "fid".$mybb->setting['application_ucp_steckiarea'];
   // application_ucp_wobbutton
-  if ($thread['fid'] == $mybb->settings['application_ucp_steckiarea'])
-  {
+  if ($thread['fid'] == $mybb->settings['application_ucp_steckiarea']) {
     eval("\$give_wob .= \"" . $templates->get("application_ucp_wobbutton") . "\";");
   }
 }
