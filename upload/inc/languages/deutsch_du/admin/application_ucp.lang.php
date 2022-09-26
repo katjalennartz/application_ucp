@@ -43,6 +43,10 @@ $l['application_ucp_formname_edit'] = 'Steckbrieffeld editieren';
 $l['application_ucp_add_name'] = 'Name des Felds';
 $l['application_ucp_add_name_descr'] = 'Die Bezeichnung für das Feld, keine Sonderzeichen, keine Leertasten. Dient als Identifikator.';
 
+$l['application_ucp_add_descr'] = 'Beschreibung des Felds';
+$l['application_ucp_add_descr_descr'] = 'Die Beschreibung für das Feld.';
+
+
 $l['application_ucp_add_fieldlabel'] = 'Label des Felds';
 $l['application_ucp_add_fieldlabel_descr'] = 'Was soll vor dem Feld stehen? Also z.B. Vorname';
 
