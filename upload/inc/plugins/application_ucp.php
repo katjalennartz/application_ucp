@@ -25,7 +25,7 @@ function application_ucp_info()
   $lang->load('application_ucp');
 
   return array(
-    "name" => $lang->application_ucp_permission,
+    "name" => $lang->application_ucp_name,
     "description" => $lang->application_ucp_info_descr,
     "website" => "https://github.com/katjalennartz/application_ucp",
     "author" => "risuena",
@@ -207,14 +207,14 @@ function application_ucp_install()
     ),
     'application_ucp_postbit_view' => array(
       'title' => 'Anzeige im Postbit',
-      'description' => 'Soll die Anzeige automatisch gebaut werden? Wenn ja, werden alle Felder mit einer Variable ($post[\'aucp_fields\']) ausgegeben. Wenn nein, müssen die Variablen für die Felder selbst eingefügt werden. (Bennenung findet ihr in der Übersicht).',
+      'description' => 'Soll die Anzeige automatisch gebaut werden? Wenn ja, werden alle Felder mit einer Variable ($post[&#039;aucp_fields&#039;]) ausgegeben. Wenn nein, müssen die Variablen für die Felder selbst eingefügt werden. (Bennenung findet ihr in der Übersicht).',
       'optionscode' => 'yesno',
       'value' => '1', // Default
       'disporder' => 13
     ),
     'application_ucp_memberlist_view' => array(
       'title' => 'Anzeige in der Memberlist',
-      'description' => 'Soll die Anzeige automatisch gebaut werden? Wenn ja, werden alle Felder mit einer Variable ($user[\'aucp_fields\']) ausgegeben. Wenn nein, müssen die Variablen für die Felder selbst eingefügt werden. (Bennenung findet ihr in der Übersicht).',
+      'description' => 'Soll die Anzeige automatisch gebaut werden? Wenn ja, werden alle Felder mit einer Variable ($user[&#039;aucp_fields&#039;]) ausgegeben. Wenn nein, müssen die Variablen für die Felder selbst eingefügt werden. (Bennenung findet ihr in der Übersicht).',
       'optionscode' => 'yesno',
       'value' => '1', // Default
       'disporder' => 13
@@ -559,6 +559,8 @@ function application_ucp_activate()
     $alertTypeAucpAffected->setEnabled(true);
     $alertTypeManager->add($alertTypeAucpAffected);
   }
+  change_admin_permission("config", "application_ucp", 1);
+
 }
 
 function application_ucp_deactivate()
@@ -581,6 +583,7 @@ function application_ucp_deactivate()
     }
     $alertTypeManager->deleteByCode('application_ucp_affected');
   }
+  change_admin_permission("config", "application_ucp", -1); 
 }
 
 /**
@@ -1657,6 +1660,11 @@ function application_ucp_usercp()
     if ($member &&  $type['editable'] == 0) {
       $readonly = "readonly"; //für textfelder/textarea
       $disabled = "disabled"; //selects / checkboxen etc.
+            //moderators still can edit fields
+            if ($mybb->usergroup['canmodcp'] == '1') {
+              $readonly = ""; //für textfelder/textarea
+              $disabled = ""; //selects / checkboxen etc.
+            }
     } else { //ist Bewerber, darf alle Felder editieren
       $readonly = "";
       $disabled = "";
@@ -1676,7 +1684,7 @@ function application_ucp_usercp()
     }
     //handelt es sich um ein Pflichtfeld
     if ($type['mandatory']) {
-      $requiredstar = "<span class\"app_ucp_star\">" . $lang->application_ucp_mandatory . "</span>"; //markierung mit sternchen ux und so :D
+      $requiredstar = "<span class\"app_ucp_star\">" . $lang->application_ucp_mandatory . "</span>"; //markierung mit sternchen ux und so :D    
       $required = "required"; //feld muss ausgefüllt werden
     } else { //kein pflichtfeld
       $requiredstar = "";
