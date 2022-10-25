@@ -559,7 +559,8 @@ function application_ucp_activate()
     $alertTypeAucpAffected->setEnabled(true);
     $alertTypeManager->add($alertTypeAucpAffected);
   }
-  change_admin_permission("config", "application_ucp", 1);
+
+	change_admin_permission("config", "application_ucp", 1);
 
 }
 
@@ -611,7 +612,7 @@ function application_ucp_admin_config_permissions(&$admin_permissions)
  * Admin Menü einfügen
  */
 $plugins->add_hook("admin_config_menu", "application_ucp_admin_config_menu");
-function application_ucp_admin_config_menu(&$sub_menu)
+function application_ucp_admin_config_menu($sub_menu)
 {
   global $mybb, $lang;
   $lang->load('application_ucp');
@@ -621,6 +622,7 @@ function application_ucp_admin_config_menu(&$sub_menu)
     "title" => $lang->application_ucp_menu,
     "link" => "index.php?module=config-application_ucp"
   ];
+  return $sub_menu;
 }
 
 /**
@@ -1660,11 +1662,11 @@ function application_ucp_usercp()
     if ($member &&  $type['editable'] == 0) {
       $readonly = "readonly"; //für textfelder/textarea
       $disabled = "disabled"; //selects / checkboxen etc.
-            //moderators still can edit fields
-            if ($mybb->usergroup['canmodcp'] == '1') {
-              $readonly = ""; //für textfelder/textarea
-              $disabled = ""; //selects / checkboxen etc.
-            }
+      //moderators still can edit fields
+      if ($mybb->usergroup['canmodcp'] == '1') {
+        $readonly = ""; //für textfelder/textarea
+        $disabled = ""; //selects / checkboxen etc.
+      }
     } else { //ist Bewerber, darf alle Felder editieren
       $readonly = "";
       $disabled = "";
@@ -1777,10 +1779,12 @@ function application_ucp_usercp()
       } else {
         $multiple = "";
         $getselects = $get_value['value'];
+
         $mult_flag = false;
       }
       //array mit optionen durchgehen und auswahl bauen
       foreach ($options as $option) {
+
         if ($mult_flag) {
           if (in_array($option, $getselects)) {
             $selected = "selected=\"selected\"";
@@ -1788,7 +1792,8 @@ function application_ucp_usercp()
             $selected = "";
           }
         } else {
-          if ($option == $getselects) {
+          if (trim($option) == trim($getselects)) {
+            
             $selected = "selected=\"selected\"";
           } else {
             $selected = "";
