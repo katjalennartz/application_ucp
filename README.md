@@ -8,7 +8,7 @@
 * Anzeige der Felder im Profil und Postbit (entweder gesammelt, oder einzeln)
 * Verwaltung der ausgefüllten Steckbriefe im ACP
 * WoB im Thread erteilen und in Gruppe einteilen
-* Optional WoB automatische Antwort
+* Optional bei WoB automatische Antwort
 
 **Einstellungen ACP**
 * Bewerbergruppe
@@ -58,6 +58,8 @@ Hier werden die verschiedenen Einstellungen der Felder im ACP erklärt
     * Diese Bezeichnund wird in der Datenbank gespeichert, um das Feld später ansprechen zu können. Keine Sonderzeichen, keine Leertasten, am besten alles kleingeschrieben. Diese Bezeichnung dient nur als Identifikator    
 * **Label des Felds:** 
     * Das Label ist das, was auch dargestellt wird. Also zum Beispiel 'Vorname'. 
+* **Beschreibung des Felds** 
+    * Die Beschreibung für das Feld.
 * **Typ des Felds:** 
     * Was für ein Inputfeld soll das Feld sein. Ein einfaches Textfeld, eine Textarea, Select, Multiple-Select, Date, Radio oder Checkbox..
 * **Auswahloptionen des Felds:** 
