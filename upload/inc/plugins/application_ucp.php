@@ -242,6 +242,17 @@ function application_ucp_install()
   }
   rebuild_settings();
 
+    //Templates erstellen
+  // templategruppe
+  $templategrouparray = array(
+    'prefix' => 'application',
+    'title'  => $db->escape_string('Steckbrief im UCP'),
+    'isdefault' => 1
+  );
+
+  $db->insert_query("templategroups", $templategrouparray);
+
+
   //Templates erstellen:
 
   $template[0] = array(
@@ -251,7 +262,7 @@ function application_ucp_install()
       {$application_ucp_index_bit}
     </div>
       ',
-    "sid" => "-1",
+    "sid" => "-2",
     "version" => "1.0",
     "dateline" => TIME_NOW
   );
@@ -261,7 +272,7 @@ function application_ucp_install()
     "template" => '<div class="aucp_indexuser">{$message}
       </div>
       ',
-    "sid" => "-1",
+    "sid" => "-2",
     "version" => "1.0",
     "dateline" => TIME_NOW
   );
@@ -324,7 +335,7 @@ function application_ucp_install()
       </body>
       </html>
       ',
-    "sid" => "-1",
+    "sid" => "-2",
     "version" => "1.0",
     "dateline" => TIME_NOW
   );
@@ -337,7 +348,7 @@ function application_ucp_install()
       <td>{$aucp_mod_modlink}</td>
       <td>{$aucp_mod_date} {$correction}</td>
     </tr>',
-    "sid" => "-1",
+    "sid" => "-2",
     "version" => "1.0",
     "dateline" => TIME_NOW
   );
@@ -367,7 +378,7 @@ function application_ucp_install()
       </div>
       </div>    
   </form>',
-    "sid" => "-1",
+    "sid" => "-2",
     "version" => "1.0",
     "dateline" => TIME_NOW
   );
@@ -404,7 +415,7 @@ function application_ucp_install()
         
       </body>
       </html>',
-    "sid" => "-1",
+    "sid" => "-2",
     "version" => "1.0",
     "dateline" => TIME_NOW
   );
@@ -817,7 +828,7 @@ function application_ucp_admin_load()
           $errors[] = $lang->application_ucp_err_name;
         }
         // Name darf keine Sonderzeichen enthalten
-        if (!preg_match("#^[a-zA-Z0-9]+$#", $mybb->input['fieldname'])) {
+        if (!preg_match("#^[a-zA-Z\-\_]+$#", $mybb->input['fieldname'])) {
           $errors[] = $lang->application_ucp_err_name_sonder;
         }
         // Label muss ausgefüllt sein
@@ -1269,7 +1280,7 @@ function application_ucp_admin_load()
         $errors[] = $lang->application_ucp_err_name;
       }
       // Name darf keine Sonderzeichen enthalten
-      if (!preg_match("#^[a-zA-Z0-9]+$#", $mybb->input['fieldname'])) {
+      if (!preg_match("#^[a-zA-Z\-\_]+$#", $mybb->input['fieldname'])) {
         $errors[] = $lang->application_ucp_err_name_sonder;
       }
       // Label muss ausgefüllt sein
