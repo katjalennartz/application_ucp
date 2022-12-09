@@ -4,7 +4,7 @@ INstallieren funktioniert schon, aber es kann sein das noch noch nicht alles opt
 In Progress: durchsuchbarkeit in der Mitgliederliste     
 
 # application_ucp    
-Das Plugin ermöglicht es, unabhängig von Profilfeldern, Felder für den Steckbrief anzulegen. Diese werden in einem gesonderten Bereich im UCP angezeigt und können hier bearbeitet werden. Das Mitglied kann den Steckbrief bearbeiten und speichern und schließlich als fertig markieren und einreichen. Es wird automatisch ein Thread in der Steckbriefarea erstellt.      
+Das Plugin ermöglicht es, unabhängig von Profilfeldern, Felder für den Steckbrief anzulegen. Diese werden in einem gesonderten Bereich im UCP angezeigt und können hier bearbeitet werden. Das Mitglied kann den Steckbrief bearbeiten und speichern und schließlich als fertig markieren und einreichen. Es wird automatisch ein Thread in der Steckbriefarea erstellt.       
 
 
 **RPG Steckbriefsystem für MyBB.**
@@ -35,8 +35,7 @@ Das Plugin ermöglicht es, unabhängig von Profilfeldern, Felder für den Steckb
 * Anzeige in der Memberlist
 * Antworttext WoB 
 * Antworttext WoB Inhalt
-* Soll das Feld durchsuchbar sein (Mitgliederliste)
-* Darstellungsreihenfolge
+* Sollen Felder durchsuchbar sein (Mitgliederliste)
 
 **Templates**
 * application_ucp_index
