@@ -1,6 +1,12 @@
 **Work in progress**    
+INstallieren funktioniert schon, aber es kann sein das noch noch nicht alles optimimal funktioniert, oder noch verändert/ optimiert wird.
+      
+In Progress: durchsuchbarkeit in der Mitgliederliste     
 
-# application_ucp
+# application_ucp    
+Das Plugin ermöglicht es, unabhängig von Profilfeldern, Felder für den Steckbrief anzulegen. Diese werden in einem gesonderten Bereich im UCP angezeigt und können hier bearbeitet werden. Das Mitglied kann den Steckbrief bearbeiten und speichern und schließlich als fertig markieren und einreichen. Es wird automatisch ein Thread in der Steckbriefarea erstellt.      
+
+
 **RPG Steckbriefsystem für MyBB.**
 * Erstellen von Steckbrieffeldern im ACP
 * Ausfüllen der Felder im UCP (speichern oder einreichen)
@@ -9,6 +15,7 @@
 * Verwaltung der ausgefüllten Steckbriefe im ACP
 * WoB im Thread erteilen und in Gruppe einteilen
 * Optional bei WoB automatische Antwort
+* Optional durchsuchen/filtern der Mitgliederliste nach den ausgefüllten Feldern
 
 **Einstellungen ACP**
 * Bewerbergruppe
@@ -28,6 +35,8 @@
 * Anzeige in der Memberlist
 * Antworttext WoB 
 * Antworttext WoB Inhalt
+* Soll das Feld durchsuchbar sein (Mitgliederliste)
+* Darstellungsreihenfolge
 
 **Templates**
 * application_ucp_index
@@ -36,6 +45,7 @@
 * application_ucp_mods_bit
 * application_ucp_wobbutton
 * application_ucp_ucp_main
+* application_ucp_filtermemberlist
 
 **eingefügte Variablen**
 * index: {$application_ucp_index} (anzeige alert)
@@ -44,6 +54,7 @@
 * showthread: {$give_wob} (wob form)
 * postbit: {$post['aucp_fields']} (anzeige Felder)
 * postbit_classic: {$post['aucp_fields']} (anzeige Felder)
+* memberlist: $applicationfilter
 
 **Links**
 * ACP Übersicht der Felder: boardadresse/admin/index.php?module=config-application_ucp
@@ -86,7 +97,11 @@ Hier werden die verschiedenen Einstellungen der Felder im ACP erklärt
   * Sind Bilder erlaubt?
 * **Videos erlaubt?**
   * Dürfen Videos eingefügt werden?
+* **Durchsuchbar:** 
+    * Hier könnt ihr angeben, ob in der Mitgliederliste nach dem Feld gesucht werden soll.
 * **Reihenfolge:** 
     * Hier bestimmt ihr an welcher Stelle das Feld angezeigt werden soll (0 ganz oben).
 * **Aktiv?** 
     * Hier stellt ihr ein, ob das Feld aktiv sein soll. Deaktiviert ihr es, wird es nicht mehr angezeigt, die DB Einträge werden aber anders als beim Löschen behalten     
+
+
