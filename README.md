@@ -1,11 +1,13 @@
 **Work in progress**    
-INstallieren funktioniert schon, aber es kann sein das noch noch nicht alles optimimal funktioniert, oder noch verändert/ optimiert wird.
+Installieren funktioniert schon, aber es kann sein das noch noch nicht alles optimimal funktioniert, oder noch verändert/ optimiert wird.
       
 In Progress: durchsuchbarkeit in der Mitgliederliste     
 
 # application_ucp    
 Das Plugin ermöglicht es, unabhängig von Profilfeldern, Felder für den Steckbrief anzulegen. Diese werden in einem gesonderten Bereich im UCP angezeigt und können hier bearbeitet werden. Das Mitglied kann den Steckbrief bearbeiten und speichern und schließlich als fertig markieren und einreichen. Es wird automatisch ein Thread in der Steckbriefarea erstellt.       
 
+**Wichtiger Hinweis.**
+Um die Funktion nutzen zu können, dass die Mitgliederliste durchsuchbar ist, sind Änderungen in der memberlist.php nötig. Entweder die patches importieren (hier im gitlab) oder ganz am ende den Anweisungen folgen.         
 
 **RPG Steckbriefsystem für MyBB.**
 * Erstellen von Steckbrieffeldern im ACP
@@ -104,3 +106,43 @@ Hier werden die verschiedenen Einstellungen der Felder im ACP erklärt
     * Hier stellt ihr ein, ob das Feld aktiv sein soll. Deaktiviert ihr es, wird es nicht mehr angezeigt, die DB Einträge werden aber anders als beim Löschen behalten     
 
 
+**Mitgliederliste bearbeiten für Durchsuchbarkeit.**        
+ich empfehle einfach die patches zu importieren             
+ansonten          
+suche:            
+``` $query = $db->simple_select("users u", "COUNT(*) AS users", "{$search_query}"); ``` 
+
+ersetzen mit:           
+
+```  $query = $db->query("
+	SELECT count(*) as users
+	FROM ".TABLE_PREFIX."users u
+	LEFT JOIN ".TABLE_PREFIX."userfields f ON (f.ufid=u.uid)
+	{$selectstring}
+	WHERE {$search_query}
+"); ```            
+            
+suche nach:  
+
+
+``` $query = $db->query("
+SELECT u.*, f.*
+FROM ".TABLE_PREFIX."users u
+LEFT JOIN ".TABLE_PREFIX."userfields f ON (f.ufid=u.uid)
+WHERE {$search_query}
+ORDER BY {$sort_field} {$sort_order}
+LIMIT {$start}, {$per_page}
+");```          
+
+ersetzen mit:  
+
+``` $query = $db->query("
+		SELECT u.*, f.*
+		{$selectfield}
+		FROM ".TABLE_PREFIX."users u
+		LEFT JOIN ".TABLE_PREFIX."userfields f ON (f.ufid=u.uid)
+		{$selectstring}
+		WHERE {$search_query}
+		ORDER BY {$sort_field} {$sort_order}
+		LIMIT {$start}, {$per_page}
+	");```            
