@@ -114,29 +114,29 @@ suche:
 
 ersetzen mit:           
 
-```  $query = $db->query("
+ $query = $db->query("
 	SELECT count(*) as users
 	FROM ".TABLE_PREFIX."users u
 	LEFT JOIN ".TABLE_PREFIX."userfields f ON (f.ufid=u.uid)
 	{$selectstring}
 	WHERE {$search_query}
-"); ```            
+");            
             
 suche nach:  
 
 
-``` $query = $db->query("
+ $query = $db->query("
 SELECT u.*, f.*
 FROM ".TABLE_PREFIX."users u
 LEFT JOIN ".TABLE_PREFIX."userfields f ON (f.ufid=u.uid)
 WHERE {$search_query}
 ORDER BY {$sort_field} {$sort_order}
 LIMIT {$start}, {$per_page}
-");```          
+");        
 
 ersetzen mit:  
 
-``` $query = $db->query("
+$query = $db->query("
 		SELECT u.*, f.*
 		{$selectfield}
 		FROM ".TABLE_PREFIX."users u
@@ -145,4 +145,4 @@ ersetzen mit:
 		WHERE {$search_query}
 		ORDER BY {$sort_field} {$sort_order}
 		LIMIT {$start}, {$per_page}
-	");```            
+	");           
