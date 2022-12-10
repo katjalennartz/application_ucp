@@ -105,44 +105,40 @@ Hier werden die verschiedenen Einstellungen der Felder im ACP erklärt
 * **Aktiv?** 
     * Hier stellt ihr ein, ob das Feld aktiv sein soll. Deaktiviert ihr es, wird es nicht mehr angezeigt, die DB Einträge werden aber anders als beim Löschen behalten     
 
+***
 
-**Mitgliederliste bearbeiten für Durchsuchbarkeit.**        
+# **Mitgliederliste bearbeiten für Durchsuchbarkeit.**        
 ich empfehle einfach die patches zu importieren             
-ansonten          
+ansonsten		          
 suche:            
-``` $query = $db->simple_select("users u", "COUNT(*) AS users", "{$search_query}"); ``` 
+```
+$query = $db->simple_select("users u", "COUNT(*) AS users", "{$search_query}"); 
+``` 
 
 ersetzen mit:           
-
- $query = $db->query("
-	SELECT count(*) as users
-	FROM ".TABLE_PREFIX."users u
+```
+$query = $db->query("SELECT count(*) as users 
+	FROM ".TABLE_PREFIX."users u 
 	LEFT JOIN ".TABLE_PREFIX."userfields f ON (f.ufid=u.uid)
 	{$selectstring}
-	WHERE {$search_query}
-");            
-            
+	WHERE {$search_query} ");
+```
+
 suche nach:  
-
-
- $query = $db->query("
-SELECT u.*, f.*
-FROM ".TABLE_PREFIX."users u
+```
+$query = $db->query("SELECT u.*, f.* FROM ".TABLE_PREFIX."users u
 LEFT JOIN ".TABLE_PREFIX."userfields f ON (f.ufid=u.uid)
 WHERE {$search_query}
 ORDER BY {$sort_field} {$sort_order}
-LIMIT {$start}, {$per_page}
-");        
+LIMIT {$start}, {$per_page}"); 
+```
 
 ersetzen mit:  
-
-$query = $db->query("
-		SELECT u.*, f.*
-		{$selectfield}
-		FROM ".TABLE_PREFIX."users u
-		LEFT JOIN ".TABLE_PREFIX."userfields f ON (f.ufid=u.uid)
-		{$selectstring}
-		WHERE {$search_query}
-		ORDER BY {$sort_field} {$sort_order}
-		LIMIT {$start}, {$per_page}
-	");           
+``` 
+$query = $db->query("SELECT u.*, f.* {$selectfield} FROM ".TABLE_PREFIX."users u
+	LEFT JOIN ".TABLE_PREFIX."userfields f ON (f.ufid=u.uid)
+	{$selectstring}
+	WHERE {$search_query}
+	ORDER BY {$sort_field} {$sort_order}
+	LIMIT {$start}, {$per_page}"); 
+```
