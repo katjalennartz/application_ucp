@@ -72,6 +72,8 @@ function application_ucp_install()
     `allow_mybb` int(1) NOT NULL DEFAULT 1,
     `allow_img` int(1) NOT NULL DEFAULT 1,
     `allow_video` int(1) NOT NULL DEFAULT 1,
+    `searchable` int(1) NOT NULL DEFAULT 0,
+    `suggestion` int(1) NOT NULL DEFAULT 0,
     PRIMARY KEY (`id`)
 ) ENGINE=MyISAM CHARACTER SET utf8 COLLATE utf8_general_ci;");
 
@@ -233,6 +235,13 @@ function application_ucp_install()
       'value' => '', // Default
       'disporder' => 15
     ),
+    'application_ucp_search' => array(
+      'title' => 'Durchsuchbarkeit',
+      'description' => '<b style="color: red;">Wichtig:</b> Änderungen für die memberlist.php in der Readme beachten. Sonst auf nein stehen lassen!',
+      'optionscode' => 'yesno',
+      'value' => '0', // Default
+      'disporder' => 16
+    ),
   );
 
   foreach ($setting_array as $name => $setting) {
@@ -242,7 +251,7 @@ function application_ucp_install()
   }
   rebuild_settings();
 
-    //Templates erstellen
+  //Templates erstellen
   // templategruppe
   $templategrouparray = array(
     'prefix' => 'application',
@@ -420,6 +429,41 @@ function application_ucp_install()
     "dateline" => TIME_NOW
   );
 
+  $template[6] = array(
+    "title" => 'application_ucp_filtermemberlist',
+    "template" => '<div class="bl-filtermemberlist">
+		{$filter}
+
+</div>',
+    "sid" => "-2",
+    "version" => "1.0",
+    "dateline" => TIME_NOW
+  );
+
+  $template[7] = array(
+    "title" => 'application_ucp_filtermemberlist_bit',
+    "template" => '<div class="filterinput">
+    <label for="{$searchfield[\\\'fieldname\\\']}">Nach {$searchfield[\\\'label\\\']}:</label> 
+  <input type="{$typ}" class="filterfield {$searchfield[\\\'fieldname\\\']}" name="{$searchfield[\\\'fieldname\\\']}" id="{$searchfield[\\\'fieldname\\\']}">
+  </div>',
+    "sid" => "-2",
+    "version" => "1.0",
+    "dateline" => TIME_NOW
+  );
+
+  $template[8] = array(
+    "title" => 'application_ucp_filtermemberlist_selectbit',
+    "template" => '<div class="filterinput"><label for="{$searchfield[\\\'fieldname\\\']}">Nach {$searchfield[\\\'label\\\']}:</label>
+    <select name="{$searchfield[\\\'fieldname\\\']}[]" id="{$searchfield[\\\'fieldname\\\']}" >
+      {$selects} 
+    </select>
+</div>
+{$filterjs}',
+    "sid" => "-2",
+    "version" => "1.0",
+    "dateline" => TIME_NOW
+  );
+
   foreach ($template as $row) {
     $db->insert_query("templates", $row);
   }
@@ -557,6 +601,9 @@ function application_ucp_activate()
   //postbit
   find_replace_templatesets("postbit", "#" . preg_quote('{$post[\'user_details\']}') . "#i", '{$post[\'user_details\']}{$post[\'aucp_fields\']}');
 
+  //memberlist
+  find_replace_templatesets("memberlist", "#" . preg_quote('{$referrals_option}</select></td></tr>') . "#i", '{$referrals_option}</select></td></tr><tr><td colspan="3">{$applicationfilter}</tr></td>');
+
   if (function_exists('myalerts_is_activated') && myalerts_is_activated()) {
 
     $alertTypeManager = MybbStuff_MyAlerts_AlertTypeManager::getInstance();
@@ -571,8 +618,7 @@ function application_ucp_activate()
     $alertTypeManager->add($alertTypeAucpAffected);
   }
 
-	change_admin_permission("config", "application_ucp", 1);
-
+  change_admin_permission("config", "application_ucp", 1);
 }
 
 function application_ucp_deactivate()
@@ -585,6 +631,7 @@ function application_ucp_deactivate()
   find_replace_templatesets("member_profile", "#" . preg_quote('{$exportbtn}') . "#i", '');
   find_replace_templatesets("showthread", "#" . preg_quote('{$give_wob}') . "#i", '');
   find_replace_templatesets("postbit", "#" . preg_quote('{$post[\'aucp_fields\']}') . "#i", '');
+  find_replace_templatesets("memberlist", "#" . preg_quote('<tr><td colspan="3">{$applicationfilter}</tr></td>') . "#i", '');
 
   //My alerts wieder löschen
   if (class_exists('MybbStuff_MyAlerts_AlertTypeManager')) {
@@ -595,7 +642,7 @@ function application_ucp_deactivate()
     }
     $alertTypeManager->deleteByCode('application_ucp_affected');
   }
-  change_admin_permission("config", "application_ucp", -1); 
+  change_admin_permission("config", "application_ucp", -1);
 }
 
 /**
@@ -606,6 +653,7 @@ function application_ucp_admin_config_action_handler(&$actions)
 {
   $actions['application_ucp'] = array('active' => 'application_ucp', 'file' => 'application_ucp');
 }
+
 /**
  * Berechtigungen im ACP
  */
@@ -674,6 +722,7 @@ function application_ucp_admin_load()
       $form_container->output_row_header($lang->application_ucp_overview_appl);
       $form_container->output_row_header($lang->application_ucp_overview_sort);
       $form_container->output_row_header("<div style=\"text-align: center;\">" . $lang->application_ucp_overview_opt . "</div>");
+
       //Alle existierenden Felder bekommen
       $get_fields = $db->simple_select("application_ucp_fields", "*", "", ["order_by" => 'sorting']);
       while ($field = $db->fetch_array($get_fields)) {
@@ -710,7 +759,11 @@ function application_ucp_admin_load()
           $activ_start = "<b style=\"color:red;\">Deaktiviert:</b> <s><i>";
           $activ_end = "</i></s>";
         }
-
+        if ($field['searchable']) {
+          $searchable = "In Mitgliederliste suchbar |";
+        } else {
+          $searchable = "";
+        }
         if ($field['postbit'] || $field['profile'] || $field['memberlist']) {
           $view = "";
           if ($field['postbit'] && $mybb->settings['application_ucp_postbit_view'] == 0) {
@@ -758,10 +811,11 @@ function application_ucp_admin_load()
         {$options}
         {$mandatory}
         {$dependency}
+        {$searchable}
         <div class=\"appacp_con\" style=\"display: grid; grid-template-columns: 1fr 1fr 1fr;\">
         {$view}
         </div>
-        <br/>Alle Elemente(textfeld, das zugehörige label etc) bekommen die Klasse \"{$field['fieldname']}\", die zum stylen verwenden werden kann.
+        <br/>Alle Elemente(textfeld, das zugehörige label etc) bekommen die Klasse \"{$field['fieldname']}\", die zum Stylen verwenden werden kann.
         " . $activ_end);
 
         //spalte reihenfolge
@@ -897,6 +951,8 @@ function application_ucp_admin_load()
             "allow_mybb" => intval($mybb->input['fieldmybb']),
             "allow_img" => intval($mybb->input['fieldimg']),
             "allow_video" => intval($mybb->input['fieldvideo']),
+            "searchable" => intval($mybb->input['searchable']),
+            "suggestion" => intval($mybb->input['suggestion']),
           ];
           $db->insert_query("application_ucp_fields", $insert);
           flash_message($lang->application_ucp_success, 'success');
@@ -1039,6 +1095,24 @@ function application_ucp_admin_load()
         $lang->application_ucp_add_fieldvideo,
         $lang->application_ucp_add_fieldvideo_descr,
         $form->generate_yes_no_radio('fieldvideo', "0")
+      );
+      // In Mitgliederliste suchbar? 
+      $form_container->output_row(
+        $lang->application_ucp_add_searchable,
+        $lang->application_ucp_add_searchable_descr,
+        $form->generate_yes_no_radio('searchable', "0")
+      );
+      // In Mitgliederliste suchbar? 
+      $form_container->output_row(
+        $lang->application_ucp_add_suggestion,
+        $lang->application_ucp_add_suggestion_descr,
+        $form->generate_yes_no_radio('suggestion', "0")
+      );
+      // In Mitgliederliste suchbar? 
+      $form_container->output_row(
+        $lang->application_ucp_add_active,
+        $lang->application_ucp_add_active_descr,
+        $form->generate_yes_no_radio('active', "0")
       );
       //anzeige reihenfolge
       $form_container->output_row(
@@ -1254,7 +1328,7 @@ function application_ucp_admin_load()
             $radios
           );
         }
-        //für date und url gibt es keine mybbfunktion, also bauen wir selber
+        //für date und url gibt es keine mybbfunktion, also bauen wir es selber
         if ($field['fieldtyp'] == "date" or $field['fieldtyp'] == "date-local" or $field['fieldtyp'] == 'url') {
           $form_container->output_row(
             $label,
@@ -1349,6 +1423,9 @@ function application_ucp_admin_load()
           "allow_mybb" => intval($mybb->input['fieldmybb']),
           "allow_img" => intval($mybb->input['fieldimg']),
           "allow_video" => intval($mybb->input['fieldvideo']),
+          "searchable" => intval($mybb->input['searchable']),
+          "suggestion" => intval($mybb->input['suggestion']),
+          "active" => intval($mybb->input['active']),
         ];
         $db->update_query("application_ucp_fields", $update, "id = {$fieldid}");
         flash_message($lang->application_ucp_success, 'success');
@@ -1489,6 +1566,21 @@ function application_ucp_admin_load()
         $form->generate_yes_no_radio('fieldvideo', $field_data['allow_video'])
       );
 
+      $form_container->output_row(
+        $lang->application_ucp_add_searchable,
+        $lang->application_ucp_add_searchable_descr,
+        $form->generate_yes_no_radio('searchable', $field_data['searchable'])
+      );
+      $form_container->output_row(
+        $lang->application_ucp_add_suggestion,
+        $lang->application_ucp_add_suggestion_descr,
+        $form->generate_yes_no_radio('suggestion', $field_data['suggestion'])
+      );
+      $form_container->output_row(
+        $lang->application_ucp_add_active,
+        $lang->application_ucp_add_active_descr,
+        $form->generate_yes_no_radio('active', $field_data['active'])
+      );
       $form_container->output_row(
         $lang->application_ucp_add_fieldsort,
         $lang->application_ucp_add_fieldsort_descr,
@@ -1698,7 +1790,9 @@ function application_ucp_usercp()
     //handelt es sich um ein Pflichtfeld
     if ($type['mandatory']) {
       $requiredstar = "<span class\"app_ucp_star\">" . $lang->application_ucp_mandatory . "</span>"; //markierung mit sternchen ux und so :D    
-      $required = "required"; //feld muss ausgefüllt werden
+      //TODO: Check if working, required erst beim einreichen ! 
+      $required = "";
+      // $required = "required"; //feld muss ausgefüllt werden
     } else { //kein pflichtfeld
       $requiredstar = "";
       $required = "";
@@ -1764,7 +1858,6 @@ function application_ucp_usercp()
     }
 
     //Feld ist einfaches Textfeld, Datum oder Datum mit Zeit
-
     if ($typ == "text" || $typ == "date" || $typ == "datetime-local" || $typ == "url") {
       $fields .= "<label  class=\"app_ucp_label\" for=\"{$type['fieldname']}\" style=\"{$hidden}\" id=\"label_{$type['fieldname']}\">{$type['label']}{$requiredstar}:</label> 
       " . $fielddescr . "
@@ -1804,7 +1897,7 @@ function application_ucp_usercp()
           }
         } else {
           if (trim($option) == trim($getselects)) {
-            
+
             $selected = "selected=\"selected\"";
           } else {
             $selected = "";
@@ -1919,10 +2012,10 @@ function application_ucp_usercp()
     //dann hier das außenrum
     $fields .= "
       <label class=\"app_ucp_label wanted\"  id=\"label_wanted\">
-      Ist der Charakter ein Gesuch?{$requiredstar}</label>
+     {$lang->application_ucp_wanted}{$requiredstar}</label>
       <div class=\"application_ucp_checkboxes\"  id=\"boxwanted\">
         {$inner}
-        <input type=\"url\" class=\"wanted_url\" placeholder=\"url zum Gesuch\" id=\"wanted_url\" name=\"-2\" value=\"{$wantedurl}\" \>
+        <input type=\"url\" class=\"wanted_url\" placeholder=\"{$lang->application_ucp_wanted_url}\" id=\"wanted_url\" name=\"-2\" value=\"{$wantedurl}\" \>
       </div>
       ";
   }
@@ -1935,7 +2028,7 @@ function application_ucp_usercp()
     $get_affected_data = $db->fetch_array($get_affected);
     $affected_data = $get_affected_data['value'];
     $fields .= " 
-    <label class=\"app_ucp_label\" for=\"affected\" id=\"label_affected\">Betroffene Mitglieder{$requiredstar}:</label> 
+    <label class=\"app_ucp_label\" for=\"affected\" id=\"label_affected\">{$lang->application_ucp_affected}{$requiredstar}:</label> 
     <input type=\"text\" autocomplete=\"off\" autocorrect=\"off\" autocapitalize=\"off\" spellcheck=\"false\"
           class=\"select2-input select2-default\" id=\"s2id_autogen1\" tabindex=\"1\" placeholder=\"\" name=\"-3\" value=\"{$affected_data}\">";
 
@@ -2014,6 +2107,31 @@ function application_ucp_usercp()
     // alle Inputs
     $fields = $mybb->input;
 
+    //Einreichen abbrechen, wenn nicht alle Pflichtfelder ausgefüllt sind.
+    //alle inputs durchgehen
+    foreach ($fields as $key => $value) {
+      //ist das Feld ein Pflichtfeld
+      $mandatory = $db->fetch_field($db->simple_select("application_ucp_fields", "mandatory", "id = {$key}"), "mandatory");
+      //wenn ja und leer dann abbrechen
+      if ($mandatory) {
+        if (is_array($value)) {
+          if (count($value) == 0) {
+            //trotzdem speichern
+            application_ucp_savefields($fields, $mybb->user['uid']);
+            echo "<script>alert('" . $lang->application_ucp_saveerror . "')";
+            redirect("usercp.php?action=application_ucp");
+          }
+        } else {
+          if ($value == "") {
+            //trotzdem speichern
+            application_ucp_savefields($fields, $mybb->user['uid']);
+            echo "<script>alert('" . $lang->application_ucp_saveerror . "')";
+            redirect("usercp.php?action=application_ucp");
+          }
+        }
+      }
+    }
+    //Inputs waren in Ordnung
     //Schauen ob es schon einen eintrag im managenent gibt
     $fetch_management = $db->simple_select("application_ucp_management", "*", "uid = {$mybb->user['uid']}");
 
@@ -2053,12 +2171,10 @@ function application_ucp_usercp()
       redirect("usercp.php?action=application_ucp");
     } else { //Der Steckbrief wird das erste Mal eingereicht
 
-
       //felder abspeichern
       application_ucp_savefields($fields, $mybb->user['uid']);
 
       //Wir wollen einen Thread erstellen, wenn der Stecki fertig ist und nutzen dafür den Posthandler von MyBB
-
       //Steckbriefarea holen
       $steckbriefarea = $mybb->settings['application_ucp_steckiarea'];
 
@@ -2069,7 +2185,7 @@ function application_ucp_usercp()
       if ($get_wanted_row) {
         //Daten für URL des Gesuchs
         $get_url_data = $db->fetch_field($db->simple_select("application_ucp_userfields", "value", "uid = {$mybb->user['uid']} AND fieldid = -2"), "value");
-        $wanted = "<a href=\"" . $get_url_data . "\">Charakter ist ein Gesuch</a>";
+        $wanted = "<a href=\"" . $get_url_data . "\">{$lang->application_ucp_thread_wantedurltitle}</a>";
       }
 
       //Gibt es betroffene User?
@@ -2151,7 +2267,7 @@ function application_ucp_usercp()
       // Mark thread as read
       require_once MYBB_ROOT . "inc/functions_indicators.php";
       mark_thread_read($tid, $steckbriefarea);
-      //Bis hier (abschnittsweise) kopiert 
+      //Bis hier (abschnittsweise) kopiert aus new thread kopiert
 
       //user informieren
       foreach ($get_affected_names as $name) {
@@ -2161,19 +2277,18 @@ function application_ucp_usercp()
         application_ucp_affected_alert($mybb->user['uid'], $user['uid'], $tid, 0);
       }
 
-
       //und jetzt noch einen eintrag in der Management Tabelle
       $insert = array(
         "uid" => $mybb->user['uid'],
         "tid" => $tid
       );
       $db->insert_query("application_ucp_management", $insert);
-      //uns zum Thread weiterleiten
+      //und zum Thread weiterleiten
       redirect(get_thread_link($tid));
     }
   }
 
-  //Steckbrief speichern und zur Korrektur geben.
+  //Steckbrieffrist verlängern
   if ($mybb->input['application_ucp_extend']) {
     $update = array(
       "aucp_extend" => '+1',
@@ -2187,7 +2302,7 @@ function application_ucp_usercp()
 
 /**
  * automatische Anzeige von den Feldern im Profil
- * + Export Steckbrief
+ * Export Steckbrief
  */
 $plugins->add_hook("member_profile_end", "application_ucp_showinprofile");
 function application_ucp_showinprofile()
@@ -2216,7 +2331,7 @@ function application_ucp_showinprofile()
 
 /**
  * automatische Anzeige von den Feldern im Profil
- * + Export Steckbrief
+ *
  */
 $plugins->add_hook("memberlist_user", "application_ucp_showinmemberlist");
 function application_ucp_showinmemberlist(&$user)
@@ -2233,6 +2348,250 @@ function application_ucp_showinmemberlist(&$user)
     // Wir stellen uns ein Array zusammen
     $fields = application_ucp_build_view($uid, "postbit", "array");
     $user = array_merge($user, $fields);
+  }
+}
+
+/**
+ ************* WICHTIG!!!!*********
+ * Suche in Memberlist - Filtern
+ * Funktioniert nur, wenn die memberlist.php umgebaut wird! 
+ * Dafür Readme lesen! 
+ ************** WICHTIG!!!!*********
+ */
+$plugins->add_hook("memberlist_intermediate", "application_ucp_filter");
+function application_ucp_filter()
+{
+  global $mybb, $db, $search_query, $js_getinputs, $filterurl, $fieldvalue, $filter, $templates, $applicationfilter, $selectfield, $selectstring, $filterjs;
+  if ($mybb->settings['application_ucp_search']) {
+    //Hier fangen wir an unseren queriy zu bauen. Wir müssten die felder der noch dazu kommenden tabelle mit auswählen
+    $selectfield = ", fields.* ";
+    //dann basteln wir unseren join
+    $selectstring = "LEFT JOIN (select um.uid as auid, ";
+    $filterurl = "?";
+    //wir brauchen alle durchsuchbaren felder
+    $getfields = $db->simple_select("application_ucp_fields", "*", "searchable = 1 and active = 1");
+    $filterjs = "";
+    $js_urlstring = "";
+    //und gehen sie durch
+    while ($searchfield = $db->fetch_array($getfields)) {
+
+      //weiter im Querie, hier modeln wir unsere Felder ders users (apllication_ucp_fields taballe) zu einer Tabellenreihe um -> name der Spalte ist fieldname, wert wie gehabt value
+      $selectstring .= " max(case when um.fieldid ='{$searchfield['id']}' then um.value end) AS '{$searchfield['fieldname']}',";
+
+      //Javascript zusammenbauen, wenn die Suche Vorschläge beinhalten soll.
+      if ($searchfield['suggestion']) {
+        $filterjs .= "
+              <script type=\"text/javascript\">
+                    <!--
+                    if(use_xmlhttprequest == \"1\")
+                    {
+                      MyBB.select2();
+                      $(\"#{$searchfield['fieldname']}\").select2({
+                        placeholder: \"filter: {$searchfield['fieldname']}\",
+                        minimumInputLength: 2,
+                        multiple: false,
+                        allowClear: true,
+                        ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
+                          url: \"xmlhttp.php?action=get_field_aucp\",
+                          dataType: 'json',
+                          data: function (term, page) {
+                            return {
+                              query: term, // search term
+                              fieldid: \"{$searchfield['id']}\",
+                            };
+                          },
+                          results: function (data, page) { // parse the results into the format expected by Select2.
+                            // since we are using custom formatting functions we do not need to alter remote JSON data
+                            return {results: data};
+                          }
+                        },
+                        initSelection: function(element, callback) {
+                          var value = $(element).val();
+                          if (value !== \"\") {
+                            callback({
+                              id: value,
+                              text: value
+                            });
+                          }
+                        },
+                          // Allow the user entered text to be selected as well
+                          createSearchChoice:function(term, data) {
+                          if ( $(data).filter( function() {
+                            return this.text.localeCompare(term)===0;
+                          }).length===0) {
+                            return {id:term, text:term};
+                          }
+                        },
+                      });
+      
+                        $('[for={$searchfield['fieldname']}]').on('click', function(){
+                        $(\"#{$searchfield['fieldname']}\").select2('open');
+                        return false;
+                      });
+                    }
+                    // -->
+                    </script>
+              ";
+      }
+
+      // //keines javascript um url parameter zu bekommen und felder auszufüllen
+      // $js_urlstring .= "
+      // if(urlParams.has('" . $searchfield['fieldname'] . "')){
+      //   let fill = urlParams.get('" . $searchfield['fieldname'] . "');
+      //   $('#" . $searchfield['fieldname'] . "').val(fill);
+      // }";
+
+      $fieldvalue = htmlspecialchars_uni($mybb->input[$searchfield['fieldname']]);
+
+      //filterinput feld fürs template - wenn textfeld oder textarea
+      if ($searchfield['fieldtyp'] == "text" || $searchfield['fieldtyp'] == "textarea") {
+        $typ = "text";
+        eval("\$filter .= \"" . $templates->get("application_ucp_filtermemberlist_bit") . "\";");
+      }
+      //input date
+      if ($searchfield['fieldtyp'] == "date") {
+        $typ = "date";
+        eval("\$filter .= \"" . $templates->get("application_ucp_filtermemberlist_bit") . "\";");
+      }
+      //input time
+      if ($searchfield['fieldtyp'] == "datetime-local") {
+        $typ = "datetime-local";
+        eval("\$filter .= \"" . $templates->get("application_ucp_filtermemberlist_bit") . "\";");
+      }
+
+      //filterinput feld fürs template - wenn Select oder Multiselect
+      if (
+        $searchfield['fieldtyp'] == "select" ||
+        $searchfield['fieldtyp'] == "select_multiple" || $searchfield['fieldtyp'] == "radio" || $searchfield['fieldtyp'] == "checkbox"
+      ) {
+        $options = explode(",", $searchfield['options']);
+        $selects = "<option value=\"\">{$searchfield['label']}</option>";
+        foreach ($options as $option) {
+          $option = trim($option); //leertasten vorne und hinten rauswerfen
+          $selects .= "<option value=\"{$option}\">{$option}</option>";
+        }
+        eval("\$filter .= \"" . $templates->get("application_ucp_filtermemberlist_selectbit") . "\";");
+      }
+
+      if (is_array($mybb->input[$searchfield['fieldname']])) {
+        $mybb->input[$searchfield['fieldname']] = $mybb->input[$searchfield['fieldname']][0];
+      }
+
+      //Query bauen zum suchen 
+      if (trim($mybb->input[$searchfield['fieldname']])) {
+
+        $value = $mybb->input[$searchfield['fieldname']];
+
+        if ($searchfield['fieldtyp'] == "text" || $searchfield['fieldtyp'] == "textarea") {
+          $search_query .= " AND " . $searchfield['fieldname'] . " LIKE '%" . $value . "%'";
+        }
+        if (
+          $searchfield['fieldtyp'] == "select" ||
+          $searchfield['fieldtyp'] == "select_multiple" || $searchfield['fieldtyp'] == "radio" || $searchfield['fieldtyp'] == "date"
+        ) {
+          $search_query .= " AND trim(" . $searchfield['fieldname'] . ") = '" . $value . "'";
+        }
+        $filterurl .= $searchfield['fieldname'] . "=" . urlencode($mybb->input[$searchfield['fieldname']]) . "&";
+      }
+    }
+
+    if (!empty($mybb->input['age_range'])) {
+      if ($mybb->input['age_range'] != 50) {
+        $search_query .= "AND TIMESTAMPDIFF(YEAR, geburtstag, CURDATE()) BETWEEN {$mybb->input['age_range']} ";
+      } else {
+        $search_query .= "AND TIMESTAMPDIFF(YEAR, geburtstag, CURDATE()) > {$mybb->input['age_range']} ";
+      }
+    }
+
+    if (!empty($mybb->input['fid4'])) {
+        $search_query .= "AND fid4 LIKE '%{$mybb->input['fid4']}%' ";
+    }
+
+    //     SELECT TIMESTAMPDIFF(YEAR, geburtstag, CURDATE()) as years, u.*, f.*  , fields.*  FROM mybb_users u  LEFT JOIN mybb_userfields f ON (f.ufid=u.uid)  LEFT JOIN (select um.uid as auid, max(case when um.fieldid ='1' then um.value end) AS 'vorname', max(case when um.fieldid ='3' then um.value end) AS 'geburtstag', max(case when um.fieldid ='13' then um.value end) AS 'relation', max(case when um.fieldid ='11' then um.value end) AS 'wohnort', max(case when um.fieldid ='22' then um.value end) AS 'gender', max(case when um.fieldid ='24' then um.value end) AS 'testradio' from `mybb_application_ucp_userfields` as um group by uid) as fields ON auid = u.uid  WHERE 1=1 AND u.usergroup NOT IN (1) AND CONCAT(',',u.additionalgroups,',') NOT LIKE '%,1,%'  
+    // AND TIMESTAMPDIFF(YEAR, geburtstag, CURDATE()) BETWEEN 40 AND 41
+
+    // ORDER BY u.regdate ASC  LIMIT 0, 20
+
+    $search_url =  $filterurl;
+    $filterurl = substr($filterurl, 0, -1);
+    $selectstring = substr($selectstring, 0, -1);
+    $selectstring .= " from `mybb_application_ucp_userfields` as um group by uid) as fields ON auid = u.uid";
+
+    // $js_getinputs  = "
+    // <script type=\"text/javascript\">
+    // let url= new URL(window.location.href);
+    // let urlParams = new URLSearchParams(url.search);
+    // " . $js_urlstring . "
+
+    // </script>
+    // ";
+    // echo $search_query;
+    //   select um.uid,
+    //        max(case when um.fieldid ='1' then um.value end) AS 'vorname',  
+    //        max(case when um.fieldid ='2' then um.value end) AS 'nachname',
+    //        max(case when um.fieldid ='22' then um.value end) AS 'gender',  
+    //        max(case when um.fieldid ='13' then um.value end) AS 'status',
+    //        max(case when um.fieldid ='11' then um.value end) AS 'geburtsort',
+    //        max(case when um.fieldid ='12' then um.value end) AS 'wohnort',
+    //        max(case when um.fieldid ='8' then um.value end) AS 'beruf',
+    //        max(case when um.fieldid ='3' then um.value end) AS 'geburtstag'
+    // from `mybb_application_ucp_userfields` as um
+    // group by uid
+    // if (trim($mybb->input['age_range_from'])) {
+    //   $search_query .= " AND username LIKE 'Zoey%'";
+    //   $search_url .= "&agerange=" . $mybb->input['age_range_from'];
+    // }
+    eval("\$applicationfilter .= \"" . $templates->get("application_ucp_filtermemberlist") . "\";");
+  }
+}
+// Über diese Hook kriegen wir die daten für die Inputfelder (in der theorie)
+
+/**
+ * Daten bekommen für automatische Suchvorschläge
+ */
+$plugins->add_hook('xmlhttp', 'application_ucp_getdata');
+function application_ucp_getdata()
+{
+  global $mybb, $charset, $db;
+  //action definieren (adresse für xml request in javascript)
+  if ($mybb->get_input('action') == 'get_field_aucp') {
+    //charset definieren
+    header("Content-type: application/json; charset={$charset}");
+
+    //Wert nach dem gesucht werden soll
+    $likestring = $db->escape_string_like($mybb->input['query']);
+    //welches feld
+    $fieldid = intval($mybb->input['fieldid']);
+    //Query um die daten zu bekommen
+    $query = $db->simple_select("application_ucp_userfields", "distinct(value)", "value LIKE '%{$likestring}%' AND fieldid = '{$fieldid}'");
+
+    //array zusammenbauen
+    while ($user = $db->fetch_array($query)) {
+      $data[] = array('fieldid' => $user['uid'], 'id' => $user['value'], 'text' => $user['value']);
+    }
+    //als JSON ausgeben, weil damit unser javascript arbeitet
+    echo json_encode($data);
+    exit;
+  }
+
+  if ($mybb->get_input('action') == 'get_userfield') {
+    $likestring = $db->escape_string_like($mybb->input['query']);
+    $fieldid = $mybb->input['fieldid'];
+
+    //Query um die daten zu bekommen
+    $query = $db->query("
+		SELECT distinct({$fieldid})
+		FROM " . TABLE_PREFIX . "users u
+		LEFT JOIN " . TABLE_PREFIX . "userfields f ON (f.ufid=u.uid)
+		WHERE {$fieldid} LIKE '%{$likestring}%'
+	");
+    //array zusammenbauen
+    while ($user = $db->fetch_array($query)) {
+      $data[] = array('uid' => $user['uid'], 'id' => $user[$fieldid], 'text' => $user[$fieldid]);
+    }
+    //als JSON ausgeben, weil damit unser javascript arbeitet
+    echo json_encode($data);
+    exit;
   }
 }
 
@@ -2288,6 +2647,7 @@ function application_ucp_showthread()
 }
 
 /**
+ * WOB Funktion
  * Exportfunktion für Steckbrief
  */
 $plugins->add_hook("misc_start", "application_ucp_misc");
@@ -2376,57 +2736,61 @@ function application_ucp_misc()
 
   // Steckbrief als PDF speichern
   if ($mybb->input['action'] == "exp_app" && $mybb->user['uid'] != 0) {
-    //Userinformationen bekommen
-    $uid = (int)$mybb->input['uid'];
-    $user = get_user($uid);
+    if ($mybb->settings['application_ucp_export']) {
+      //Userinformationen bekommen
+      $uid = (int)$mybb->input['uid'];
+      $user = get_user($uid);
 
-    require(MYBB_ROOT . 'inc/3rdparty/tfpdf.php');
-    //PDF aufsetzen
-    class FPDF extends tFPDF
-    {
-      // Footer vom PDF
-      function Footer()
+      require(MYBB_ROOT . 'inc/3rdparty/tfpdf.php');
+      //PDF aufsetzen
+      class FPDF extends tFPDF
       {
-        $this->SetY(-15);
-        $this->SetFont('Arial', '', 8);
-        $this->Cell(0, 10, 'Seite ' . $this->PageNo() . '/{nb}', 0, 0, 'R');
-      }
-    }
-
-    $title =  $user['username'];
-    $pdf = new FPDF();
-    $pdf->AddPage();
-    $pdf->AliasNbPages();
-    $pdf->AddFont('Arial', '', 'ARIAL.TTF', true);
-    $pdf->SetFont('Arial', 'B', 16);
-
-    $pdf->MultiCell(0, 5, $user['username'], 0, 'C');
-
-    //alle Felder holen:
-    $fields = application_ucp_build_view($uid, "profile", "array");
-
-    foreach ($fields as $key => $field) {
-      if (substr($key, 0, 10) == "labelvalue") {
-
-        if (strpos($field, "bild")) {
-        } else {
-          //Label und Value auslesen und in PDF packen
-          $y = $y + 15;
-          $pdf->SetFont('Arial', '', 12);
-          $pdf->SetX(20);
-          //die html codes rauswerfen
-          $clean = html_entity_decode($field);
-          $clean = strip_tags($clean);
-          // {"$"}this->MultiCell(0,5,{"$"}txt);
-          $pdf->MultiCell(0, 5, $clean);
-          $pdf->MultiCell(0, 5, "");
+        // Footer vom PDF
+        function Footer()
+        {
+          $this->SetY(-15);
+          $this->SetFont('Arial', '', 8);
+          $this->Cell(0, 10, 'Seite ' . $this->PageNo() . '/{nb}', 0, 0, 'R');
         }
       }
+
+      $title =  $user['username'];
+      $pdf = new FPDF();
+      $pdf->AddPage();
+      $pdf->AliasNbPages();
+      $pdf->AddFont('Arial', '', 'ARIAL.TTF', true);
+      $pdf->SetFont('Arial', 'B', 16);
+
+      $pdf->MultiCell(0, 5, $user['username'], 0, 'C');
+
+      //alle Felder holen:
+      $fields = application_ucp_build_view($uid, "profile", "array");
+
+      foreach ($fields as $key => $field) {
+        if (substr($key, 0, 10) == "labelvalue") {
+
+          if (strpos($field, "bild")) {
+          } else {
+            //Label und Value auslesen und in PDF packen
+            $y = $y + 15;
+            $pdf->SetFont('Arial', '', 12);
+            $pdf->SetX(20);
+            //die html codes rauswerfen
+            $clean = html_entity_decode($field);
+            $clean = strip_tags($clean);
+            // {"$"}this->MultiCell(0,5,{"$"}txt);
+            $pdf->MultiCell(0, 5, $clean);
+            $pdf->MultiCell(0, 5, "");
+          }
+        }
+      }
+      $pdf->Output('I', $title . '.pdf');
     }
-    $pdf->Output('I', $title . '.pdf');
   }
 }
-
+/**
+ * Overview für Moderatoren
+ */
 $plugins->add_hook("misc_start", "application_ucp_modoverview");
 function application_ucp_modoverview()
 {
@@ -2574,14 +2938,17 @@ $plugins->add_hook('index_start', 'application_ucp_indexalert');
 function application_ucp_indexalert()
 {
   global $templates, $db, $mybb, $application_ucp_index;
-
+  //settings holen
   $applicants = $mybb->settings['application_ucp_applicants'];
   $mods = $mybb->settings['application_ucp_stecki_mods'];
   $friststecki = $mybb->settings['application_ucp_applicationtime'];
   $fristkorrektur = $mybb->settings['application_ucp_correctiontime'];
 
   $alertflag = 0;
+
+  //wer ist online
   $uid = $mybb->user['uid'];
+  //Daten aus Management tabelle
   $get_managment = $db->simple_select("application_ucp_management", "*", "uid = {$uid}");
 
   //Benutzer ist ein Bewerber
@@ -2671,7 +3038,9 @@ function application_ucp_indexalert()
 /**
  * Anzeige der Felder im Profil und im Postbit
  * Wir sind faul und wollen das ganze nicht mehrmals schreiben :D 
- * @param uid von wem sollen die Felder angezeigt werden
+ * @param uid
+ * uid von wem sollen die Felder angezeigt werden, location 
+ * location: wo, profil, memberlist oder postbit
  * @return html oder array 
  */
 
@@ -2681,8 +3050,11 @@ function application_ucp_build_view($uid, $location, $kind)
   require_once MYBB_ROOT . "inc/class_parser.php";
   $parser = new postParser;
 
+  //soll als plan html ausgegeben werden - wir bauen direk das markup
   if ($kind == "html") {
+    //äußerer Container
     $buildhtml = "<div class=\"aucp_fieldContainer aucp_{$location}\">";
+    //alle felder bekommen
     $fieldquery = $db->write_query("
         SELECT * FROM `" . TABLE_PREFIX . "application_ucp_userfields` uf 
           inner JOIN 
@@ -2690,7 +3062,7 @@ function application_ucp_build_view($uid, $location, $kind)
         ON f.id = uf.fieldid 
         and uid = {$uid} AND {$location} = 1 
         AND fieldid > 0 AND active = 1");
-
+    //Felder durchgehen
     while ($field = $db->fetch_array($fieldquery)) {
       //parser options
       $parser_options = array(
@@ -2701,22 +3073,27 @@ function application_ucp_build_view($uid, $location, $kind)
         "allow_videocode" => $field['allow_video'],
         "nl2br" => 1
       );
+
       if ($field['fieldtyp'] == "date") {
+        //field date? Dann wollen wir es hübsch ausgeben.
         $fieldvalue = date("d.m.Y", strtotime($field['value']));
       } else {
         $fieldvalue = $field['value'];
       }
+      //innerer container mit werten und label
       $buildhtml .= "<div class=\"aucp_fieldContainer__item\"><div class=\"aucp_fieldContainer__field label\">{$field['label']}:</div>
     <div class=\"aucp_fieldContainer__field field {$field['fieldname}']}\">" . $parser->parse_message($fieldvalue, $parser_options) . "</div>
     </div>
     ";
     }
+    //ende äußerer container
     $buildhtml .= "</div>";
-    return $buildhtml;
+    return $buildhtml; //rückgabe
   }
+  //Rückgabe als Array, also einzelne Variablen die sich ansprechen lassen - ohne html code
   if ($kind == "array") {
     $array = array();
-
+    //erst einmal felder bekommen
     $fieldquery = $db->write_query("
       SELECT * FROM `" . TABLE_PREFIX . "application_ucp_userfields` uf 
         inner JOIN 
@@ -2725,7 +3102,7 @@ function application_ucp_build_view($uid, $location, $kind)
       and uid = {$uid} 
       AND {$location} = 1 
       AND fieldid > 0");
-
+    //durchgehen
     while ($field = $db->fetch_array($fieldquery)) {
       $parser_options = array(
         "allow_html" => $field['allow_html'],
@@ -2739,6 +3116,7 @@ function application_ucp_build_view($uid, $location, $kind)
       } else {
         $fieldvalue = $field['value'];
       }
+      // Wir bauen unsere Variablen zusammen
       //   Label & Value: {$application['labelvalue_vorname']}
       $arrayfieldlabelvalue = "labelvalue_{$field['fieldname']}";
       $array[$arrayfieldlabelvalue] = $field['label'] . ": " . $parser->parse_message($fieldvalue, $parser_options);
@@ -2751,13 +3129,12 @@ function application_ucp_build_view($uid, $location, $kind)
       $arraylabel = "value_{$field['fieldname']}";
       $array[$arraylabel] = $parser->parse_message($fieldvalue, $parser_options);
     }
-
     return $array;
   }
 }
 
 /**
- * Felder abspeichern
+ * Funktion um die Felder zu speichern
  */
 function application_ucp_savefields($fields, $uid)
 {
@@ -2771,7 +3148,8 @@ function application_ucp_savefields($fields, $uid)
     //Weil wir nur infofelder haben, wir wollen nur die Felder mit einem numerischen wert, also einer ID und somit einem Steckbrieffeld absspeichern
     if (is_numeric($key)) {
       //Füge den Wert neu ein, wenn er noch nicht existiert
-      $value = $db->escape_string($value);
+      //dabei einmal sonderzeichen escapen und leertasten vorne und hinten rauswerfen
+      $value = trim($db->escape_string($value));
       $db->write_query("
         INSERT INTO " . TABLE_PREFIX . "application_ucp_userfields (uid, value, fieldid) 
         VALUES('{$uid}', '{$value}', {$key}) ON 
@@ -2780,7 +3158,12 @@ function application_ucp_savefields($fields, $uid)
   }
 }
 /***
- * PN an user, der betroffen ist.
+ * PN oder Alert an user, der betroffen ist.
+ * @param 
+ * $charakter welchen Charakter betriff es, 
+ * $touid an welche pn
+ * $tid thread
+ * $editflag Es wurde nur editiert
  */
 function application_ucp_affected_alert($charakter, $touid, $tid, $editflag)
 {
@@ -2832,7 +3215,7 @@ function application_ucp_affected_alert($charakter, $touid, $tid, $editflag)
         MybbStuff_MyAlerts_AlertManager::getInstance()->addAlert($alert);
       }
     }
-  } else if ($alerttype == 3) { //noting
+  } else if ($alerttype == 3) { //nothing
     //ja nichts halt, eh?
   }
 }
@@ -2840,6 +3223,7 @@ function application_ucp_affected_alert($charakter, $touid, $tid, $editflag)
 /**************************** 
  * 
  *  My Alert Integration
+ * Alert für Accounts die vom Steckbrief betroffen sind (verwandte freunde gesuche... )
  * 
  * *************************** */
 if (class_exists('MybbStuff_MyAlerts_AlertTypeManager')) {
