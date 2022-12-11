@@ -1,15 +1,21 @@
 <?php
 /**
- * Social Network 1.0 Main Language File
+ * Steckbriefe im UCP  1.0 Main Language File
+ * by risuena
  */
 
 $l['application_ucp_usernav'] = 'Steckbrief';
 $l['application_ucp_mandatory'] = '*';
+$l['application_ucp_wanted'] = 'Ist der Charakter ein Gesuch?';
+$l['application_ucp_wanted_url'] = 'URL zum Gesuch';
+$l['application_ucp_affected'] = 'Betroffene Mitglieder';
 $l['application_ucp_extbtn'] = 'Frist Verlängern';
 $l['application_ucp_save'] = 'Speichern';
 $l['application_ucp_readybtn'] = 'Speichern & zur Kontrolle';
-
+$l['application_ucp_saveerror'] = 'Du kannst deinen Steckbrief nicht einreichen, ehe nicht alle Pflichtfelder ausgefüllt sind.';
 $l['application_ucp_export'] = 'Steckbrief exportieren';
+
+$l['application_ucp_thread_wantedurltitle'] = "Charakter ist ein Gesuch";
 
 $l['application_ucp_wobgroups'] = 'Primäre Benutzergruppe *';
 $l['application_ucp_wobgroups2'] = 'Sekundäre Benutzergruppe';
