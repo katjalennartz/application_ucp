@@ -90,6 +90,15 @@ $l['application_ucp_add_fieldmybb_descr'] = 'Soll MyBB-Code in dem Feld benutzt 
 $l['application_ucp_add_fieldimg'] = 'IMG-Tag erlaubt?';
 $l['application_ucp_add_fieldimg_descr'] = 'Dürfen Bilder via IMG Tag in dem Feld eingebunden werden?';
 
+$l['application_ucp_add_searchable'] = 'Durchsuchbar?';
+$l['application_ucp_add_searchable_descr'] = 'Soll in der Mitgliederliste nach dem Feld gesucht werden können?';
+
+$l['application_ucp_add_suggestion'] = 'Suchvorschläge?';
+$l['application_ucp_add_suggestion_descr'] = 'Sollen Vorschläge für die Suche anhand von schon eingetragener Werte gemacht werden?';
+
+$l['application_ucp_add_active'] = 'Aktiv?';
+$l['application_ucp_add_active_descr'] = 'Bei Nein: Die Daten der User werden nicht gelöscht, das Feld wird nur ausgeblendet, ist nicht mehr bearbeitbar und wird nirgends mehr angezeigt.';
+
 $l['application_ucp_add_fieldvideo'] = 'Videos erlaubt?';
 $l['application_ucp_add_fieldvideo_descr'] = 'Dürfen Videos in dem Feld eingebunden werden?';
 
