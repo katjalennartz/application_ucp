@@ -2028,7 +2028,7 @@ function application_ucp_usercp()
     $get_affected_data = $db->fetch_array($get_affected);
     $affected_data = $get_affected_data['value'];
     $fields .= " 
-    <label class=\"app_ucp_label\" for=\"affected\" id=\"label_affected\">{$lang->application_ucp_affected}{$requiredstar}:</label> 
+    <label class=\"app_ucp_label\" for=\"affected\" id=\"label_affected\">{$lang->application_ucp_affected_ucp}{$requiredstar}:</label> 
     <input type=\"text\" autocomplete=\"off\" autocorrect=\"off\" autocapitalize=\"off\" spellcheck=\"false\"
           class=\"select2-input select2-default\" id=\"s2id_autogen1\" tabindex=\"1\" placeholder=\"\" name=\"-3\" value=\"{$affected_data}\">";
 
@@ -2105,33 +2105,50 @@ function application_ucp_usercp()
   //Steckbrief speichern und zur Korrektur geben.
   if ($mybb->input['application_ucp_ready']) {
     // alle Inputs
+    $fields_numerickey = array();
+    // //einmal fürs überprüfen
+    // $fields = $mybb->input;
+    //einmal fürs später speichern, evt. doppelt gemoppelt aber well.
     $fields = $mybb->input;
+
+    //wir wollen nur unsere fields in dem array
+    foreach ($fields as $key => $value) {
+      if (is_numeric($key)) {
+        $fields_numerickey[$key] = $value;
+      }
+    }
+    //wir speichern hier den alten wert (Alte betroffene User suchen), um ihn später zu vergleichen
+    $old_affected = $db->fetch_field($db->simple_select("application_ucp_userfields", "value", "uid = {$mybb->user['uid']} AND fieldid='-3'"), "value");
+
+    //als erstes speichern wir alle felder, damit nichts verloren geht
+    application_ucp_savefields($fields_numerickey, $mybb->user['uid']);
+
 
     //Einreichen abbrechen, wenn nicht alle Pflichtfelder ausgefüllt sind.
     //alle inputs durchgehen
-    foreach ($fields as $key => $value) {
+    foreach ($fields_numerickey as $key => $value) {
       //ist das Feld ein Pflichtfeld
       $mandatory = $db->fetch_field($db->simple_select("application_ucp_fields", "mandatory", "id = {$key}"), "mandatory");
-      //wenn ja und leer dann abbrechen
-      if ($mandatory) {
-        if (is_array($value)) {
-          if (count($value) == 0) {
-            //trotzdem speichern
-            application_ucp_savefields($fields, $mybb->user['uid']);
-            echo "<script>alert('" . $lang->application_ucp_saveerror . "')";
-            redirect("usercp.php?action=application_ucp");
-          }
-        } else {
-          if ($value == "") {
-            //trotzdem speichern
-            application_ucp_savefields($fields, $mybb->user['uid']);
-            echo "<script>alert('" . $lang->application_ucp_saveerror . "')";
-            redirect("usercp.php?action=application_ucp");
-          }
+
+      //pflichtfeld, aber nicht ausgefüllt.
+      if ($mandatory && empty($value)) {
+        // wir vergleichen kurz alte affected user und neue, wenn neue setzen wir den wert wieder auf die alten
+        // dadurch muss zwar neu eingetragen werden, aber so wird sichergestellt, dass die neu eingetragenen user, 
+        // noch informiert werden, wenn erneut losgeschickt wird
+
+        if ($fields_numerickey['-3'] != $old_affected) {
+          $fields_numerickey['-3'] = $old_affected;
+          application_ucp_save_single_field($fields_numerickey, '-3', $mybb->user['uid']);
         }
+        echo "<script>alert('" . $lang->application_ucp_saveerror . "')
+        window.location = './usercp.php?action=application_ucp';</script>";
+
+        // echo "<script>alert('" . $lang->application_ucp_saveerror . "');</script>";
+        // redirect("usercp.php?action=application_ucp");
       }
     }
-    //Inputs waren in Ordnung
+
+    //Inputs waren in Ordnung - alle Pflichfelder ausgefüllt
     //Schauen ob es schon einen eintrag im managenent gibt
     $fetch_management = $db->simple_select("application_ucp_management", "*", "uid = {$mybb->user['uid']}");
 
@@ -2139,10 +2156,9 @@ function application_ucp_usercp()
     if ($db->num_rows($fetch_management) > 0) {
       //die daten
       $managmentdata = $db->fetch_array($fetch_management);
-      //Alte betroffene User suchen
-      $old_affected = $db->fetch_field($db->simple_select("application_ucp_userfields", "value", "uid = {$mybb->user['uid']} AND fieldid='-3' AND value !=''"), "");
+      //vergleich zu alten werten
       //wurde was am feld geändert?
-      if ($fields['-3'] != $old_affected) {
+      if ($fields_numerickey['-3'] != $old_affected) {
         //es wurden neue Betroffene hinzugefügt und müssen noch informiert werden
         //wir brauchen arrays
         $array_new = explode(",", $fields['-3']);
@@ -2155,8 +2171,7 @@ function application_ucp_usercp()
           }
         }
       }
-      // speichern
-      application_ucp_savefields($fields, $mybb->user['uid']);
+
       // Wenn die Korrekturzeit vom Mod kleiner ist, als heute ist es eine Korrektur des Users
       if (strtotime($managmentdata['modcorrection_time']) <= time()) {
         $add = $db->fetch_field($db->simple_select("application_ucp_management", "correctioncnt", "uid = {$mybb->user['uid']}"), "correctioncnt");
@@ -2170,9 +2185,6 @@ function application_ucp_usercp()
       }
       redirect("usercp.php?action=application_ucp");
     } else { //Der Steckbrief wird das erste Mal eingereicht
-
-      //felder abspeichern
-      application_ucp_savefields($fields, $mybb->user['uid']);
 
       //Wir wollen einen Thread erstellen, wenn der Stecki fertig ist und nutzen dafür den Posthandler von MyBB
       //Steckbriefarea holen
@@ -2504,7 +2516,7 @@ function application_ucp_filter()
     }
 
     if (!empty($mybb->input['fid4'])) {
-        $search_query .= "AND fid4 LIKE '%{$mybb->input['fid4']}%' ";
+      $search_query .= "AND fid4 LIKE '%{$mybb->input['fid4']}%' ";
     }
 
     //     SELECT TIMESTAMPDIFF(YEAR, geburtstag, CURDATE()) as years, u.*, f.*  , fields.*  FROM mybb_users u  LEFT JOIN mybb_userfields f ON (f.ufid=u.uid)  LEFT JOIN (select um.uid as auid, max(case when um.fieldid ='1' then um.value end) AS 'vorname', max(case when um.fieldid ='3' then um.value end) AS 'geburtstag', max(case when um.fieldid ='13' then um.value end) AS 'relation', max(case when um.fieldid ='11' then um.value end) AS 'wohnort', max(case when um.fieldid ='22' then um.value end) AS 'gender', max(case when um.fieldid ='24' then um.value end) AS 'testradio' from `mybb_application_ucp_userfields` as um group by uid) as fields ON auid = u.uid  WHERE 1=1 AND u.usergroup NOT IN (1) AND CONCAT(',',u.additionalgroups,',') NOT LIKE '%,1,%'  
@@ -3131,6 +3143,25 @@ function application_ucp_build_view($uid, $location, $kind)
     }
     return $array;
   }
+}
+
+/**
+ * Funktion um ein einzelnes Felder zu speichern
+ */
+function application_ucp_save_single_field($fields, $key, $uid)
+{
+  global $db, $mybb;
+  var_dump($fields);
+  if (is_array($fields[$key])) {
+    $fields[$key] = implode(",", $fields[$key]);
+  }
+  $value = trim($db->escape_string($fields[$key]));
+
+  // speichern
+  $db->write_query("
+    INSERT INTO " . TABLE_PREFIX . "application_ucp_userfields (uid, value, fieldid) 
+    VALUES('{$uid}', '{$value}', {$key}) ON 
+    DUPLICATE KEY UPDATE value='{$value}'");
 }
 
 /**
