@@ -263,7 +263,6 @@ function application_ucp_install()
 
 
   //Templates erstellen:
-
   $template[0] = array(
     "title" => 'application_ucp_index',
     "template" => '<div class="red_alert">
@@ -290,20 +289,20 @@ function application_ucp_install()
     "title" => 'application_ucp_mods',
     "template" => '<html>
       <head>
-      <title>{$mybb->settings[\\\'bbname\\\']} - Steckbriefübersicht</title>
+      <title>{$mybb->settings[\\\'bbname\\\']} - {$lang->application_ucp_temps_title}</title>
       {$headerinclude}
       </head>
       <body>
       {$header}
-      <table border="0" cellspacing="{$theme[\\\'borderwidth\\\']}" cellpadding="{$theme[\\\'tablespace\\\']}" class="tborder tfixed">
+      <table border="0" cellspacing="{$theme[\\\'borderwidth\\\']}" cellpadding="{$theme[\\\'tablespace\\\']}" class="aucp-modoverview tborder tfixed">
       <tr>
-      <td class="trow1"><h2>fertige Steckbriefe</h2><br/>
+      <td class="trow1"><h2>{$lang->application_ucp_temps_ready_applications}</h2><br/>
           <table>
           <tr>
-            <td class="bl-tdhead">Charakter</td>
-            <td class="bl-tdhead">Steckbrief</td>
-            <td class="bl-tdhead">In Bearbeitung? </td>
-            <td class="bl-tdhead">eingereicht/korrigiert am</td>
+            <td class="aucp-tdhead">{$lang->application_ucp_temps_charakter}</td>
+            <td class="aucp-tdhead">{$lang->application_ucp_temps_application}</td>
+            <td class="aucp-tdhead">{$lang->application_ucp_temps_wip}</td>
+            <td class="aucp-tdhead">{$lang->application_ucp_temps_correctdate}</td>
           </tr>
             {$application_ucp_mods_readybit}
           </table>
@@ -311,26 +310,26 @@ function application_ucp_install()
       </tr>
         
           <tr>
-      <td class="trow1"><h2>Steckbriefe die vom User korrigiert werden müssen</h2><br/>
+      <td class="trow1"><h2>{$lang->application_ucp_temps_in_correction_user}</h2><br/>
         <table>
           <tr>
-            <td class="bl-tdhead">Charakter</td>
-            <td class="bl-tdhead">Steckbrief</td>
-            <td class="bl-tdhead">Verantwortlicher angefordert? </td>
-            <td class="bl-tdhead">Fristende </td>
+            <td class="aucp-tdhead">{$lang->application_ucp_temps_charakter}</td>
+            <td class="aucp-tdhead">{$lang->application_ucp_temps_application}</td>
+            <td class="aucp-tdhead">{$lang->application_ucp_temps_responsible}</td>
+            <td class="aucp-tdhead">{$lang->application_ucp_temps_frist}</td>
           </tr>
             {$application_ucp_mods_users}
           </table>
         </td>
       </tr>
         <tr>
-      <td class="trow1"><h2>noch nicht eingereichte Steckbriefe</h2><br/>
+      <td class="trow1"><h2>{$lang->application_ucp_temps_notready}</h2><br/>
           <table>
           <tr>
-            <td class="bl-tdhead">Link zum Profil</td>
-            <td class="bl-tdhead">Registriert seit</td>
-            <td class="bl-tdhead">Letzte Aktivität</td>
-            <td class="bl-tdhead">Fristende </td>
+            <td class="aucp-tdhead">{$lang->application_ucp_temps_profilelink}</td>
+            <td class="aucp-tdhead">{$lang->application_ucp_temps_registeredsince}</td>
+            <td class="aucp-tdhead"{$lang->application_ucp_temps_lastactive}></td>
+            <td class="aucp-tdhead">{$lang->application_ucp_temps_frist}</td>
           </tr>
             {$application_ucp_mods_new}
           </table>
@@ -378,7 +377,7 @@ function application_ucp_install()
       <div class="aucp_showthread-wob__item">
       <label for="usergroups">{$lang->application_ucp_wobgroups2}</label><br />
           <select name="additionalgroups[]" id="additionalgroups[]" size="3" multiple="multiple">
-              <option value="">Keine sekundäre Gruppe</option>
+              <option value="">{$lang->application_ucp_nonewobgroups2}</option>
               {$additionalgroups_bit}
           </select>
       </div>
@@ -396,7 +395,7 @@ function application_ucp_install()
     "title" => 'application_ucp_ucp_main',
     "template" => '<html>
       <head>
-      <title>{$mybb->settings[\\\'bbname\\\']} - Steckbrief ausfüllen</title>
+      <title>{$mybb->settings[\\\'bbname\\\']} - {$lang->application_ucp_fillapplication}</title>
       {$headerinclude}
       </head>
       <body>
@@ -431,10 +430,10 @@ function application_ucp_install()
 
   $template[6] = array(
     "title" => 'application_ucp_filtermemberlist',
-    "template" => '<div class="bl-filtermemberlist">
+    "template" => '
+    <div class="bl-filtermemberlist">
 		{$filter}
-
-</div>',
+    </div>',
     "sid" => "-2",
     "version" => "1.0",
     "dateline" => TIME_NOW
@@ -1769,6 +1768,7 @@ function application_ucp_usercp()
     if ($member &&  $type['editable'] == 0) {
       $readonly = "readonly"; //für textfelder/textarea
       $disabled = "disabled"; //selects / checkboxen etc.
+
       //moderators still can edit fields
       if ($mybb->usergroup['canmodcp'] == '1') {
         $readonly = ""; //für textfelder/textarea
@@ -2387,7 +2387,6 @@ function application_ucp_filter()
     //wir brauchen alle durchsuchbaren felder
     $getfields = $db->simple_select("application_ucp_fields", "*", "searchable = 1 and active = 1");
     $filterjs = "";
-    $js_urlstring = "";
     //und gehen sie durch
     while ($searchfield = $db->fetch_array($getfields)) {
 
