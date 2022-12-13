@@ -603,7 +603,9 @@ function application_ucp_activate()
 
   //memberlist
   find_replace_templatesets("memberlist", "#" . preg_quote('{$referrals_option}</select></td></tr>') . "#i", '{$referrals_option}</select></td></tr><tr><td colspan="3">{$applicationfilter}</tr></td>');
+  find_replace_templatesets("memberlist", "#" . preg_quote('</body>') . "#i", '{$filterjs}</body>');
 
+ 
   if (function_exists('myalerts_is_activated') && myalerts_is_activated()) {
 
     $alertTypeManager = MybbStuff_MyAlerts_AlertTypeManager::getInstance();
@@ -632,7 +634,9 @@ function application_ucp_deactivate()
   find_replace_templatesets("showthread", "#" . preg_quote('{$give_wob}') . "#i", '');
   find_replace_templatesets("postbit", "#" . preg_quote('{$post[\'aucp_fields\']}') . "#i", '');
   find_replace_templatesets("memberlist", "#" . preg_quote('<tr><td colspan="3">{$applicationfilter}</tr></td>') . "#i", '');
+  find_replace_templatesets("memberlist", "#" . preg_quote('{$filterjs}') . "#i", '');
 
+  
   //My alerts wieder löschen
   if (class_exists('MybbStuff_MyAlerts_AlertTypeManager')) {
     $alertTypeManager = MybbStuff_MyAlerts_AlertTypeManager::getInstance();
@@ -2519,40 +2523,11 @@ function application_ucp_filter()
       $search_query .= "AND fid4 LIKE '%{$mybb->input['fid4']}%' ";
     }
 
-    //     SELECT TIMESTAMPDIFF(YEAR, geburtstag, CURDATE()) as years, u.*, f.*  , fields.*  FROM mybb_users u  LEFT JOIN mybb_userfields f ON (f.ufid=u.uid)  LEFT JOIN (select um.uid as auid, max(case when um.fieldid ='1' then um.value end) AS 'vorname', max(case when um.fieldid ='3' then um.value end) AS 'geburtstag', max(case when um.fieldid ='13' then um.value end) AS 'relation', max(case when um.fieldid ='11' then um.value end) AS 'wohnort', max(case when um.fieldid ='22' then um.value end) AS 'gender', max(case when um.fieldid ='24' then um.value end) AS 'testradio' from `mybb_application_ucp_userfields` as um group by uid) as fields ON auid = u.uid  WHERE 1=1 AND u.usergroup NOT IN (1) AND CONCAT(',',u.additionalgroups,',') NOT LIKE '%,1,%'  
-    // AND TIMESTAMPDIFF(YEAR, geburtstag, CURDATE()) BETWEEN 40 AND 41
-
-    // ORDER BY u.regdate ASC  LIMIT 0, 20
-
     $search_url =  $filterurl;
     $filterurl = substr($filterurl, 0, -1);
     $selectstring = substr($selectstring, 0, -1);
     $selectstring .= " from `mybb_application_ucp_userfields` as um group by uid) as fields ON auid = u.uid";
 
-    // $js_getinputs  = "
-    // <script type=\"text/javascript\">
-    // let url= new URL(window.location.href);
-    // let urlParams = new URLSearchParams(url.search);
-    // " . $js_urlstring . "
-
-    // </script>
-    // ";
-    // echo $search_query;
-    //   select um.uid,
-    //        max(case when um.fieldid ='1' then um.value end) AS 'vorname',  
-    //        max(case when um.fieldid ='2' then um.value end) AS 'nachname',
-    //        max(case when um.fieldid ='22' then um.value end) AS 'gender',  
-    //        max(case when um.fieldid ='13' then um.value end) AS 'status',
-    //        max(case when um.fieldid ='11' then um.value end) AS 'geburtsort',
-    //        max(case when um.fieldid ='12' then um.value end) AS 'wohnort',
-    //        max(case when um.fieldid ='8' then um.value end) AS 'beruf',
-    //        max(case when um.fieldid ='3' then um.value end) AS 'geburtstag'
-    // from `mybb_application_ucp_userfields` as um
-    // group by uid
-    // if (trim($mybb->input['age_range_from'])) {
-    //   $search_query .= " AND username LIKE 'Zoey%'";
-    //   $search_url .= "&agerange=" . $mybb->input['age_range_from'];
-    // }
     eval("\$applicationfilter .= \"" . $templates->get("application_ucp_filtermemberlist") . "\";");
   }
 }
