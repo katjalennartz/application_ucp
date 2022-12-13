@@ -100,6 +100,8 @@ Hier werden die verschiedenen Einstellungen der Felder im ACP erklärt
   * Dürfen Videos eingefügt werden?
 * **Durchsuchbar:** 
     * Hier könnt ihr angeben, ob in der Mitgliederliste nach dem Feld gesucht werden soll.
+* **Suchvorschläge?** 
+    * Sollen, wenn das Feld durchsuchbar ist, Vorschläge gemacht werden, mit Werten die von anderen Charakteren ausgefüllt sind.
 * **Reihenfolge:** 
     * Hier bestimmt ihr an welcher Stelle das Feld angezeigt werden soll (0 ganz oben).
 * **Aktiv?** 
