@@ -55,7 +55,7 @@ Um die Funktion nutzen zu können, dass die Mitgliederliste durchsuchbar ist, si
 * showthread: {$give_wob} (wob form)
 * postbit: {$post['aucp_fields']} (anzeige Felder)
 * postbit_classic: {$post['aucp_fields']} (anzeige Felder)
-* memberlist: $applicationfilter
+* memberlist: {$applicationfilter} (anzeige suchfelder) , {$filterjs} (Javascript für Suchvorschläge)
 
 **Links**
 * ACP Übersicht der Felder: boardadresse/admin/index.php?module=config-application_ucp
