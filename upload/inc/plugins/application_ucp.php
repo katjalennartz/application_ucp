@@ -1790,7 +1790,7 @@ function application_ucp_usercp()
     //handelt es sich um ein Pflichtfeld
     if ($type['mandatory']) {
       $requiredstar = "<span class\"app_ucp_star\">" . $lang->application_ucp_mandatory . "</span>"; //markierung mit sternchen ux und so :D    
-      //TODO: Check if working, required erst beim einreichen ! 
+
       $required = "";
       // $required = "required"; //feld muss ausgefüllt werden
     } else { //kein pflichtfeld
@@ -2005,9 +2005,9 @@ function application_ucp_usercp()
 
     //Die Checkboxen
     $inner .= "
-        <input type=\"radio\" class=\"wanted_check\" id=\"wanted\" name=\"-1\" value=\"1\" {$checked_yes} \> 
+        <input type=\"radio\" class=\"wanted_check\" id=\"wanted\" name=\"-1\" value=\"1\" {$checked_yes}\> 
         <label for=\"wanted\">Ja</label><br/>
-        <input type=\"radio\" class=\"wanted_check\" id=\"wanted\" name=\"-1\" value=\"0\" {$checked_no} \> 
+        <input type=\"radio\" class=\"wanted_check\" id=\"wanted\" name=\"-1\" value=\"0\" {$checked_no} required \> 
         <label for=\"wanted\">Nein</label><br/>";
     //dann hier das außenrum
     $fields .= "
