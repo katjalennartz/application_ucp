@@ -8,11 +8,11 @@ $l['application_ucp_usernav'] = 'Steckbrief';
 $l['application_ucp_mandatory'] = '*';
 $l['application_ucp_wanted'] = 'Ist der Charakter ein Gesuch?';
 $l['application_ucp_wanted_url'] = 'URL zum Gesuch';
-$l['application_ucp_affected'] = 'Betroffene Mitglieder';
+$l['application_ucp_affected_ucp'] = 'Betroffene Mitglieder';
 $l['application_ucp_extbtn'] = 'Frist Verlängern';
 $l['application_ucp_save'] = 'Speichern';
 $l['application_ucp_readybtn'] = 'Speichern & zur Kontrolle';
-$l['application_ucp_saveerror'] = 'Du kannst deinen Steckbrief nicht einreichen, ehe nicht alle Pflichtfelder ausgefüllt sind.';
+$l['application_ucp_saveerror'] = 'Du kannst deinen Steckbrief nicht einreichen, ehe nicht alle Pflichtfelder ausgefuellt sind. Wenn du neue betroffene Mitglieder eingetragen hattest, musst du diese vor dem Speichern neu eintragen.';
 $l['application_ucp_export'] = 'Steckbrief exportieren';
 
 $l['application_ucp_thread_wantedurltitle'] = "Charakter ist ein Gesuch";
