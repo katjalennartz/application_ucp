@@ -2382,16 +2382,18 @@ function application_ucp_filter()
     //Hier fangen wir an unseren queriy zu bauen. Wir müssten die felder der noch dazu kommenden tabelle mit auswählen
     $selectfield = ", fields.* ";
     //dann basteln wir unseren join
-    $selectstring = "LEFT JOIN (select um.uid as auid, ";
+    // $selectstring = "LEFT JOIN (select um.uid as auid, ";
     $filterurl = "?";
     //wir brauchen alle durchsuchbaren felder
     $getfields = $db->simple_select("application_ucp_fields", "*", "searchable = 1 and active = 1");
     $filterjs = "";
     //und gehen sie durch
+    $selectstring = application_ucp_buildsql();
+
     while ($searchfield = $db->fetch_array($getfields)) {
 
-      //weiter im Querie, hier modeln wir unsere Felder ders users (apllication_ucp_fields taballe) zu einer Tabellenreihe um -> name der Spalte ist fieldname, wert wie gehabt value
-      $selectstring .= " max(case when um.fieldid ='{$searchfield['id']}' then um.value end) AS '{$searchfield['fieldname']}',";
+      // //weiter im Querie, hier modeln wir unsere Felder ders users (apllication_ucp_fields taballe) zu einer Tabellenreihe um -> name der Spalte ist fieldname, wert wie gehabt value
+      // $selectstring .= " max(case when um.fieldid ='{$searchfield['id']}' then um.value end) AS '{$searchfield['fieldname']}',";
 
       //Javascript zusammenbauen, wenn die Suche Vorschläge beinhalten soll.
       if ($searchfield['suggestion']) {
@@ -2524,8 +2526,8 @@ function application_ucp_filter()
 
     $search_url =  $filterurl;
     $filterurl = substr($filterurl, 0, -1);
-    $selectstring = substr($selectstring, 0, -1);
-    $selectstring .= " from `".TABLE_PREFIX."_application_ucp_userfields` as um group by uid) as fields ON auid = u.uid";
+    // $selectstring = substr($selectstring, 0, -1);
+    // $selectstring .= " from `".TABLE_PREFIX."_application_ucp_userfields` as um group by uid) as fields ON auid = u.uid";
 
     eval("\$applicationfilter .= \"" . $templates->get("application_ucp_filtermemberlist") . "\";");
   }
@@ -3022,6 +3024,26 @@ function application_ucp_indexalert()
  * Hilfsfunktionen
  *
  */
+
+ /**
+ * ****
+ * Helper Function for building SQL String. 
+ * ****
+ */
+function application_ucp_buildsql() {
+  global $db, $mybb;
+  $selectstring = "LEFT JOIN (select um.uid as auid, ";
+  $getfields = $db->simple_select("application_ucp_fields", "*", "searchable = 1 and active = 1");
+  while ($searchfield = $db->fetch_array($getfields)) {
+    //weiter im Querie, hier modeln wir unsere Felder ders users (apllication_ucp_fields taballe) zu einer Tabellenreihe um -> name der Spalte ist fieldname, wert wie gehabt value
+    $selectstring .= " max(case when um.fieldid ='{$searchfield['id']}' then um.value end) AS '{$searchfield['fieldname']}',";
+  }
+  $selectstring = substr($selectstring, 0, -1);
+  $selectstring .= " from `".TABLE_PREFIX."application_ucp_userfields` as um group by uid) as fields ON auid = u.uid";
+  return $selectstring;
+}
+
+
 
 /**
  * Anzeige der Felder im Profil und im Postbit
