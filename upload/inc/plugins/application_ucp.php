@@ -604,7 +604,7 @@ function application_ucp_activate()
   find_replace_templatesets("memberlist", "#" . preg_quote('{$referrals_option}</select></td></tr>') . "#i", '{$referrals_option}</select></td></tr><tr><td colspan="3">{$applicationfilter}</tr></td>');
   find_replace_templatesets("memberlist", "#" . preg_quote('</body>') . "#i", '{$filterjs}</body>');
 
- 
+
   if (function_exists('myalerts_is_activated') && myalerts_is_activated()) {
 
     $alertTypeManager = MybbStuff_MyAlerts_AlertTypeManager::getInstance();
@@ -635,7 +635,7 @@ function application_ucp_deactivate()
   find_replace_templatesets("memberlist", "#" . preg_quote('<tr><td colspan="3">{$applicationfilter}</tr></td>') . "#i", '');
   find_replace_templatesets("memberlist", "#" . preg_quote('{$filterjs}') . "#i", '');
 
-  
+
   //My alerts wieder löschen
   if (class_exists('MybbStuff_MyAlerts_AlertTypeManager')) {
     $alertTypeManager = MybbStuff_MyAlerts_AlertTypeManager::getInstance();
@@ -2525,7 +2525,7 @@ function application_ucp_filter()
     $search_url =  $filterurl;
     $filterurl = substr($filterurl, 0, -1);
     $selectstring = substr($selectstring, 0, -1);
-    $selectstring .= " from `mybb_application_ucp_userfields` as um group by uid) as fields ON auid = u.uid";
+    $selectstring .= " from `".TABLE_PREFIX."_application_ucp_userfields` as um group by uid) as fields ON auid = u.uid";
 
     eval("\$applicationfilter .= \"" . $templates->get("application_ucp_filtermemberlist") . "\";");
   }
@@ -2863,7 +2863,7 @@ function application_ucp_modoverview()
         AND usergroup = {$applicantgroup}");
     while ($data = $db->fetch_array($get_new)) {
       $user = get_user($data['uid']);
-
+      // var_dump($user);
       $regdate = date("d.m.Y", $user['regdate']);
       $lastactiv = date("d.m.Y", $user['lastactive']);
       //hier registierungsdatum statt steckilink
@@ -2872,12 +2872,14 @@ function application_ucp_modoverview()
       $aucp_mod_profillink = "<a href=\"" . get_profile_link($user['uid']) . "\">" . $user['username'] . "</a>";
       //hier statt link zum mod, letzte aktivität des users
       $aucp_mod_modlink = $lastactiv;
-      $aucp_mod_date = date("d.m.Y", strtotime($data['regdate'] . " + {$app_deadline} days"));
+
+      $aucp_mod_date = date("d.m.Y",date("d.m.Y",$data['regdate']) . " + {$app_deadline} days"); 
       if ($mybb->settings['application_ucp_extend'] > 0) {
         //wie oft wurde verlängert
         $extend_cnt = $db->fetch_field($db->simple_select("users", "aucp_extend", "uid = {$user['uid']}"), "aucp_extend");
         if ($extend_cnt > 0) {
           $to_add = $mybb->settings['application_ucp_extend'] * $extend_cnt;
+
           $add_extend = strtotime("+{$to_add} days", $aucp_mod_date);
           $addtext = " ({$extend_cnt}x verlängert.)";
           $aucp_mod_date = $add_extend . $addtext;
