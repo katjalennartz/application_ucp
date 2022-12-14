@@ -1,11 +1,10 @@
-**Work in progress**    
-Installieren funktioniert schon, aber es kann sein das noch noch nicht alles optimimal funktioniert, oder noch verändert/ optimiert wird.
-      
-In Progress: durchsuchbarkeit in der Mitgliederliste     
-
-# application_ucp    
+ # Steckbriefe im UCP
 Das Plugin ermöglicht es, unabhängig von Profilfeldern, Felder für den Steckbrief anzulegen. Diese werden in einem gesonderten Bereich im UCP angezeigt und können hier bearbeitet werden. Das Mitglied kann den Steckbrief bearbeiten und speichern und schließlich als fertig markieren und einreichen. Es wird automatisch ein Thread in der Steckbriefarea erstellt.       
 
+**version: 1.0** 
+
+**geplante Features:** Automatische Listen - evt. als Add On Plugin
+		
 **Wichtiger Hinweis.**
 Um die Funktion nutzen zu können, dass die Mitgliederliste durchsuchbar ist, sind Änderungen in der memberlist.php nötig. Entweder die patches importieren (hier im gitlab) oder ganz am ende den Anweisungen folgen.         
 
@@ -66,6 +65,22 @@ Um die Funktion nutzen zu können, dass die Mitgliederliste durchsuchbar ist, si
 # Felder im ACP und ihre Funktionen    
 Hier werden die verschiedenen Einstellungen der Felder im ACP erklärt
 
+## Step 1 - Installation
+
+Hier findet ihr eine kleine Erklärung, wie das Plugin funktioniert und wie ihr am Besten startet.
+
+
+1. Als aller erstes alle Dateien aus dem **Upload Ordner**  hochladen. 
+*(Achtung, ich stelle gerade nur die Sprachdateien für deutsch_du zur Verfügung.)*
+2. Die memberlist.php anpassen. Entweder importiert ihr einfach den Patch, den ich zur Verfügung stelle (wenn ihr das Patches Plugin installiert habt), oder folgt der Anleitung in der Readme.md
+3. Einstellungen im ACP vornehmen (Konfiguration -> Einstellungen: admin/index.php?module=config) 
+4. Steckbrieffelder erstellen (Konfiguration -> Steckbrief Einstellungen: admin/index.php?module=config-application_ucp )
+5. Jetzt sollten man im User CP die Steckbriefe ausfüllen können.
+		
+Je nach Einstellungen, die ihr getroffen habt, müsst ihr die Felder selbst einbauen, oder sie werden ausgegeben. Die Variablen dafür findet ihr in der Übersicht (Steckbrief Einstellungen)
+
+## Erklärung der Felder
+		
 * **Name des Felds:** 
     * Diese Bezeichnund wird in der Datenbank gespeichert, um das Feld später ansprechen zu können. Keine Sonderzeichen, keine Leertasten, am besten alles kleingeschrieben. Diese Bezeichnung dient nur als Identifikator    
 * **Label des Felds:** 
