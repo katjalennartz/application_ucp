@@ -123,6 +123,14 @@ Je nach Einstellungen, die ihr getroffen habt, müsst ihr die Felder selbst einb
     * Hier stellt ihr ein, ob das Feld aktiv sein soll. Deaktiviert ihr es, wird es nicht mehr angezeigt, die DB Einträge werden aber anders als beim Löschen behalten     
 
 ***
+# **Globale Variablen.**   
+Für den user der aktuell Online ist, zum Beispiel in der Headertabelle: 		
+
+Ausgabe:		
+$ucp_data['fieldname']		
+Fieldname von dem Feld, das ausgegeben werden soll.	 			
+
+***
 
 # **Mitgliederliste bearbeiten für Durchsuchbarkeit.**        
 ich empfehle einfach die patches zu importieren             
