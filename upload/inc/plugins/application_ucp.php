@@ -8,6 +8,10 @@
  * Die Felder können frei im ACP erstellt werden.
  * Bitte die Readme beachten. Wirklich! Da steht alles wichtige drin ;) 
  * 
+ * 
+ * PDF EXPORT:
+ * CREDITS to https://tcpdf.org/
+ * and https://www.php-einfach.de/experte/php-codebeispiele/pdf-per-php-erstellen-pdf-rechnung/
  */
 
 //Fehleranzeige bei Bedarf anschalten, in dem die folgenden 2 Zeilen einkommentiert werden
@@ -2318,7 +2322,7 @@ function application_ucp_usercp()
 
 /**
  * automatische Anzeige von den Feldern im Profil
- * Export Steckbrief
+ * Export Steckbrief button
  */
 $plugins->add_hook("member_profile_end", "application_ucp_showinprofile");
 function application_ucp_showinprofile()
@@ -2728,51 +2732,77 @@ function application_ucp_misc()
       //Userinformationen bekommen
       $uid = (int)$mybb->input['uid'];
       $user = get_user($uid);
-
-      require(MYBB_ROOT . 'inc/3rdparty/tfpdf.php');
-      //PDF aufsetzen
-      class FPDF extends tFPDF
-      {
-        // Footer vom PDF
-        function Footer()
-        {
-          $this->SetY(-15);
-          $this->SetFont('Arial', '', 8);
-          $this->Cell(0, 10, 'Seite ' . $this->PageNo() . '/{nb}', 0, 0, 'R');
-        }
-      }
-
-      $title =  $user['username'];
-      $pdf = new FPDF();
-      $pdf->AddPage();
-      $pdf->AliasNbPages();
-      $pdf->AddFont('Arial', '', 'ARIAL.TTF', true);
-      $pdf->SetFont('Arial', 'B', 16);
-
-      $pdf->MultiCell(0, 5, $user['username'], 0, 'C');
-
-      //alle Felder holen:
+      //HTML Bauen
       $fields = application_ucp_build_view($uid, "profile", "array");
 
-      foreach ($fields as $key => $field) {
-        if (substr($key, 0, 10) == "labelvalue") {
+      $html = '<h1 style="text-align:center">Steckbrief: ' . $user['username'] . '</h1>
+      <div style="width:80%">
+       <table> ';
+      foreach ($fields as $key => $value) {
 
-          if (strpos($field, "bild")) {
+        if (substr($key, 0, 4) == "pdf_") {
+          $key = substr($key, 4);
+
+          if (strpos($value, "bild")) {
           } else {
-            //Label und Value auslesen und in PDF packen
-            $y = $y + 15;
-            $pdf->SetFont('Arial', '', 12);
-            $pdf->SetX(20);
-            //die html codes rauswerfen
-            $clean = html_entity_decode($field);
-            $clean = strip_tags($clean);
-            // {"$"}this->MultiCell(0,5,{"$"}txt);
-            $pdf->MultiCell(0, 5, $clean);
-            $pdf->MultiCell(0, 5, "");
+            $html .= '
+            <tr>
+            <td width="30%"> 
+              <p style="padding:5px;"> ' . $key . ': </p> 
+            </td>
+            <td>
+            <p style="padding:5px;"> '. $value . '</p>
+              </td>
+              </tr>';
           }
         }
       }
-      $pdf->Output('I', $title . '.pdf');
+      $html .= "
+      </table>
+      </div>";
+      require_once('tcpdf/tcpdf.php');
+
+      $pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
+
+      // Dokumenteninformationen
+      $pdf->SetCreator(PDF_CREATOR);
+      $pdf->SetAuthor($pdfAuthor);
+      $pdf->SetTitle('Steckbrief ' . $user['username']);
+      $pdf->SetSubject('Steckbrief' . $user['username']);
+
+      // Header und Footer Informationen
+      $pdf->setHeaderFont(array(PDF_FONT_NAME_MAIN, '', PDF_FONT_SIZE_MAIN));
+      $pdf->setFooterFont(array(PDF_FONT_NAME_DATA, '', PDF_FONT_SIZE_DATA));
+
+      // Auswahl des Font
+      $pdf->SetDefaultMonospacedFont(PDF_FONT_MONOSPACED);
+
+      // Auswahl der MArgins
+      $pdf->SetMargins(PDF_MARGIN_LEFT, PDF_MARGIN_TOP, PDF_MARGIN_RIGHT);
+      $pdf->SetHeaderMargin(PDF_MARGIN_HEADER);
+      $pdf->SetFooterMargin(PDF_MARGIN_FOOTER);
+
+      // Automatisches Autobreak der Seiten
+      $pdf->SetAutoPageBreak(TRUE, PDF_MARGIN_BOTTOM);
+
+      // Image Scale 
+      $pdf->setImageScale(PDF_IMAGE_SCALE_RATIO);
+
+      // Schriftart
+      $pdf->SetFont('helvetica', '', 10);
+
+      // Neue Seite
+      $pdf->AddPage();
+
+      // Fügt den HTML Code in das PDF Dokument ein
+      $pdf->writeHTML($html, true, false, true, false, '');
+
+      //Ausgabe der PDF
+      //Variante 1: PDF direkt an den Benutzer senden:
+      $pdf->Output($user['username'].".pdf", 'I');
+
+      //Thanks to 
+      // https://www.php-einfach.de/experte/php-codebeispiele/pdf-per-php-erstellen-pdf-rechnung/
     }
   }
 }
@@ -2875,7 +2905,7 @@ function application_ucp_modoverview()
       //hier statt link zum mod, letzte aktivität des users
       $aucp_mod_modlink = $lastactiv;
 
-      $aucp_mod_date = date("d.m.Y",date("d.m.Y",$data['regdate']) . " + {$app_deadline} days"); 
+      $aucp_mod_date = date("d.m.Y", date("d.m.Y", $data['regdate']) . " + {$app_deadline} days");
       if ($mybb->settings['application_ucp_extend'] > 0) {
         //wie oft wurde verlängert
         $extend_cnt = $db->fetch_field($db->simple_select("users", "aucp_extend", "uid = {$user['uid']}"), "aucp_extend");
@@ -3018,6 +3048,25 @@ function application_ucp_indexalert()
     eval("\$application_ucp_index = \"" . $templates->get("application_ucp_index") . "\";");
   }
 }
+/**
+ * 
+ * make fields of current user global showable 
+ * 
+ */
+
+$plugins->add_hook("global_start", "application_ucp_global");
+function application_ucp_global()
+{
+
+  global $db, $mybb;
+  //wir bauen unser querie um die infos von dem user zu kriegen, der online ist. 
+  $ucp_data = array();
+  $getinfos = $db->write_query("SELECT uf.*, fieldname FROM `" . TABLE_PREFIX . "application_ucp_userfields` uf, " . TABLE_PREFIX . "application_ucp_fields f WHERE uf.fieldid = f.id AND uid = {$mybb->user['uid']} AND f.active = 1");
+  while ($data = $db->fetch_array($getinfos)) {
+    $ucp_data[$data['fieldname']] = $data['value'];
+  }
+}
+
 
 /***
  * 
@@ -3025,12 +3074,13 @@ function application_ucp_indexalert()
  *
  */
 
- /**
+/**
  * ****
  * Helper Function for building SQL String. 
  * ****
  */
-function application_ucp_buildsql() {
+function application_ucp_buildsql()
+{
   global $db, $mybb;
   $selectstring = "LEFT JOIN (select um.uid as auid, ";
   $getfields = $db->simple_select("application_ucp_fields", "*", "searchable = 1 and active = 1");
@@ -3039,7 +3089,7 @@ function application_ucp_buildsql() {
     $selectstring .= " max(case when um.fieldid ='{$searchfield['id']}' then um.value end) AS '{$searchfield['fieldname']}',";
   }
   $selectstring = substr($selectstring, 0, -1);
-  $selectstring .= " from `".TABLE_PREFIX."application_ucp_userfields` as um group by uid) as fields ON auid = u.uid";
+  $selectstring .= " from `" . TABLE_PREFIX . "application_ucp_userfields` as um group by uid) as fields ON auid = u.uid";
   return $selectstring;
 }
 
@@ -3138,7 +3188,12 @@ function application_ucp_build_view($uid, $location, $kind)
       // Value: {$application['value_vorname']}
       $arraylabel = "value_{$field['fieldname']}";
       $array[$arraylabel] = $parser->parse_message($fieldvalue, $parser_options);
+
+      // label as key, value as value, needed for pdf: {$application['pdf_Vorname']}
+      $arraylabel = "pdf_{$field['label']}";
+      $array[$arraylabel] = $parser->parse_message($fieldvalue, $parser_options);
     }
+
     return $array;
   }
 }
