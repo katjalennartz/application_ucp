@@ -4,7 +4,7 @@ $l['application_ucp_info_name'] = 'Bewerbung im UCP von Risuena';
 $l['application_ucp_info_descr'] = 'Möglichkeit im UCP einen eigenen Ausfüllbereich für Steckbriefe/Charakterinfos zu haben';
 
 
-$l['application_ucp_permission'] = 'Steckbrief Benachrichtigungen';
+$l['application_ucp_permission'] = 'Darf Setckbrieffelder erstellen/verwalten?';
 $l['application_ucp_name'] = 'Steckbrief im UCP';
 $l['application_ucp_menu'] = 'Steckbrief Einstellungen';
 
@@ -27,7 +27,7 @@ $l['application_ucp_manageusers_all'] = 'Übersicht aller User und die Möglichk
 
 $l['application_ucp_manageusers_manage'] = 'Verwalten';
 $l['application_ucp_manageusers_application'] = 'Steckbrief verwalten';
-
+$l['application_ucp_manageusers_profile'] = 'Profil ansehen';
 
 $l['application_ucp_edituser'] = 'Steckbrief bearbeiten.';
 
