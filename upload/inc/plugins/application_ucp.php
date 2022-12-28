@@ -1813,15 +1813,18 @@ function application_ucp_usercp()
       $application_ucp_js .= "
         $('#" . $type['fieldname'] . "').hide();
         $('#label_" . $type['fieldname'] . "').hide();  
+        $('#descr_" . $type['fieldname'] . "').hide(); 
         if($('#" . $type['dependency'] . "').val() == '" . $type['dependency_value'] . "') {
           $('#hideinfo_" . $type['fieldname'] . "').val('true');
           $('#" . $type['fieldname'] . "').show(); 
           $('#label_{$type['fieldname']}').show(); 
+          $('#descr_" . $type['fieldname'] . "').show(); 
         }
         if($('#" . $type['dependency'] . ":checked').val() == '" . $type['dependency_value'] . "') {
           $('#hideinfo_" . $type['fieldname'] . "').val('true');
           $('#" . $type['fieldname'] . "').show(); 
           $('#label_{$type['fieldname']}').show(); 
+          $('#descr_" . $type['fieldname'] . "').show(); 
         }
         $('#" . $type['dependency'] . "').change(function(){
           var inputtyp = $('#" . $type['dependency'] . ":checked').attr('type');
@@ -1835,6 +1838,7 @@ function application_ucp_usercp()
                 $('#hideinfo_" . $type['fieldname'] . "').val('true');
                 $('#" . $type['fieldname'] . "').show(); 
                 $('#label_{$type['fieldname']}').show(); 
+                $('#descr_" . $type['fieldname'] . "').show(); 
                 // if(document.getElementById('label_{$type['fieldname']}').textContent.includes('*')) {
                   // $('#" . $type['fieldname'] . "').addAttr('required');
                 // }
@@ -1842,6 +1846,7 @@ function application_ucp_usercp()
                 $('#hideinfo_" . $type['fieldname'] . "').val('false');
                 $('#" . $type['fieldname'] . "').hide(); 
                 $('#label_" . $type['fieldname'] . "').hide(); 
+                $('#descr_" . $type['fieldname'] . "').hide(); 
                 // $('#" . $type['fieldname'] . "').removeAttr('required');
             } 
         });
@@ -1852,7 +1857,7 @@ function application_ucp_usercp()
     }
     //was für einen feldtyp haben wir
     $typ = $type['fieldtyp'];
-
+    $fields .= "<div class=\"applucp-con__item\">";
     //Felder bauen
     //Das Feld ist initial versteckt, das brauchen wir um vorm speichern zu prüfen ob der inhalt gespeichert werden soll
     if ($hide == true) {
@@ -1860,7 +1865,7 @@ function application_ucp_usercp()
     }
     //Beschreibung falls vorhanden
     if ($type['fielddescr'] != "") {
-      $fielddescr = "<span class=\"descr_{$type['fieldname']}\">{$type['fielddescr']}</span>";
+      $fielddescr = "<span class=\"descr_{$type['fieldname']}\" id=\"descr_{$type['fieldname']}\">{$type['fielddescr']}</span>";
     } else {
       $fielddescr = "";
     }
@@ -1979,7 +1984,9 @@ function application_ucp_usercp()
         ";
       }
     }
+    $fields .= "</div>";
   }
+
   //ende Javascript
   $application_ucp_js .= "});</script>";
 
@@ -2751,7 +2758,7 @@ function application_ucp_misc()
               <p style="padding:5px;"> ' . $key . ': </p> 
             </td>
             <td>
-            <p style="padding:5px;"> '. $value . '</p>
+            <p style="padding:5px;"> ' . $value . '</p>
               </td>
               </tr>';
           }
@@ -2799,7 +2806,7 @@ function application_ucp_misc()
 
       //Ausgabe der PDF
       //Variante 1: PDF direkt an den Benutzer senden:
-      $pdf->Output($user['username'].".pdf", 'I');
+      $pdf->Output($user['username'] . ".pdf", 'I');
 
       //Thanks to 
       // https://www.php-einfach.de/experte/php-codebeispiele/pdf-per-php-erstellen-pdf-rechnung/
@@ -3082,14 +3089,22 @@ function application_ucp_global()
 function application_ucp_buildsql()
 {
   global $db, $mybb;
-  $selectstring = "LEFT JOIN (select um.uid as auid, ";
+
+  $selectstring = "LEFT JOIN (select um.uid as auid,";
   $getfields = $db->simple_select("application_ucp_fields", "*", "searchable = 1 and active = 1");
+
   while ($searchfield = $db->fetch_array($getfields)) {
     //weiter im Querie, hier modeln wir unsere Felder ders users (apllication_ucp_fields taballe) zu einer Tabellenreihe um -> name der Spalte ist fieldname, wert wie gehabt value
     $selectstring .= " max(case when um.fieldid ='{$searchfield['id']}' then um.value end) AS '{$searchfield['fieldname']}',";
   }
+
   $selectstring = substr($selectstring, 0, -1);
   $selectstring .= " from `" . TABLE_PREFIX . "application_ucp_userfields` as um group by uid) as fields ON auid = u.uid";
+
+  //Kein durchsuchbares feld, wir müssen so mysql fehler abfangen.
+  if ($db->num_rows($getfields) == 0) {
+    $selectstring = "LEFT JOIN (select um.uid as auid from `" . TABLE_PREFIX . "application_ucp_userfields` as um group by uid) as fields ON auid = u.uid";
+  }
   return $selectstring;
 }
 
