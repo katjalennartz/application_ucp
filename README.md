@@ -2,6 +2,7 @@
 Das Plugin ermöglicht es, unabhängig von Profilfeldern, Felder für den Steckbrief anzulegen. Diese werden in einem gesonderten Bereich im UCP angezeigt und können hier bearbeitet werden. Das Mitglied kann den Steckbrief bearbeiten und speichern und schließlich als fertig markieren und einreichen. Es wird automatisch ein Thread in der Steckbriefarea erstellt.       
 
 **Ausfühlichere Erklärungen und Erweiterungen im Wiki!** 
+	
 https://github.com/katjalennartz/application_ucp/wiki
 
 
