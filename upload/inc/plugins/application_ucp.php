@@ -2353,7 +2353,7 @@ function application_ucp_showinprofile()
   //Export des Steckbriefes
   if ($mybb->settings['application_ucp_export'] && $mybb->user['uid'] != 0) {
     $exportbtn = "
-    <form action=\"misc.php?action=exp_app\" method=\"post\">
+    <form action=\"misc.php?action=exp_app\" method=\"post\" target=\"_blank\">
     <input type=\"hidden\" name=\"uid\" value=\"{$mybb->input['uid']}\" id=\"uid\" />
     <input type=\"submit\" name=\"exp_app\" value=\"" . $lang->application_ucp_export . "\" id=\"exp_app\" />
     </form>";
