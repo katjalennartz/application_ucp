@@ -109,7 +109,7 @@ function application_ucp_install()
   $setting_group = array(
     'name' => 'application_ucp',
     'title' => 'Steckbrief im UCP',
-    'description' => 'Allgemeine Einstellungen für die Steckbriefe im UCP?',
+    'description' => 'Allgemeine Einstellungen für die Steckbriefe im UCP.',
     'disporder' => 7, // The order your setting group will display
     'isdefault' => 0
   );
@@ -508,8 +508,10 @@ function application_ucp_install()
     }
     
     .applucp-con__item.applucp-buttons {
-        grid-column: 1 / -1;
-    }
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+  }
     
     /*Display Profil and Postbit */
     .aucp_fieldContainer {
