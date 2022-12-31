@@ -894,9 +894,10 @@ function application_ucp_admin_load()
       $page->output_footer();
       die();
     }
-    if ($mybb->get_input('action') == "update_order" && $mybb->request_method == "post") {
-
-      foreach ($mybb->get_input('sorting') as $id => $order) {
+    $action = $mybb->get_input('action');
+    if ($action == "update_order" && $mybb->request_method == "post") {
+      $sorting = $mybb->get_input('sorting', MyBB::INPUT_ARRAY);
+      foreach ($sorting as $id => $order) {
         $update_query = array(
           "sorting" => (int)$order
         );
@@ -1382,88 +1383,91 @@ function application_ucp_admin_load()
     if ($mybb->get_input('action') == "application_ucp_edit") {
       //hier wird das speichern des zu editierenden Feldes gemanaged
       //erst wieder Fehler abfangen
-      $fieldid = $mybb->get_input('fieldid');
-      if (empty($mybb->get_input('fieldname'))) {
-        $errors[] = $lang->application_ucp_err_name;
-      }
-      // Name darf keine Sonderzeichen enthalten
-      if (!preg_match("#^[a-zA-Z\-\_]+$#", $mybb->get_input('fieldname'))) {
-        $errors[] = $lang->application_ucp_err_name_sonder;
-      }
-      // Label muss ausgefüllt sein
-      if (empty($mybb->get_input('fieldlabel'))) {
-        $errors[] = $lang->application_ucp_err_label;
-      }
-      // Feldtyp muss ausgewählt sein
-      if (empty($mybb->get_input('fieldtyp'))) {
-        $errors[] = $lang->application_ucp_err_fieldtyp;
-      }
-      // Feldtyp muss ausgewählt sein
-      if (empty($mybb->get_input('fieldtyp'))) {
-        $errors[] = $lang->application_ucp_err_fieldtyp;
-      }
+      if ($mybb->request_method == "post") {
+        $fieldid = $mybb->get_input('fieldid');
+        if (empty($mybb->get_input('fieldname'))) {
+          $errors[] = $lang->application_ucp_err_name;
+        }
+        // Name darf keine Sonderzeichen enthalten
+        if (!preg_match("#^[a-zA-Z\-\_]+$#", $mybb->get_input('fieldname'))) {
+          $errors[] = $lang->application_ucp_err_name_sonder;
+        }
+        // Label muss ausgefüllt sein
+        if (empty($mybb->get_input('fieldlabel'))) {
+          $errors[] = $lang->application_ucp_err_label;
+        }
+        // Feldtyp muss ausgewählt sein
+        if (empty($mybb->get_input('fieldtyp'))) {
+          $errors[] = $lang->application_ucp_err_fieldtyp;
+        }
+        // Feldtyp muss ausgewählt sein
+        if (empty($mybb->get_input('fieldtyp'))) {
+          $errors[] = $lang->application_ucp_err_fieldtyp;
+        }
 
-      // fieldoptions muss bei folgenden ausgefüllt sein
-      if (
-        $mybb->get_input('fieldtyp') == "select" ||
-        $mybb->get_input('fieldtyp') == "select_multiple" ||
-        $mybb->get_input('fieldtyp') == "checkbox" ||
-        $mybb->get_input('fieldtyp') == "radio"
-      ) {
-        if (empty($mybb->get_input('fieldoptions'))) {
-          $errors[] = $lang->application_ucp_err_fieldoptions;
+        // fieldoptions muss bei folgenden ausgefüllt sein
+        if (
+          $mybb->get_input('fieldtyp') == "select" ||
+          $mybb->get_input('fieldtyp') == "select_multiple" ||
+          $mybb->get_input('fieldtyp') == "checkbox" ||
+          $mybb->get_input('fieldtyp') == "radio"
+        ) {
+          if (empty($mybb->get_input('fieldoptions'))) {
+            $errors[] = $lang->application_ucp_err_fieldoptions;
+          }
         }
-      }
-      // Feldtyp muss ausgewählt sein
-      if (empty($mybb->get_input('fieldtyp'))) {
-        $errors[] = $lang->application_ucp_err_fieldtyp;
-      }
+        // Feldtyp muss ausgewählt sein
+        if (empty($mybb->get_input('fieldtyp'))) {
+          $errors[] = $lang->application_ucp_err_fieldtyp;
+        }
 
-      // Wurde eine Abhängigkeit ausgewählt?
-      if ($mybb->get_input('dependency') != "none") {
-        //Abhängigkeitswert wurde leer gelasse
-        if (empty($mybb->get_input('dependency_value'))) {
-          $errors[] = $lang->application_ucp_err_dependency_value_empty;
+        // Wurde eine Abhängigkeit ausgewählt?
+        if ($mybb->get_input('dependency') != "none") {
+          //Abhängigkeitswert wurde leer gelasse
+          if (empty($mybb->get_input('dependency_value'))) {
+            $errors[] = $lang->application_ucp_err_dependency_value_empty;
+          }
+          //Falscher Abhängigkeitswert
+          //wir brauchen erst die options des Felds von dem es abhängig ist
+          $get_dep = $db->fetch_field($db->simple_select("application_ucp_fields", "options", "fieldname = '" . $mybb->get_input('dependency') . "'"), "options");
+          // wir prüfen ob die Options den angegebenen Wert enthält. 
+          $depinput = $mybb->get_input('dependency_value');
+          if (strpos($get_dep, $depinput) === false) {
+            //gibt keine Option mit diesem Wert
+            $errors[] = $lang->application_ucp_err_dependency_value_wrong;
+          }
         }
-        //Falscher Abhängigkeitswert
-        //wir brauchen erst die options des Felds von dem es abhängig ist
-        $get_dep = $db->fetch_field($db->simple_select("application_ucp_fields", "options", "fieldname = '" . $mybb->get_input('dependency') . "'"), "options");
-        // wir prüfen ob die Options den angegebenen Wert enthält. 
-        if (strpos($get_dep, $mybb->get_input('dependency_value')) === false) {
-          //gibt keine Option mit diesem Wert
-          $errors[] = $lang->application_ucp_err_dependency_value_wrong;
+        // dependency_value
+        // wenn es keine Fehler gibt, speichern
+        if (empty($errors)) {
+          $update = [
+            "fieldname" => $db->escape_string($mybb->get_input('fieldname')),
+            "fieldtyp" => $db->escape_string($mybb->get_input('fieldtyp')),
+            "label" => $db->escape_string($mybb->get_input('fieldlabel')),
+            "fielddescr" => $db->escape_string($mybb->get_input('fielddescr')),
+            "options" => $db->escape_string($mybb->get_input('fieldoptions')),
+            "editable" => intval($mybb->get_input('fieldeditable')),
+            "mandatory" => intval($mybb->get_input('fieldmandatory')),
+            "dependency" => $db->escape_string($mybb->get_input('dependency')),
+            "dependency_value" => $db->escape_string($mybb->get_input('dependency_value')),
+            "postbit" => intval($mybb->get_input('fieldpostbit')),
+            "profile" => intval($mybb->get_input('fieldprofile')),
+            "memberlist" => intval($mybb->get_input('fieldmember')),
+            "template" => $db->escape_string($mybb->get_input('fieldtemplate')),
+            "sorting" => intval($mybb->get_input('fieldsort')),
+            "allow_html" => intval($mybb->get_input('fieldhtml')),
+            "allow_mybb" => intval($mybb->get_input('fieldmybb')),
+            "allow_img" => intval($mybb->get_input('fieldimg')),
+            "allow_video" => intval($mybb->get_input('fieldvideo')),
+            "searchable" => intval($mybb->get_input('searchable')),
+            "suggestion" => intval($mybb->get_input('suggestion')),
+            "active" => intval($mybb->get_input('active')),
+          ];
+          $db->update_query("application_ucp_fields", $update, "id = {$fieldid}");
+          flash_message($lang->application_ucp_success, 'success');
+          admin_redirect("index.php?module=config-application_ucp");
+          die();
         }
-      }
-      // dependency_value
-      // wenn es keine Fehler gibt, speichern
-      if (empty($errors)) {
-        $update = [
-          "fieldname" => $db->escape_string($mybb->get_input('fieldname')),
-          "fieldtyp" => $db->escape_string($mybb->get_input('fieldtyp')),
-          "label" => $db->escape_string($mybb->get_input('fieldlabel')),
-          "fielddescr" => $db->escape_string($mybb->get_input('fielddescr')),
-          "options" => $db->escape_string($mybb->get_input('fieldoptions')),
-          "editable" => intval($mybb->get_input('fieldeditable')),
-          "mandatory" => intval($mybb->get_input('fieldmandatory')),
-          "dependency" => $db->escape_string($mybb->get_input('dependency')),
-          "dependency_value" => $db->escape_string($mybb->get_input('dependency_value')),
-          "postbit" => intval($mybb->get_input('fieldpostbit')),
-          "profile" => intval($mybb->get_input('fieldprofile')),
-          "memberlist" => intval($mybb->get_input('fieldmember')),
-          "template" => $db->escape_string($mybb->get_input('fieldtemplate')),
-          "sorting" => intval($mybb->get_input('fieldsort')),
-          "allow_html" => intval($mybb->get_input('fieldhtml')),
-          "allow_mybb" => intval($mybb->get_input('fieldmybb')),
-          "allow_img" => intval($mybb->get_input('fieldimg')),
-          "allow_video" => intval($mybb->get_input('fieldvideo')),
-          "searchable" => intval($mybb->get_input('searchable')),
-          "suggestion" => intval($mybb->get_input('suggestion')),
-          "active" => intval($mybb->get_input('active')),
-        ];
-        $db->update_query("application_ucp_fields", $update, "id = {$fieldid}");
-        flash_message($lang->application_ucp_success, 'success');
-        admin_redirect("index.php?module=config-application_ucp");
-        die();
       }
 
       //Das Formular erstellen
