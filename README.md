@@ -51,6 +51,21 @@ Um die Funktion nutzen zu können, dass die Mitgliederliste durchsuchbar ist, si
 * application_ucp_wobbutton
 * application_ucp_ucp_main
 * application_ucp_filtermemberlist
+* application_ucp_filtermemberlist_bit
+* application_ucp_filtermemberlist_selectbit
+* application_ucp_infos
+
+**Stylesheet**
+* application_ucp.css
+
+**Datenbank**
+neue Tabellen: 
+* mybb_application_ucp_fields (die angelegten Felder)
+* mybb_application_ucp_management (verwaltung für Steckbriefannahme)
+* mybb_application_ucp_userfields (die ausgefüllten Daten der User)
+
+eingefügte Spalten
+* mybb_users : aucp_extend und aucp_extenddate
 
 **eingefügte Variablen**
 * index: {$application_ucp_index} (anzeige alert)
