@@ -3134,7 +3134,7 @@ function application_ucp_indexalert()
             //Dein Steckbrief ist fertig korrigiert Zeit zur kontrolle bis
             $alertflag = 1;
             $profilelink = build_profile_link($mod['username'], $mod['uid']);
-            $frist = strtotime("+{$fristkorrektur} days", strtotime($mybb->user['modcorrection_time']));
+            $frist = strtotime("+{$fristkorrektur} days", strtotime($alert['modcorrection_time']));
             $deadline = date("d.m.Y", $frist);
             $lang->application_ucp_index_correction = $lang->sprintf($lang->application_ucp_index_correction, $profilelink, $deadline);
             $message = $lang->application_ucp_index_correction;
