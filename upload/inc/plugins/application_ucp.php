@@ -3067,15 +3067,17 @@ function application_ucp_do_reply()
 $plugins->add_hook('index_start', 'application_ucp_indexalert');
 function application_ucp_indexalert()
 {
-  global $templates, $db, $mybb, $application_ucp_index;
-  //settings holen
-  $extend_button = $addtext = "";
+  global $templates, $db, $mybb, $application_ucp_index, $lang;
+  $extend_button = $addtext = $profilelink = "";
+  //settings holen 
   $applicants = $mybb->settings['application_ucp_applicants'];
   $mods = $mybb->settings['application_ucp_stecki_mods'];
   $friststecki = $mybb->settings['application_ucp_applicationtime'];
   $fristkorrektur = $mybb->settings['application_ucp_correctiontime'];
   $application_ucp_index_bit = $application_ucp_index_modbit = "";
   $alertflag = 0;
+
+  $lang->load('application_ucp');
 
   //wer ist online
   $uid = $mybb->user['uid'];
@@ -3092,19 +3094,22 @@ function application_ucp_indexalert()
       $add_extend =  $frist;
       //extend button
       if ($mybb->settings['application_ucp_extend'] > 0) {
-        //wie oft wurde verlänger
+        //wie oft wurde verlängert
         $extend_cnt = $db->fetch_field($db->simple_select("users", "aucp_extend", "uid = {$mybb->user['uid']}"), "aucp_extend");
         if ($extend_cnt < $mybb->settings['application_ucp_extend_cnt']) {
-          $extend_button = "<a href=\"misc.php&action=ext_app\" class=\"aucp extbtn\">Verlängern</a>";
+          $extend_button = "<a href=\"misc.php&action=ext_app\" class=\"aucp extbtn\">{$lang->application_ucp_extbtn}</a>";
         }
         if ($extend_cnt > 0) {
           $to_add = $mybb->settings['application_ucp_extend'] * $extend_cnt;
           $add_extend = strtotime("+{$to_add} days", $frist);
-          $addtext = " Du hast {$extend_cnt} Mal verlängert.";
+          $lang->application_ucp_index_extinfo = $lang->sprintf($lang->application_ucp_index_extinfo, $extend_cnt);
+
+          $addtext = $lang->application_ucp_index_extinfo;
         }
       }
       $deadline = date("d.m.Y", $add_extend);
-      $message = "Du hast noch bis zum {$deadline} Zeit deinen Steckbrief zu vervollständigen.{$addtext}";
+      $lang->application_ucp_index_extinfo_deadline = $lang->sprintf($lang->application_ucp_index_extinfo_deadline, $deadline, $addtext);
+      $message = $lang->application_ucp_index_extinfo_deadline;
       eval("\$application_ucp_index_bit .= \"" . $templates->get("application_ucp_index_bit") . "\";");
     } else {
       //Steckbrief wurde eingereicht
@@ -3112,7 +3117,7 @@ function application_ucp_indexalert()
         // Noch kein verantwortlicher Moderator
         if ($alert['uid_mod'] == "0") {
           $alertflag = 1;
-          $message = "Dein Steckbrief wurde noch von keinem Moderator übernommen.";
+          $message = $lang->application_ucp_index_nomod;
           eval("\$application_ucp_index_bit .= \"" . $templates->get("application_ucp_index_bit") . "\";");
         } else {
           //Moderator hat übernommen
@@ -3121,15 +3126,18 @@ function application_ucp_indexalert()
           if (strtotime($alert['modcorrection_time']) <= strtotime($alert['usercorrection_time'])) {
             //Info: XY hat deinen Steckbrief übernommen
             $alertflag = 1;
-            $message = "Dein Steckbrief wurde von " . build_profile_link($mod['username'], $mod['uid']) . " übernommen.";
+            $profilelink = build_profile_link($mod['username'], $mod['uid']);
+            $lang->application_ucp_index_token = $lang->sprintf($lang->application_ucp_index_token, $profilelink);
+            $message = $lang->application_ucp_index_token;
             eval("\$application_ucp_index_bit .= \"" . $templates->get("application_ucp_index_bit") . "\";");
           } elseif (strtotime($alert['modcorrection_time']) > strtotime($alert['usercorrection_time'])) {
             //Dein Steckbrief ist fertig korrigiert Zeit zur kontrolle bis
             $alertflag = 1;
+            $profilelink = build_profile_link($mod['username'], $mod['uid']);
             $frist = strtotime("+{$fristkorrektur} days", strtotime($mybb->user['modcorrection_time']));
             $deadline = date("d.m.Y", $frist);
-            $message = "Dein Steckbrief wurde von " . build_profile_link($mod['username'], $mod['uid']) . " korrigiert. <br/> 
-            Du hast für die Korrektur Zeit bis zum {$deadline}";
+            $lang->application_ucp_index_correction = $lang->sprintf($lang->application_ucp_index_correction, $profilelink, $deadline);
+            $message = $lang->application_ucp_index_correction;
             eval("\$application_ucp_index_bit .= \"" . $templates->get("application_ucp_index_bit") . "\";");
           }
         }
@@ -3147,8 +3155,8 @@ function application_ucp_indexalert()
         //Noch kein Mod zugeteilt
         if ($alert['uid_mod'] == "0") {
           $alertflag = 1;
-          $message = "{$aboutuserlink} ist mit dem Steckbrief fertig<br />
-	        <a href=\"misc.php?action=take_application&uid={$alert['uid']}\">Korrektur übernehmen</a>";
+          $lang->application_ucp_index_mod_steckialert = $lang->sprintf($lang->application_ucp_index_mod_steckialert, $aboutuserlink, $alert['uid']);
+          $message = $lang->application_ucp_index_mod_steckialert;
 
           eval("\$application_ucp_index_bit .= \"" . $templates->get("application_ucp_index_bit") . "\";");
         } else {
@@ -3160,12 +3168,12 @@ function application_ucp_indexalert()
     eval("\$application_ucp_index = \"" . $templates->get("application_ucp_index") . "\";");
   }
 }
+
 /**
  * 
  * make fields of current user global showable 
  * 
  */
-
 $plugins->add_hook("global_start", "application_ucp_global");
 function application_ucp_global()
 {
