@@ -20,7 +20,7 @@ $l['application_ucp_temps_profilelink'] = 'Link zum Profil';
 $l['application_ucp_temps_responsible'] = 'Verantwortlicher angefordert?';
 $l['application_ucp_temps_correctdate'] = 'eingereicht/korrigiert am';
 
-
+//UCP
 $l['application_ucp_usernav'] = 'Steckbrief';
 $l['application_ucp_fillapplication'] = 'Steckbrief ausfüllen';
 $l['application_ucp_mandatory'] = '*';
@@ -32,26 +32,29 @@ $l['application_ucp_save'] = 'Speichern';
 $l['application_ucp_readybtn'] = 'Speichern & zur Kontrolle';
 $l['application_ucp_saveerror'] = 'Du kannst deinen Steckbrief nicht einreichen, ehe nicht alle Pflichtfelder ausgefuellt sind. Wenn du neue betroffene Mitglieder eingetragen hattest, musst du diese vor dem Speichern neu eintragen.';
 $l['application_ucp_export'] = 'Steckbrief exportieren';
+$l['application_ucp_infoheader'] = 'Du bist seit dem {1} registriert. Du hast {2} verlängert und Zeit bis zum {3}.';
+$l['application_ucp_correction'] = 'Dein Steckbrief wurde eingereicht.';
 
+//INDEX
+$l['application_ucp_index_extinfo'] = "Du hast {1} Mal verlängert.";
+$l['application_ucp_index_extinfo_deadline'] = "Du hast noch bis zum {1} Zeit deinen Steckbrief zu vervollständigen.{2}";
+$l['application_ucp_index_nomod'] = "Dein Steckbrief wurde noch von keinem Moderator übernommen.";
+$l['application_ucp_index_token'] = "Dein Steckbrief wurde von {1} übernommen.";
+$l['application_ucp_index_correction'] = "Dein Steckbrief wurde von {1} korrigiert.<br/> Du hast für die Korrektur Zeit bis zum {2}.";
+$l['application_ucp_index_mod_steckialert'] =  "{1} ist mit dem Steckbrief fertig.<br /> <a href=\"misc.php?action=take_application&uid={2}\">Korrektur übernehmen</a>";
+
+//WOB - Thread
 $l['application_ucp_thread_wantedurltitle'] = "Charakter ist ein Gesuch";
-
 $l['application_ucp_wobgroups'] = 'Primäre Benutzergruppe *';
 $l['application_ucp_wobgroups2'] = 'Sekundäre Benutzergruppe';
 $l['application_ucp_nonewobgroups2'] = 'Keine sekundäre Gruppe';
 
 $l['application_ucp_wobbtn'] = 'WOB';
-
 $l['application_ucp_affected_label'] = 'Betroffene Charaktere:';
+
 
 //My Alert
 $l['myalerts_setting_application_ucp_affected'] = 'Steckbriefe: Benachrichtigung wenn dich ein Steckbrief betrifft.';
 $l['application_ucp_affected'] = '{1} hat einen Steckbrief gepostet der dich betrifft. Bitte gib dein Okay.';
-
-// $l['application_ucp_permission'] = 'Steckbrief Benachrichtigungen';
-// $l['application_ucp_name'] = 'Steckbrief im UCP';
-// $l['application_ucp_menu'] = 'Steckbrief Einstellungen';
-// $l['application_ucp_overview'] = 'Steckbrieffelder Übersicht';
-// $l['application_ucp_createquesttype'] = 'Steckbrieffeld erstellen';
-
 
 ?>
