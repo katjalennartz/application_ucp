@@ -1028,13 +1028,13 @@ function application_ucp_admin_load()
       );
       //name des felds
       $form_container->output_row(
-        $lang->application_ucp_add_name." <em>*</em>",
+        $lang->application_ucp_add_name . " <em>*</em>",
         $lang->application_ucp_add_name_descr,
         $form->generate_text_box('fieldname', $mybb->get_input('fieldname'))
       );
       //beschreibung/anzeige des Felds
       $form_container->output_row(
-        $lang->application_ucp_add_fieldlabel." <em>*</em>",
+        $lang->application_ucp_add_fieldlabel . " <em>*</em>",
         $lang->application_ucp_add_fieldlabel_descr,
         $form->generate_text_box('fieldlabel', $mybb->get_input('fieldlabel'))
       );
@@ -1079,7 +1079,7 @@ function application_ucp_admin_load()
       $form_container->output_row(
         $lang->application_ucp_add_fielddependency,
         $lang->application_ucp_add_fielddependency_descr,
-        $form->generate_select_box('dependency', $select_dep,$mybb->get_input('dependency'), array("id" => "sel_dep"))
+        $form->generate_select_box('dependency', $select_dep, $mybb->get_input('dependency'), array("id" => "sel_dep"))
       );
       //von welchem wert ist die Abhängigkeit abhängig?
       $form_container->output_row(
@@ -3198,6 +3198,27 @@ function application_ucp_global()
  * Hilfsfunktionen
  *
  */
+/**
+ * Helperfunction for check if dep is right
+ * 
+ */
+function application_ucp_checkdep($dep, $deptestvalue, $uid)
+{
+  global $db, $mybb;
+  $depflag = true;
+  if ($dep != "none") {
+    $depid = $db->fetch_field($db->simple_select("application_ucp_fields", "id", "fieldname = '{$dep}'"), "id");
+    $depvalue = $db->fetch_field($db->simple_select("application_ucp_userfields", "value", "fieldid = {$depid} and uid = {$uid}"), "value");
+    if ($depvalue == $deptestvalue) {
+      $depflag = true;
+    } else {
+      //wenn nicht, setzen wir die flag auf false, das feld soll nicht angezeigt werden.
+      $depflag = false;
+    }
+  }
+  return $depflag;
+}
+
 
 /**
  * ****
@@ -3242,7 +3263,8 @@ function application_ucp_build_view($uid, $location, $kind)
   global $db, $mybb;
   require_once MYBB_ROOT . "inc/class_parser.php";
   $parser = new postParser;
-
+  //wir gehen davon aus, das feld ist erst einmal von nichts abhängig, deswegen setzen wir die flag auf true
+  $depflag = true;
   //soll als plan html ausgegeben werden - wir bauen direk das markup
   if ($kind == "html") {
     //äußerer Container
@@ -3257,6 +3279,8 @@ function application_ucp_build_view($uid, $location, $kind)
         AND fieldid > 0 AND active = 1");
     //Felder durchgehen
     while ($field = $db->fetch_array($fieldquery)) {
+      //erst testen wir die abhängigkeit, das feld hat eine, also schauen wir ob die bedingung erfüllt ist
+      $depflag = application_ucp_checkdep($field['dependency'], $field['dependency_value'], $uid);
       //parser options
       $parser_options = array(
         "allow_html" => $field['allow_html'],
@@ -3274,10 +3298,12 @@ function application_ucp_build_view($uid, $location, $kind)
         $fieldvalue = $field['value'];
       }
       //innerer container mit werten und label
-      $buildhtml .= "<div class=\"aucp_fieldContainer__item\"><div class=\"aucp_fieldContainer__field label\">{$field['label']}:</div>
+      if ($depflag) {
+        $buildhtml .= "<div class=\"aucp_fieldContainer__item\"><div class=\"aucp_fieldContainer__field label\">{$field['label']}:</div>
     <div class=\"aucp_fieldContainer__field field {$field['fieldname}']}\">" . $parser->parse_message($fieldvalue, $parser_options) . "</div>
     </div>
     ";
+      }
     }
     //ende äußerer container
     $buildhtml .= "</div>";
@@ -3297,36 +3323,40 @@ function application_ucp_build_view($uid, $location, $kind)
       AND fieldid > 0");
     //durchgehen
     while ($field = $db->fetch_array($fieldquery)) {
-      $parser_options = array(
-        "allow_html" => $field['allow_html'],
-        "allow_mycode" => $field['allow_mybb'],
-        "allow_smilies" => 0,
-        "allow_imgcode" => $field['allow_img'],
-        "allow_videocode" => $field['allow_video']
-      );
-      if ($field['fieldtyp'] == "date") {
-        $fieldvalue = date("d.m.Y", strtotime($field['value']));
-      } else {
-        $fieldvalue = $field['value'];
+      //erst testen wir die abhängigkeit, das feld hat eine, also schauen wir ob die bedingung erfüllt ist
+      $depflag = application_ucp_checkdep($field['dependency'], $field['dependency_value'], $uid);
+
+      if ($depflag) {
+        $parser_options = array(
+          "allow_html" => $field['allow_html'],
+          "allow_mycode" => $field['allow_mybb'],
+          "allow_smilies" => 0,
+          "allow_imgcode" => $field['allow_img'],
+          "allow_videocode" => $field['allow_video']
+        );
+        if ($field['fieldtyp'] == "date") {
+          $fieldvalue = date("d.m.Y", strtotime($field['value']));
+        } else {
+          $fieldvalue = $field['value'];
+        }
+        // Wir bauen unsere Variablen zusammen
+        //   Label & Value: {$application['labelvalue_vorname']}
+        $arrayfieldlabelvalue = "labelvalue_{$field['fieldname']}";
+        $array[$arrayfieldlabelvalue] = $field['label'] . ": " . $parser->parse_message($fieldvalue, $parser_options);
+
+        // Label: {$application['label_vorname']}
+        $arraylabel = "label_{$field['fieldname']}";
+        $array[$arraylabel] = $field['label'];
+
+        // Value: {$application['value_vorname']}
+        $arraylabel = "value_{$field['fieldname']}";
+        $array[$arraylabel] = $parser->parse_message($fieldvalue, $parser_options);
+
+        // label as key, value as value, needed for pdf: {$application['pdf_Vorname']}
+        $arraylabel = "pdf_{$field['label']}";
+        $array[$arraylabel] = $parser->parse_message($fieldvalue, $parser_options);
       }
-      // Wir bauen unsere Variablen zusammen
-      //   Label & Value: {$application['labelvalue_vorname']}
-      $arrayfieldlabelvalue = "labelvalue_{$field['fieldname']}";
-      $array[$arrayfieldlabelvalue] = $field['label'] . ": " . $parser->parse_message($fieldvalue, $parser_options);
-
-      // Label: {$application['label_vorname']}
-      $arraylabel = "label_{$field['fieldname']}";
-      $array[$arraylabel] = $field['label'];
-
-      // Value: {$application['value_vorname']}
-      $arraylabel = "value_{$field['fieldname']}";
-      $array[$arraylabel] = $parser->parse_message($fieldvalue, $parser_options);
-
-      // label as key, value as value, needed for pdf: {$application['pdf_Vorname']}
-      $arraylabel = "pdf_{$field['label']}";
-      $array[$arraylabel] = $parser->parse_message($fieldvalue, $parser_options);
     }
-
     return $array;
   }
 }
