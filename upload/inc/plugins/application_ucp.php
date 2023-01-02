@@ -907,14 +907,15 @@ function application_ucp_admin_load()
     }
 
     //Hier werden jetzt die Felder im ACP erstellt
-    if ($mybb->get_input('action') == "application_ucp_add") {
+    if ($mybb->input['action'] == "application_ucp_add") {
       //einfügen in der DB
       if ($mybb->request_method == "post") {
         // als erstes prüfen ob alle Felder ausgefüllt sind und Fehler abfangen
         // Name muss ausgefüllt sein
-        if (empty($mybb->get_input('fieldname'))) {
+        if (empty($mybb->input['fieldname'])) {
           $errors[] = $lang->application_ucp_err_name;
         }
+        //TODO ident existiert schon? 
         // Name darf keine Sonderzeichen enthalten
         if (!preg_match("#^[a-zA-Z\-\_]+$#", $mybb->get_input('fieldname'))) {
           $errors[] = $lang->application_ucp_err_name_sonder;
@@ -989,9 +990,12 @@ function application_ucp_admin_load()
             "suggestion" => intval($mybb->get_input('suggestion')),
           ];
           $db->insert_query("application_ucp_fields", $insert);
+          $mybb->input['module'] = "application_ucp";
+          $mybb->input['action'] = $lang->application_ucp_success;
+          log_admin_action(htmlspecialchars_uni($mybb->input['fieldname']));
+
           flash_message($lang->application_ucp_success, 'success');
           admin_redirect("index.php?module=config-application_ucp");
-          die();
         }
       }
 
@@ -1005,6 +1009,11 @@ function application_ucp_admin_load()
       if (isset($errors)) {
         $page->output_inline_error($errors);
       }
+
+      //Formular bauen 
+      $form = new Form("index.php?module=config-application_ucp&amp;action=application_ucp_add", "post", "", 1);
+      $form_container = new FormContainer($lang->application_ucp_formname);
+
       // Welche Auswahlmöglichkeiten an Feldtypen
       $select = array(
         "text" => "Textfeld",
@@ -1017,51 +1026,47 @@ function application_ucp_admin_load()
         "datetime-local" => "Datum und Uhrzeit",
         "url" => "URL"
       );
-
-      //Formular bauen 
-      $form = new Form("index.php?module=config-application_ucp&amp;action=application_ucp_add", "post", "", 1);
-      $form_container = new FormContainer($lang->application_ucp_formname);
       //name des felds
       $form_container->output_row(
-        $lang->application_ucp_add_name,
+        $lang->application_ucp_add_name." <em>*</em>",
         $lang->application_ucp_add_name_descr,
-        $form->generate_text_box('fieldname', "")
+        $form->generate_text_box('fieldname', $mybb->get_input('fieldname'))
       );
       //beschreibung/anzeige des Felds
       $form_container->output_row(
-        $lang->application_ucp_add_fieldlabel,
+        $lang->application_ucp_add_fieldlabel." <em>*</em>",
         $lang->application_ucp_add_fieldlabel_descr,
-        $form->generate_text_box('fieldlabel', "")
+        $form->generate_text_box('fieldlabel', $mybb->get_input('fieldlabel'))
       );
       //Typ des Felds
       $form_container->output_row(
         $lang->application_ucp_add_fieldtyp,
         $lang->application_ucp_add_fieldtyp_descr,
-        $form->generate_select_box('fieldtyp', $select, array(), array('id' => 'fieldtype'))
+        $form->generate_select_box('fieldtyp', $select, $mybb->get_input('fieldtyp'), array('id' => 'fieldtype'))
       );
       //Feldbeschreibung
       $form_container->output_row(
         $lang->application_ucp_add_descr,
         $lang->application_ucp_add_descr_descr,
-        $form->generate_text_box('fielddescr', "")
+        $form->generate_text_box('fielddescr', $mybb->get_input('fielddescr'))
       );
       //Auswahloptionen 
       $form_container->output_row(
         $lang->application_ucp_add_fieldoptions,
         $lang->application_ucp_add_fieldoptions_descr,
-        $form->generate_text_box('fieldoptions', "")
+        $form->generate_text_box('fieldoptions', $mybb->get_input('fieldoptions'))
       );
       //pflichtfeld
       $form_container->output_row(
         $lang->application_ucp_add_fieldmandatory,
         $lang->application_ucp_add_fieldmandatory_descr,
-        $form->generate_yes_no_radio('fieldmandatory', "1")
+        $form->generate_yes_no_radio('fieldmandatory', $mybb->get_input('fieldmandatory'))
       );
       //editierbar
       $form_container->output_row(
         $lang->application_ucp_add_fieldeditable,
         $lang->application_ucp_add_fieldeditable_descr,
-        $form->generate_yes_no_radio('fieldeditable', "0")
+        $form->generate_yes_no_radio('fieldeditable', $mybb->get_input('fieldeditable'))
       );
       //Abhängigkeit? 
       $select_dep_query = $db->simple_select("application_ucp_fields", "fieldname, label", "");
@@ -1074,85 +1079,85 @@ function application_ucp_admin_load()
       $form_container->output_row(
         $lang->application_ucp_add_fielddependency,
         $lang->application_ucp_add_fielddependency_descr,
-        $form->generate_select_box('dependency', $select_dep, array("id" => "sel_dep"))
+        $form->generate_select_box('dependency', $select_dep,$mybb->get_input('dependency'), array("id" => "sel_dep"))
       );
       //von welchem wert ist die Abhängigkeit abhängig?
       $form_container->output_row(
         $lang->application_ucp_add_fielddependencyval,
         $lang->application_ucp_add_fielddependencyval_descr,
-        $form->generate_text_box('dependency_value', "")
+        $form->generate_text_box('dependency_value', $mybb->get_input('dependency_value'))
       );
       //Anzeige im postbit?
       $form_container->output_row(
         $lang->application_ucp_add_fieldpostbit,
         $lang->application_ucp_add_fieldpostbit_descr,
-        $form->generate_yes_no_radio('fieldpostbit', "1")
+        $form->generate_yes_no_radio('fieldpostbit', $mybb->get_input('fieldpostbit'))
       );
       //anzeige im profil
       $form_container->output_row(
         $lang->application_ucp_add_fieldprofile,
         $lang->application_ucp_add_fieldprofile_descr,
-        $form->generate_yes_no_radio('fieldprofile', "1")
+        $form->generate_yes_no_radio('fieldprofile', $mybb->get_input('fieldprofile'))
       );
       //anzeige in der Mitgliederliste
       $form_container->output_row(
         $lang->application_ucp_add_fieldmember,
         $lang->application_ucp_add_fieldmember_descr,
-        $form->generate_yes_no_radio('fieldmember', "1")
+        $form->generate_yes_no_radio('fieldmember', $mybb->get_input('fieldmember'))
       );
       //Vorlage im Feld? 
       $form_container->output_row(
         $lang->application_ucp_add_fieldtemplate,
         $lang->application_ucp_add_fieldtemplate_descr,
-        $form->generate_text_area('fieldtemplate', "")
+        $form->generate_text_area('fieldtemplate', $mybb->get_input('fieldtemplate'))
       );
       //html
       $form_container->output_row(
         $lang->application_ucp_add_fieldhtml,
         $lang->application_ucp_add_fieldhtml_descr,
-        $form->generate_yes_no_radio('fieldhtml', "0")
+        $form->generate_yes_no_radio('fieldhtml', $mybb->get_input('fieldhtml'))
       );
       //mybb code
       $form_container->output_row(
         $lang->application_ucp_add_fieldmybb,
         $lang->application_ucp_add_fieldmybb_descr,
-        $form->generate_yes_no_radio('fieldmybb', "0")
+        $form->generate_yes_no_radio('fieldmybb', $mybb->get_input('fieldmybb'))
       );
       // img
       $form_container->output_row(
         $lang->application_ucp_add_fieldimg,
         $lang->application_ucp_add_fieldimg_descr,
-        $form->generate_yes_no_radio('fieldimg', "0")
+        $form->generate_yes_no_radio('fieldimg', $mybb->get_input('fieldimg'))
       );
       // video
       $form_container->output_row(
         $lang->application_ucp_add_fieldvideo,
         $lang->application_ucp_add_fieldvideo_descr,
-        $form->generate_yes_no_radio('fieldvideo', "0")
+        $form->generate_yes_no_radio('fieldvideo', $mybb->get_input('fieldvideo'))
       );
       // In Mitgliederliste suchbar? 
       $form_container->output_row(
         $lang->application_ucp_add_searchable,
         $lang->application_ucp_add_searchable_descr,
-        $form->generate_yes_no_radio('searchable', "0")
+        $form->generate_yes_no_radio('searchable', $mybb->get_input('searchable'))
       );
       // In Mitgliederliste suchbar? 
       $form_container->output_row(
         $lang->application_ucp_add_suggestion,
         $lang->application_ucp_add_suggestion_descr,
-        $form->generate_yes_no_radio('suggestion', "0")
+        $form->generate_yes_no_radio('suggestion', $mybb->get_input('suggestion'))
       );
       // In Mitgliederliste suchbar? 
       $form_container->output_row(
         $lang->application_ucp_add_active,
         $lang->application_ucp_add_active_descr,
-        $form->generate_yes_no_radio('active', "0")
+        $form->generate_yes_no_radio('active', $mybb->get_input('active'))
       );
       //anzeige reihenfolge
       $form_container->output_row(
         $lang->application_ucp_add_fieldsort,
         $lang->application_ucp_add_fieldsort_descr,
-        $form->generate_numeric_field('fieldsort', "1")
+        $form->generate_numeric_field('fieldsort', $mybb->get_input('fieldsort'))
       );
 
       $form_container->end();
