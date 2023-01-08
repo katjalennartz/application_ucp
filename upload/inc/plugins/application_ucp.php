@@ -78,6 +78,8 @@ function application_ucp_install()
     `allow_video` int(1) NOT NULL DEFAULT 1,
     `searchable` int(1) NOT NULL DEFAULT 0,
     `suggestion` int(1) NOT NULL DEFAULT 0,
+    `guest` int(1) NOT NULL DEFAULT 1,
+    `guest_content` varchar(500) NOT NULL DEFAULT '',
     PRIMARY KEY (`id`)
 ) ENGINE=MyISAM CHARACTER SET utf8 COLLATE utf8_general_ci;");
 
@@ -748,13 +750,25 @@ function application_ucp_admin_load()
         $page->output_inline_error($errors);
       }
 
+      if (!$db->field_exists("guest", "application_ucp_fields")) {
+
+        $form_container = new FormContainer("Upgrade!");
+
+        $form_container->output_row('<font style="color: red;">
+        <b>UPGRADE</b> Du musst noch das Upgradescript ausführen 
+        um neue Felder (Gast, und alternativer Inhalt für Gäste) hinzuzufügen!<bR>
+        Es gibt auch neue Sprachvariablen, languages also auch hochladen ;)<br>
+         <a href="'.$mybb->settings['bburl'].'/update_fields.php" target="_blank">Jetzt ausführen</a></font><br/>
+        ', "", "", "", array("colspan" => "5"));
+        $form_container->end();
+ 
+      }
+
       //Hier erstellen wir jetzt eine Übersicht über unsere ganzen Felder
       //erst brauchen wir einen Container und ein Formular - für delete, die Sortierung etc.
       $form = new Form("index.php?module=config-application_ucp&amp;action=update_order", "post");
       $form_container = new FormContainer($lang->application_ucp_overview);
-      $form_container->output_row_header($lang->application_ucp_overview_appl);
-      $form_container->output_row_header($lang->application_ucp_overview_sort);
-      $form_container->output_row_header("<div style=\"text-align: center;\">" . $lang->application_ucp_overview_opt . "</div>");
+
 
       //Alle existierenden Felder bekommen
       $get_fields = $db->simple_select("application_ucp_fields", "*", "", ["order_by" => 'sorting']);
@@ -894,7 +908,18 @@ function application_ucp_admin_load()
       $page->output_footer();
       die();
     }
+
+
     $action = $mybb->get_input('action');
+    // if ($action == "upgrade" && $mybb->request_method == "post") {
+    //          // if ($mybb->get_input('action') == 'upgrade') {
+    //       // if (!$db->field_exists("guest", "application_ucp_fields")) {
+    //       //   echo "hau";
+    //       // }
+    //       // if (!$db->field_exists("guest", "application_ucp_fields")) {
+    //       // }
+    // }
+
     if ($action == "update_order" && $mybb->request_method == "post") {
       $sorting = $mybb->get_input('sorting', MyBB::INPUT_ARRAY);
       foreach ($sorting as $id => $order) {
@@ -967,6 +992,13 @@ function application_ucp_admin_load()
 
         // wenn es keine Fehler gibt, speichern
         if (empty($errors)) {
+
+          if ($mybb->get_input('guest') == '0') {
+            $guestcontent = $db->escape_string($mybb->get_input('guest_content'));
+          } else {
+            $guestcontent = "";
+          }
+
           $insert = [
             "fieldname" => $db->escape_string($mybb->get_input('fieldname')),
             "fieldtyp" => $db->escape_string($mybb->get_input('fieldtyp')),
@@ -988,6 +1020,8 @@ function application_ucp_admin_load()
             "allow_video" => intval($mybb->get_input('fieldvideo')),
             "searchable" => intval($mybb->get_input('searchable')),
             "suggestion" => intval($mybb->get_input('suggestion')),
+            "guest" => intval($mybb->get_input('guest')),
+            "guest_content" => $guestcontent,
           ];
           $db->insert_query("application_ucp_fields", $insert);
           $mybb->input['module'] = "application_ucp";
@@ -1152,6 +1186,18 @@ function application_ucp_admin_load()
         $lang->application_ucp_add_active,
         $lang->application_ucp_add_active_descr,
         $form->generate_yes_no_radio('active', $mybb->get_input('active'))
+      );
+      // Dürfen Gäste das Feld sehen? 
+      $form_container->output_row(
+        $lang->application_ucp_add_guest,
+        $lang->application_ucp_add_guest_descr,
+        $form->generate_yes_no_radio('guest', $mybb->get_input('guest'))
+      );
+      //optionaler Inhalt für Gäste?
+      $form_container->output_row(
+        $lang->application_ucp_add_guest_content,
+        $lang->application_ucp_add_guest_content_descr,
+        $form->generate_text_box('guest_content', $mybb->get_input('guest_content'))
       );
       //anzeige reihenfolge
       $form_container->output_row(
@@ -1445,6 +1491,13 @@ function application_ucp_admin_load()
         // dependency_value
         // wenn es keine Fehler gibt, speichern
         if (empty($errors)) {
+
+          if ($mybb->get_input('guest') == '0') {
+            $guestcontent = $db->escape_string($mybb->get_input('guest_content'));
+          } else {
+            $guestcontent = "";
+          }
+
           $update = [
             "fieldname" => $db->escape_string($mybb->get_input('fieldname')),
             "fieldtyp" => $db->escape_string($mybb->get_input('fieldtyp')),
@@ -1467,6 +1520,8 @@ function application_ucp_admin_load()
             "searchable" => intval($mybb->get_input('searchable')),
             "suggestion" => intval($mybb->get_input('suggestion')),
             "active" => intval($mybb->get_input('active')),
+            "guest" => intval($mybb->get_input('guest')),
+            "guest_content" => $guestcontent,
           ];
           $db->update_query("application_ucp_fields", $update, "id = {$fieldid}");
           flash_message($lang->application_ucp_success, 'success');
@@ -1622,6 +1677,16 @@ function application_ucp_admin_load()
         $lang->application_ucp_add_active,
         $lang->application_ucp_add_active_descr,
         $form->generate_yes_no_radio('active', $field_data['active'])
+      );
+      $form_container->output_row(
+        $lang->application_ucp_add_guest,
+        $lang->application_ucp_add_guest_descr,
+        $form->generate_yes_no_radio('guest', $field_data['guest'])
+      );
+      $form_container->output_row(
+        $lang->application_ucp_add_guest_content,
+        $lang->application_ucp_add_guest_content_descr,
+        $form->generate_text_box('guest_content', $field_data['guest_content'])
       );
       $form_container->output_row(
         $lang->application_ucp_add_fieldsort,
@@ -3260,11 +3325,12 @@ function application_ucp_buildsql()
 
 function application_ucp_build_view($uid, $location, $kind)
 {
-  global $db, $mybb;
+  global $db, $mybb, $theme;
   require_once MYBB_ROOT . "inc/class_parser.php";
   $parser = new postParser;
   //wir gehen davon aus, das feld ist erst einmal von nichts abhängig, deswegen setzen wir die flag auf true
   $depflag = true;
+  $thisuser = $mybb->user['uid'];
   //soll als plan html ausgegeben werden - wir bauen direk das markup
   if ($kind == "html") {
     //äußerer Container
@@ -3299,10 +3365,21 @@ function application_ucp_build_view($uid, $location, $kind)
       }
       //innerer container mit werten und label
       if ($depflag) {
-        $buildhtml .= "<div class=\"aucp_fieldContainer__item\"><div class=\"aucp_fieldContainer__field label\">{$field['label']}:</div>
+        //Gast und feld soll nicht für Gäste angezeigt werden
+        if ($thisuser == 0 && $field['guest'] == 0) {
+          //alternativer Inhalt
+          $fieldvalue = $field['guest_content'];
+          $fieldvalue = str_replace('$themepath', $theme['imgdir'], $fieldvalue);
+          $buildhtml .= "<div class=\"aucp_fieldContainer__item\"><div class=\"aucp_fieldContainer__field label\">{$field['label']}:</div>
+          <div class=\"aucp_fieldContainer__field field {$field['fieldname}']}\">" . $parser->parse_message($fieldvalue, $parser_options) . "</div>
+          </div>
+          ";
+        } else {
+          $buildhtml .= "<div class=\"aucp_fieldContainer__item\"><div class=\"aucp_fieldContainer__field label\">{$field['label']}:</div>
     <div class=\"aucp_fieldContainer__field field {$field['fieldname}']}\">" . $parser->parse_message($fieldvalue, $parser_options) . "</div>
     </div>
     ";
+        }
       }
     }
     //ende äußerer container
@@ -3338,6 +3415,11 @@ function application_ucp_build_view($uid, $location, $kind)
           $fieldvalue = date("d.m.Y", strtotime($field['value']));
         } else {
           $fieldvalue = $field['value'];
+        }
+        if ($thisuser == 0 && $field['guest'] == 0) {
+          //alternativer Inhalt
+          $fieldvalue = $field['guest_content'];
+          $fieldvalue = str_replace('$themepath', $theme['imgdir'], $fieldvalue);
         }
         // Wir bauen unsere Variablen zusammen
         //   Label & Value: {$application['labelvalue_vorname']}
