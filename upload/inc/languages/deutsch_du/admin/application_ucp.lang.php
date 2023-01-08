@@ -96,6 +96,14 @@ $l['application_ucp_add_searchable_descr'] = 'Soll in der Mitgliederliste nach d
 $l['application_ucp_add_suggestion'] = 'Suchvorschläge?';
 $l['application_ucp_add_suggestion_descr'] = 'Sollen Vorschläge für die Suche anhand von schon eingetragener Werte gemacht werden?';
 
+$l['application_ucp_add_guest'] = 'Gäste?';
+$l['application_ucp_add_guest_descr'] = 'Dürfen Gäste das Feld sehen?';
+
+$l['application_ucp_add_guest_content'] = 'alternativer Inhalt für Gäste';
+$l['application_ucp_add_guest_content_descr'] = 'Was sollen Gäste anstatt des eigentlichen sehen? Leer lassen wenn es nur ausgeblendet werden soll.
+Für den themeordner $themepath angeben also z.B. $themepath/default.png';
+
+
 $l['application_ucp_add_active'] = 'Aktiv?';
 $l['application_ucp_add_active_descr'] = 'Bei Nein: Die Daten der User werden nicht gelöscht, das Feld wird nur ausgeblendet, ist nicht mehr bearbeitbar und wird nirgends mehr angezeigt.';
 
