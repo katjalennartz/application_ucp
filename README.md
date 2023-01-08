@@ -6,7 +6,9 @@ Das Plugin ermöglicht es, unabhängig von Profilfeldern, Felder für den Steckb
 https://github.com/katjalennartz/application_ucp/wiki
 
 
-**version: 1.0** 
+**version: 1.0.1**  
+(last update 8.1.2023)		
+**->Update Script durchführen aus dem root verzeichnis, es gibt neue Felder in der Datenbank!** 
 
 **geplante Features:** Automatische Listen - evt. als Add On Plugin
 		
@@ -42,6 +44,7 @@ Um die Funktion nutzen zu können, dass die Mitgliederliste durchsuchbar ist, si
 * Antworttext WoB 
 * Antworttext WoB Inhalt
 * Sollen Felder durchsuchbar sein (Mitgliederliste)
+
 
 **Templates**
 * application_ucp_index
@@ -139,8 +142,13 @@ Je nach Einstellungen, die ihr getroffen habt, müsst ihr die Felder selbst einb
     * Sollen, wenn das Feld durchsuchbar ist, Vorschläge gemacht werden, mit Werten die von anderen Charakteren ausgefüllt sind.
 * **Reihenfolge:** 
     * Hier bestimmt ihr an welcher Stelle das Feld angezeigt werden soll (0 ganz oben).
+* **Gast**
+     * Dürfen Gäste das Feld sehen?
+* **Alternativer Inhalt für Gäste**
+     * Alternativer Inhalt für Gäste
 * **Aktiv?** 
-    * Hier stellt ihr ein, ob das Feld aktiv sein soll. Deaktiviert ihr es, wird es nicht mehr angezeigt, die DB Einträge werden aber anders als beim Löschen behalten     
+    * Hier stellt ihr ein, ob das Feld aktiv sein soll. Deaktiviert ihr es, wird es nicht mehr angezeigt, die DB Einträge werden aber anders als beim Löschen behalten   
+
 
 ***
 # **Globale Variablen.**   
