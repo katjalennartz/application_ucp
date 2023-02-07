@@ -664,7 +664,7 @@ function application_ucp_deactivate()
   find_replace_templatesets("postbit", "#" . preg_quote('{$post[\'aucp_fields\']}') . "#i", '');
   find_replace_templatesets("memberlist", "#" . preg_quote('<tr><td colspan="3">{$applicationfilter}</tr></td>') . "#i", '');
   find_replace_templatesets("memberlist", "#" . preg_quote('{$filterjs}') . "#i", '');
-  find_replace_templatesets("index", "#" . preg_quote('{$header}{$application_ucp_index}') . "#i", '');
+  find_replace_templatesets("index", "#" . preg_quote('{$application_ucp_index}') . "#i", '');
 
 
   //My alerts wieder löschen
