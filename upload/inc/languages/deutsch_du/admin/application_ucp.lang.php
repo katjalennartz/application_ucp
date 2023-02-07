@@ -66,7 +66,7 @@ $l['application_ucp_add_fielddependency'] = 'Abhängigkeit?';
 $l['application_ucp_add_fielddependency_descr'] = 'Ist das Feld nur sichtbar, wenn es von dem Wert eines anderen abhängig ist? Wenn ja, dieses hier auswählen.';
 
 $l['application_ucp_add_fielddependencyval'] = 'Abhängigkeitswert?';
-$l['application_ucp_add_fielddependencyval_descr'] = 'Von welcher auswählbaren Option soll das Feld abhängigkeit? Z.B "Hogwarts".<br/>Leer lassen wenn keine Abhängigkeit.<br/>
+$l['application_ucp_add_fielddependencyval_descr'] = 'Von welcher auswählbaren Option soll das Feld abhängigkeit? Z.B "Hogwarts".<br/> Bei mehreren mit Komma getrennt, aber <b>ohne</b> Leertaste angeben: Also "Ravenclaw,Hufflepuff".<br/> Leer lassen wenn keine Abhängigkeit.<br/>
  <b>Achtung:</b> genauso geschrieben, wie in den Auswahloptionen des Felds, welches bei Abhängigkeit gewählt ist!';
 
 $l['application_ucp_add_fieldpostbit'] = 'Anzeige Postbit?';
@@ -117,6 +117,8 @@ $l['application_ucp_save'] = 'Speichern';
 
 // Errors
 $l['application_ucp_err_name'] = 'Bitte einen Namen angeben.';
+$l['application_ucp_err_name_exists'] = 'Der Name existiert schon. Bitte eindeutigen Identifikator verwenden.';
+
 $l['application_ucp_err_name_sonder'] = 'Der Name darf keine Sonderzeichen oder Leertasten enthalten.';
 $l['application_ucp_err_label'] = 'Bitte ein Label angeben.';
 $l['application_ucp_err_fieldtyp'] = 'Bitte einen Feldtypen auswählen.';
