@@ -39,8 +39,6 @@ function application_ucp_info()
   );
 }
 
-$plugins->add_hook("usercp_start", "application_ucp_usercp");
-
 function application_ucp_is_installed()
 {
   global $db;
@@ -57,10 +55,10 @@ function application_ucp_install()
 
   $db->write_query("CREATE TABLE `" . TABLE_PREFIX . "application_ucp_fields` (
     `id` int(10) NOT NULL AUTO_INCREMENT,
-    `fieldtyp` varchar(100) NOT NULL,
-    `fieldname` varchar(100) NOT NULL,
-    `fielddescr` varchar(500) NOT NULL,
-    `label` varchar(100) NOT NULL,
+    `fieldtyp` varchar(100) NOT NULL DEFAULT '',
+    `fieldname` varchar(100) NOT NULL DEFAULT '',
+    `fielddescr` varchar(500) NOT NULL DEFAULT '',
+    `label` varchar(100) NOT NULL DEFAULT '',
     `options` varchar(500) NOT NULL DEFAULT '',
     `editable` int(1) NOT NULL DEFAULT 0,
     `mandatory` int(1) NOT NULL DEFAULT 1,
@@ -85,8 +83,8 @@ function application_ucp_install()
 
   $db->write_query("CREATE TABLE `" . TABLE_PREFIX . "application_ucp_userfields` (
   `id` int(10) NOT NULL AUTO_INCREMENT,
-  `uid` int(10) NOT NULL,
-  `value` varchar(10000) NOT NULL DEFAULT '',
+  `uid` int(10) NOT NULL DEFAULT 0,
+  `value` LONGTEXT CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
   `fieldid` int(10) NOT NULL,
   UNIQUE KEY `uid_fieldidid` (`uid`,`fieldid`),
   PRIMARY KEY (`id`)
@@ -94,19 +92,19 @@ function application_ucp_install()
 
   $db->write_query("CREATE TABLE `" . TABLE_PREFIX . "application_ucp_management` (
   `id` int(10) NOT NULL AUTO_INCREMENT,
-  `uid` int(10) NOT NULL,
-  `tid` int(10) NOT NULL,
+  `uid` int(10) NOT NULL DEFAULT 0,
+  `tid` int(10) NOT NULL DEFAULT 0,
   `uid_mod` int(10) NOT NULL DEFAULT 0,
   `submission_time` datetime NOT NULL DEFAULT NOW(),
-  `modcorrection_time` datetime,
-  `usercorrection_time` datetime,
+  `modcorrection_time` datetime NULL,
+  `usercorrection_time` datetime NULL,
   `correctioncnt` int(10) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM CHARACTER SET utf8 COLLATE utf8_general_ci;");
 
   //Verlängerung
   $db->add_column("users", "aucp_extend", "INT(10) NOT NULL DEFAULT 0");
-  $db->add_column("users", "aucp_extenddate", "DATE NOT NULL DEFAULT 0");
+  $db->add_column("users", "aucp_extenddate", "DATE NULL");
   // ALTER TABLE `mybb_users` ADD `aucp_extenddate` DATE NOT NULL AFTER `aucp_extend`;
 
   // Admin Einstellungen
@@ -758,10 +756,9 @@ function application_ucp_admin_load()
         <b>UPGRADE</b> Du musst noch das Upgradescript ausführen 
         um neue Felder (Gast, und alternativer Inhalt für Gäste) hinzuzufügen!<bR>
         Es gibt auch neue Sprachvariablen, languages also auch hochladen ;)<br>
-         <a href="'.$mybb->settings['bburl'].'/update_fields.php" target="_blank">Jetzt ausführen</a></font><br/>
+         <a href="' . $mybb->settings['bburl'] . '/update_fields.php" target="_blank">Jetzt ausführen</a></font><br/>
         ', "", "", "", array("colspan" => "5"));
         $form_container->end();
- 
       }
 
       //Hier erstellen wir jetzt eine Übersicht über unsere ganzen Felder
@@ -940,7 +937,11 @@ function application_ucp_admin_load()
         if (empty($mybb->input['fieldname'])) {
           $errors[] = $lang->application_ucp_err_name;
         }
-        //TODO ident existiert schon? 
+        //Name muss eindeutig sein
+        $testname = $db->simple_select("application_ucp_fields", "*", "fieldname = '{$mybb->get_input('fieldname')}'");
+        if ($db->num_rows($testname)) {
+          $errors[] = $lang->application_ucp_err_name_exists;
+        }
         // Name darf keine Sonderzeichen enthalten
         if (!preg_match("#^[a-zA-Z\-\_]+$#", $mybb->get_input('fieldname'))) {
           $errors[] = $lang->application_ucp_err_name_sonder;
@@ -982,12 +983,12 @@ function application_ucp_admin_load()
           }
           //Falscher Abhängigkeitswert
           //wir brauchen erst die options des Felds von dem es abhängig ist
-          $get_dep = $db->fetch_field($db->simple_select("application_ucp_fields", "options", "fieldname = '{$mybb->input['dependency']}'"), "options");
-          // wir prüfen ob die Options den angegebenen Wert enthält. 
-          if (strpos($get_dep, $mybb->get_input('dependency_value')) === false) {
-            //gibt keine Option mit diesem Wert
-            $errors[] = $lang->application_ucp_err_dependency_value_wrong;
-          }
+          // $get_dep = $db->fetch_field($db->simple_select("application_ucp_fields", "options", "fieldname = '{$mybb->input['dependency']}'"), "options");
+          // // wir prüfen ob die Options den angegebenen Wert enthält. 
+          // if (strpos($get_dep, $mybb->get_input('dependency_value')) === false) {
+          //   //gibt keine Option mit diesem Wert
+          //   $errors[] = $lang->application_ucp_err_dependency_value_wrong;
+          // }
         }
 
         // wenn es keine Fehler gibt, speichern
@@ -1321,7 +1322,6 @@ function application_ucp_admin_load()
           $notactive = "";
         }
 
-
         // Label und Beschreibung basteln
         $label = $field['label'] . $required . ":";
         $descr = $dep . " " . $notactive;
@@ -1439,6 +1439,11 @@ function application_ucp_admin_load()
         if (empty($mybb->get_input('fieldname'))) {
           $errors[] = $lang->application_ucp_err_name;
         }
+        //Name muss eindeutig sein
+        $testname = $db->simple_select("application_ucp_fields", "*", "fieldname = '{$mybb->get_input('fieldname')}'");
+        if ($db->num_rows($testname)) {
+          $errors[] = $lang->application_ucp_err_name_exists;
+        }
         // Name darf keine Sonderzeichen enthalten
         if (!preg_match("#^[a-zA-Z\-\_]+$#", $mybb->get_input('fieldname'))) {
           $errors[] = $lang->application_ucp_err_name_sonder;
@@ -1480,13 +1485,13 @@ function application_ucp_admin_load()
           }
           //Falscher Abhängigkeitswert
           //wir brauchen erst die options des Felds von dem es abhängig ist
-          $get_dep = $db->fetch_field($db->simple_select("application_ucp_fields", "options", "fieldname = '" . $mybb->get_input('dependency') . "'"), "options");
-          // wir prüfen ob die Options den angegebenen Wert enthält. 
-          $depinput = $mybb->get_input('dependency_value');
-          if (strpos($get_dep, $depinput) === false) {
-            //gibt keine Option mit diesem Wert
-            $errors[] = $lang->application_ucp_err_dependency_value_wrong;
-          }
+          // $get_dep = $db->fetch_field($db->simple_select("application_ucp_fields", "options", "fieldname = '" . $mybb->get_input('dependency') . "'"), "options");
+          // // wir prüfen ob die Options den angegebenen Wert enthält. 
+          // $depinput = $mybb->get_input('dependency_value');
+          // if (strpos($get_dep, $depinput) === false) {
+          //   //gibt keine Option mit diesem Wert
+          //   $errors[] = $lang->application_ucp_err_dependency_value_wrong;
+          // }
         }
         // dependency_value
         // wenn es keine Fehler gibt, speichern
@@ -1955,27 +1960,32 @@ function application_ucp_usercp()
         $('#" . $type['fieldname'] . "').hide();
         $('#label_" . $type['fieldname'] . "').hide();  
         $('#descr_" . $type['fieldname'] . "').hide(); 
-        if($('#" . $type['dependency'] . "').val() == '" . $type['dependency_value'] . "') {
+        var str = ','+'" . $type['dependency_value'] . "';
+
+        if(str.includes(','+$('#" . $type['dependency'] . "').val())) {
           $('#hideinfo_" . $type['fieldname'] . "').val('true');
           $('#" . $type['fieldname'] . "').show(); 
           $('#label_{$type['fieldname']}').show(); 
           $('#descr_" . $type['fieldname'] . "').show(); 
         }
-        if($('#" . $type['dependency'] . ":checked').val() == '" . $type['dependency_value'] . "') {
+        
+        if(str.includes(','+$('#" . $type['dependency'] . ":checked').val())) {
+          console.log('blubber');
           $('#hideinfo_" . $type['fieldname'] . "').val('true');
           $('#" . $type['fieldname'] . "').show(); 
           $('#label_{$type['fieldname']}').show(); 
           $('#descr_" . $type['fieldname'] . "').show(); 
         }
         $('#" . $type['dependency'] . "').change(function(){
+          
           var inputtyp = $('#" . $type['dependency'] . ":checked').attr('type');
+         
             if( inputtyp == 'checkbox' || inputtyp == 'radio') {
                 var checked = ':checked';
             } else {
               var checked = '';
             }
-          
-            if($('#" . $type['dependency'] . "'+checked+'').val() == '" . $type['dependency_value'] . "') {
+            if(str.includes(','+$('#" . $type['dependency'] . "'+checked+'').val())) {
                 $('#hideinfo_" . $type['fieldname'] . "').val('true');
                 $('#" . $type['fieldname'] . "').show(); 
                 $('#label_{$type['fieldname']}').show(); 
@@ -2030,6 +2040,7 @@ function application_ucp_usercp()
       $options = explode(",", $type['options']);
       $selects = "";
 
+      //Mehrfachauswahl? 
       if ($typ == "select_multiple") {
         $getselects = explode(",", $get_value['value']);
         $multiple = "multiple";
@@ -2042,8 +2053,11 @@ function application_ucp_usercp()
       }
       //array mit optionen durchgehen und auswahl bauen
       foreach ($options as $option) {
+        //leertasten rauswerfen
+        $option = trim($option);
 
         if ($mult_flag) {
+          //vorauswahl von schon ausgefüllten werten
           if (in_array($option, $getselects)) {
             $selected = "selected=\"selected\"";
           } else {
@@ -2057,7 +2071,7 @@ function application_ucp_usercp()
             $selected = "";
           }
         }
-        $option = trim($option); //leertasten vorne und hinten rauswerfen
+
         $selects .= "<option value=\"{$option}\" {$selected} >{$option}</option>";
       }
 
@@ -2091,9 +2105,14 @@ function application_ucp_usercp()
         }
         //und alles zusammenbasteln
         $inner .= "
-        <input type=\"{$typ}\" class=\"{$type['fieldname']}_check\" id=\"{$type['fieldname']}\" name=\"{$type['id']}[]\" value=\"{$option}\" {$checked} {$required} {$disabled} \> 
+        <input type=\"{$typ}\" class=\"{$type['fieldname']}_check\" id=\"{$type['fieldname']}\" name=\"{$type['id']}[]\" value=\"{$option}\" {$checked} {$required} {$disabled} > 
         <label for=\"{$type['fieldname']}\">{$option}</label><br/>";
       }
+      //auswahl löschen hinzufügen, damit man das feld auch wieder leeren kann
+      $inner .= "
+      <input type=\"{$typ}\" class=\"{$type['fieldname']}_check\" id=\"{$type['fieldname']}\" name=\"{$type['id']}[]\" value=\"deleteinput\" {$checked} {$required} {$disabled} > 
+      <label for=\"{$type['fieldname']}\">Auswahl löschen</label><br/>";
+
       // dann hier das außenrum
       $fields .= "
       <label class=\"app_ucp_label {$type['fieldname']}\" style=\"{$hidden}\" id=\"label_{$type['fieldname']}\">
@@ -2122,11 +2141,37 @@ function application_ucp_usercp()
           checkboxes.attr('required', 'required');
         }
         });
+
+
+
         ";
       }
+
+      //checkbox wurde mal ausgewählt und gespeichert, jetzt soll es möglich sein auch wieder leere felder zu speichern
+      //dafür etwas javascript
+      if ($typ == "checkbox") {
+        $application_ucp_js .= "        
+        $('.{$type['fieldname']}_check').on('change', function() {
+          if($(this).val() == 'deleteinput' && this.checked) {
+            console.log('haifisch check')
+          $('.{$type['fieldname']}_check').not(this).prop('checked', false);
+          $('.{$type['fieldname']}_check').not(this).prop('disabled', true); 
+     
+          }
+          if($(this).val() == 'deleteinput' && this.checked === false) { 
+            console.log('haifisch uncheck')
+            $('.{$type['fieldname']}_check').not(this).prop('disabled', false); 
+            $('.{$type['fieldname']}_check').not(this).removeAttr('disabled'); 
+          }
+      }); 
+      ";
+      }
     }
+
     $fields .= "</div>";
   }
+
+
 
   //ende Javascript
   $application_ucp_js .= "});</script>";
@@ -2141,15 +2186,15 @@ function application_ucp_usercp()
     //Die Angabe ist Pflicht
     $requiredstar = "<span class=\"app_ucp_star\">" . $lang->application_ucp_mandatory . "</span>";
     //testen ob schon einmal ausgefüllt und entsprechend die Checkbox vorauswählen oder nicht
-    $get_checked = $db->simple_select("application_ucp_userfields", "*", "uid = {$mybb->user['uid']} AND fieldid = -1");
+    $get_checked = $db->simple_select("application_ucp_userfields", "*", "uid = {$mybb->user['uid']} AND fieldid = '-1'");
     $get_checked_row = $db->num_rows($get_checked);
     $get_checked_data = $db->fetch_array($get_checked);
     if ($get_checked_row > 0) {
-      if ($get_checked_data['value'] == "1") {
-        $checked_yes = "CHECKED";
+      if ($get_checked_data['value'] == 1) {
+        $checked_yes = "CHECKED ";
         $checked_no = "";
       } else {
-        $checked_no = "CHECKED";
+        $checked_no = "CHECKED ";
         $checked_yes = "";
       }
     } else {
@@ -2526,7 +2571,7 @@ function application_ucp_showinprofile()
   }
   $fields = application_ucp_build_view($userprofil, "profile", "array");
   //Export des Steckbriefes
-  if ($mybb->settings['application_ucp_export'] && $mybb->user['uid'] != 0) {
+  if ($mybb->settings['application_ucp_export'] && $mybb->user['uid'] != 0 && ($mybb->user['uid'] == $userprofil || $mybb->usergroup['canmodcp'] == 1)) {
     $exportbtn = "
     <form action=\"misc.php?action=exp_app\" method=\"post\" target=\"_blank\">
     <input type=\"hidden\" name=\"uid\" value=\"{$mybb->input['uid']}\" id=\"uid\" />
@@ -2641,7 +2686,7 @@ function application_ucp_filter()
               ";
       }
 
-      // //keines javascript um url parameter zu bekommen und felder auszufüllen
+      // //kleines javascript um url parameter zu bekommen und felder auszufüllen - not working at the moment
       // $js_urlstring .= "
       // if(urlParams.has('" . $searchfield['fieldname'] . "')){
       //   let fill = urlParams.get('" . $searchfield['fieldname'] . "');
@@ -2722,7 +2767,8 @@ function application_ucp_filter()
     eval("\$applicationfilter .= \"" . $templates->get("application_ucp_filtermemberlist") . "\";");
   }
 }
-// Über diese Hook kriegen wir die daten für die Inputfelder (in der theorie)
+
+// Über diese Hook kriegen wir die daten für die Inputfelder 
 
 /**
  * Daten bekommen für automatische Suchvorschläge
@@ -2745,7 +2791,8 @@ function application_ucp_getdata()
 
     //array zusammenbauen
     while ($user = $db->fetch_array($query)) {
-      $data[] = array('fieldid' => $user['uid'], 'id' => $user['value'], 'text' => $user['value']);
+      $datacontent = strip_tags($user['value']);
+      $data[] = array('fieldid' => $user['uid'], 'id' => $datacontent, 'text' => $datacontent);
     }
     //als JSON ausgeben, weil damit unser javascript arbeitet
     echo json_encode($data);
@@ -2794,6 +2841,10 @@ function application_ucp_postbit(&$post)
   }
 }
 
+
+/***
+ * WOB verteilen
+ */
 $plugins->add_hook("showthread_start", "application_ucp_showthread");
 function application_ucp_showthread()
 {
@@ -2826,7 +2877,7 @@ function application_ucp_showthread()
 }
 
 /**
- * WOB Funktion
+ * WOB Funktionalität eintragen - funktionalität
  * Exportfunktion für Steckbrief
  */
 $plugins->add_hook("misc_start", "application_ucp_misc");
@@ -2904,10 +2955,11 @@ function application_ucp_misc()
   }
 
   //Steckbrieffrist verlängern
-  if ($mybb->input['action'] == " ext_app") {
+  if ($mybb->input['action'] == "ext_app") {
     //Steckbrief speichern und zur Korrektur geben.
     $update = array(
       "aucp_extend" => '+1',
+      "aucp_extenddate" => date("Y-m-d")
     );
     $db->write_query("users", $update, "uid = {$mybb->user['uid']}");
   }
@@ -3057,7 +3109,6 @@ function application_ucp_modoverview()
       $aucp_mod_steckilink = "<a href=\"" . get_thread_link($data['tid']) . "\">Steckbrief</a>";
 
       $aucp_mod_modlink = $mod;
-
       $aucp_mod_date = date("d.m.Y", strtotime($data['submission_time'] . " + {$app_corr_deadline} days"));
       // $aucp_mod_date = "";
       eval("\$application_ucp_mods_users .= \"" . $templates->get("application_ucp_mods_bit") . "\";");
@@ -3085,14 +3136,14 @@ function application_ucp_modoverview()
       //hier statt link zum mod, letzte aktivität des users
       $aucp_mod_modlink = $lastactiv;
 
-      $aucp_mod_date = date("d.m.Y", date("d.m.Y", $data['regdate']) . " + {$app_deadline} days");
+      $aucp_mod_date = date("d.m.Y", strtotime(date("d.m.Y", $data['regdate']) . " + {$app_deadline} days"));
+
       if ($mybb->settings['application_ucp_extend'] > 0) {
         //wie oft wurde verlängert
         $extend_cnt = $db->fetch_field($db->simple_select("users", "aucp_extend", "uid = {$user['uid']}"), "aucp_extend");
         if ($extend_cnt > 0) {
           $to_add = $mybb->settings['application_ucp_extend'] * $extend_cnt;
-
-          $add_extend = strtotime("+{$to_add} days", $aucp_mod_date);
+          $add_extend = date("d.m.Y", strtotime("+7 day", strtotime($aucp_mod_date)));
           $addtext = " ({$extend_cnt}x verlängert.)";
           $aucp_mod_date = $add_extend . $addtext;
         }
@@ -3270,17 +3321,24 @@ function application_ucp_global()
 function application_ucp_checkdep($dep, $deptestvalue, $uid)
 {
   global $db, $mybb;
+
   $depflag = true;
   if ($dep != "none") {
+
     $depid = $db->fetch_field($db->simple_select("application_ucp_fields", "id", "fieldname = '{$dep}'"), "id");
     $depvalue = $db->fetch_field($db->simple_select("application_ucp_userfields", "value", "fieldid = {$depid} and uid = {$uid}"), "value");
-    if ($depvalue == $deptestvalue) {
+
+    $depvalue = "," . $depvalue;
+    $deptestvalue = "," . $deptestvalue;
+
+    if (strpos($deptestvalue, $depvalue)  !== false) {
       $depflag = true;
     } else {
       //wenn nicht, setzen wir die flag auf false, das feld soll nicht angezeigt werden.
       $depflag = false;
     }
   }
+
   return $depflag;
 }
 
@@ -3342,7 +3400,7 @@ function application_ucp_build_view($uid, $location, $kind)
         " . TABLE_PREFIX . "application_ucp_fields f 
         ON f.id = uf.fieldid 
         and uid = {$uid} AND {$location} = 1 
-        AND fieldid > 0 AND active = 1");
+        AND fieldid > 0 AND active = 1 and value != 'deleteinput'");
     //Felder durchgehen
     while ($field = $db->fetch_array($fieldquery)) {
       //erst testen wir die abhängigkeit, das feld hat eine, also schauen wir ob die bedingung erfüllt ist
@@ -3397,7 +3455,9 @@ function application_ucp_build_view($uid, $location, $kind)
       ON f.id = uf.fieldid 
       and uid = {$uid} 
       AND {$location} = 1 
-      AND fieldid > 0");
+      AND fieldid > 0
+      AND active = 1 
+      AND value != 'deleteinput'");
     //durchgehen
     while ($field = $db->fetch_array($fieldquery)) {
       //erst testen wir die abhängigkeit, das feld hat eine, also schauen wir ob die bedingung erfüllt ist
@@ -3413,6 +3473,8 @@ function application_ucp_build_view($uid, $location, $kind)
         );
         if ($field['fieldtyp'] == "date") {
           $fieldvalue = date("d.m.Y", strtotime($field['value']));
+        } elseif ($field['fieldtyp'] == "select_multiple") {
+          $fieldvalue = str_replace(",", ", ", $field['value']);
         } else {
           $fieldvalue = $field['value'];
         }
