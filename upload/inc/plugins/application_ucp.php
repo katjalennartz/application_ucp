@@ -620,7 +620,7 @@ function application_ucp_activate()
 	</div>
   {$give_wob}
   ');
-
+  find_replace_templatesets("showthread", "#" . preg_quote('{$thread[\'subject\']}') . "#i", '{$thread[\'subject\']} {$aucp_responsible_mod}');
   //postbit classic 
   find_replace_templatesets("postbit_classic", "#" . preg_quote('{$post[\'user_details\']}') . "#i", '{$post[\'user_details\']}{$post[\'aucp_fields\']}');
   //postbit
@@ -659,10 +659,12 @@ function application_ucp_deactivate()
   find_replace_templatesets("member_profile", "#" . preg_quote('{$aucp_fields}') . "#i", '');
   find_replace_templatesets("member_profile", "#" . preg_quote('{$exportbtn}') . "#i", '');
   find_replace_templatesets("showthread", "#" . preg_quote('{$give_wob}') . "#i", '');
+  find_replace_templatesets("showthread", "#" . preg_quote('{$aucp_responsible_mod}') . "#i", '');
   find_replace_templatesets("postbit", "#" . preg_quote('{$post[\'aucp_fields\']}') . "#i", '');
   find_replace_templatesets("memberlist", "#" . preg_quote('<tr><td colspan="3">{$applicationfilter}</tr></td>') . "#i", '');
   find_replace_templatesets("memberlist", "#" . preg_quote('{$filterjs}') . "#i", '');
   find_replace_templatesets("index", "#" . preg_quote('{$application_ucp_index}') . "#i", '');
+
 
 
   //My alerts wieder löschen
@@ -2328,7 +2330,7 @@ function application_ucp_usercp()
     //wir speichern hier den alten wert (Alte betroffene User suchen), um ihn später zu vergleichen
     $old_affected = $db->fetch_field($db->simple_select("application_ucp_userfields", "value", "uid = {$mybb->user['uid']} AND fieldid='-3'"), "value");
 
-    //als erstes speichern wir alle felder, damit nichts verloren geht
+    //dann speichern wir alle felder, damit nichts verloren geht
     application_ucp_savefields($fields_numerickey, $mybb->user['uid']);
 
 
@@ -2390,9 +2392,11 @@ function application_ucp_usercp()
           "correctioncnt" => $add,
         );
         //speichern
-        $db->update_query("application_ucp_management", $update, "uid = {$mybb->user['uid']}");
+            $db->update_query("application_ucp_management", $update, "uid = {$mybb->user['uid']}");
       }
-      redirect("usercp.php?action=application_ucp");
+      echo "<script>alert('Gerne kannst du noch im Thread Bescheid geben und etwas zu deiner Korrektur sagen.');</script>";
+   
+      redirect("newreply.php?tid={$managmentdata['tid']}");
     } else { //Der Steckbrief wird das erste Mal eingereicht
 
       //Wir wollen einen Thread erstellen, wenn der Stecki fertig ist und nutzen dafür den Posthandler von MyBB
@@ -2848,7 +2852,7 @@ function application_ucp_postbit(&$post)
 $plugins->add_hook("showthread_start", "application_ucp_showthread");
 function application_ucp_showthread()
 {
-  global $lang, $db, $mybb, $templates, $thread, $give_wob;
+  global $lang, $db, $mybb, $templates, $thread, $tid, $give_wob, $aucp_responsible_mod;
   //Sprachvariable laden
   $lang->load('application_ucp');
 
@@ -2872,6 +2876,16 @@ function application_ucp_showthread()
   // echo "fid".$mybb->setting['application_ucp_steckiarea'];
   // application_ucp_wobbutton
   if ($thread['fid'] == $mybb->settings['application_ucp_steckiarea']) {
+
+    $responsible_uid = $db->fetch_field($db->simple_select("application_ucp_management", "uid_mod", "tid = {$tid}"), "uid_mod");
+
+    if ($responsible_uid != 0) {
+      $responsible = get_user($responsible_uid);
+      $responsible_link = build_profile_link($responsible['username'], $responsible_uid);
+      $aucp_responsible_mod = $lang->sprintf($lang->application_ucp_responsible, $responsible_link);
+    } else {
+      $aucp_responsible_mod = $lang->application_ucp_noresponsible;
+    }
     eval("\$give_wob .= \"" . $templates->get("application_ucp_wobbutton") . "\";");
   }
 }
@@ -3052,7 +3066,7 @@ function application_ucp_modoverview()
 {
   global $mybb, $db, $templates, $header, $footer, $theme, $headerinclude, $application_ucp_mods, $application_ucp_mods_readybit;
   $addtext = "";
-  if ($mybb->get_input('action', MyBB::INPUT_STRING) == "aplication_mods") {
+  if ($mybb->get_input('action', MyBB::INPUT_STRING) == "application_mods" || $mybb->get_input('action', MyBB::INPUT_STRING) == "aplication_mods") {
     // get settings
     $applicantgroup = $mybb->settings['application_ucp_applicants'];
     $app_deadline = $mybb->settings['application_ucp_applicationtime'];
@@ -3065,7 +3079,16 @@ function application_ucp_modoverview()
     }
 
     // fertige Steckbriefe bekommen (alle wo der Mod quasi etwas tun muss)
-    $ready_for_mod = $db->simple_select("application_ucp_management", "*", "(modcorrection_time < usercorrection_time)");
+    $ready_for_mod = $db->simple_select(
+      "application_ucp_management",
+      "*",
+      "(modcorrection_time is null) 
+      OR 
+      (usercorrection_time > modcorrection_time)"
+    );
+
+    // OR (usercorrection_time is null) 
+    // OR (modcorrection_time < usercorrection_time)
     // (uid_mod = 0 or modcorrection_time is NULL or modcorrection_time ='') 
     while ($data = $db->fetch_array($ready_for_mod)) {
       if ($data['correctioncnt'] > 0) {
@@ -3096,7 +3119,10 @@ function application_ucp_modoverview()
     $aucp_mod_steckilink = $aucp_mod_profillink = $aucp_mod_modlink = $aucp_mod_date = $correction = "";
 
     // Steckbriefe die vom User korrigiert werden müssen
-    $round_two = $db->simple_select("application_ucp_management", "*", "submission_time < modcorrection_time AND usercorrection_time < modcorrection_time");
+    $round_two = $db->simple_select("application_ucp_management", "*", 
+    "(modcorrection_time is not null && usercorrection_time is null) 
+    || (modcorrection_time > usercorrection_time)
+    ");
     while ($data = $db->fetch_array($round_two)) {
       $user = get_user($data['uid']);
       if ($data['uid_mod'] != "0") {
@@ -3204,7 +3230,6 @@ function application_ucp_indexalert()
   $uid = $mybb->user['uid'];
   //Daten aus Management tabelle
   $get_managment = $db->simple_select("application_ucp_management", "*", "uid = {$uid}");
-
   //Benutzer ist ein Bewerber
   if ($mybb->user['usergroup'] == $applicants) {
 
@@ -3245,11 +3270,12 @@ function application_ucp_indexalert()
           $mod = get_user($alert['uid_mod']);
           //noch in Korrektur
           if (strtotime($alert['modcorrection_time']) <= strtotime($alert['usercorrection_time'])) {
-            //Info: XY hat deinen Steckbrief übernommen
+            //Info: XY hat deinen Steckbrief übernommen //aber noch keine Korrektur
             $alertflag = 1;
             $profilelink = build_profile_link($mod['username'], $mod['uid']);
             $lang->application_ucp_index_token = $lang->sprintf($lang->application_ucp_index_token, $profilelink);
             $message = $lang->application_ucp_index_token;
+            //Korrektur vorgenommen - user muss reagieren
             eval("\$application_ucp_index_bit .= \"" . $templates->get("application_ucp_index_bit") . "\";");
           } elseif (strtotime($alert['modcorrection_time']) > strtotime($alert['usercorrection_time'])) {
             //Dein Steckbrief ist fertig korrigiert Zeit zur kontrolle bis
@@ -3266,23 +3292,55 @@ function application_ucp_indexalert()
     }
   }
 
-  $get_alerts = $db->simple_select("application_ucp_management", "*");
-  while ($alert = $db->fetch_array($get_alerts)) {
-    if (is_member($mods, $uid)) {
+  if (is_member($mods, $uid)) {
+    $get_alerts = $db->simple_select("application_ucp_management", "*");
+    while ($alert = $db->fetch_array($get_alerts)) {
       //Steckbrief wurde abgegeben
-      if (strtotime($alert['submission_time']) > strtotime($alert['modcorrection_time'])) {
-        $about = get_user($alert['uid']);
-        $aboutuserlink = build_profile_link($about['username'], $about['uid'], "_blank");
-        //Noch kein Mod zugeteilt
-        if ($alert['uid_mod'] == "0") {
-          $alertflag = 1;
-          $lang->application_ucp_index_mod_steckialert = $lang->sprintf($lang->application_ucp_index_mod_steckialert, $aboutuserlink, $alert['uid']);
-          $message = $lang->application_ucp_index_mod_steckialert;
+      $about = get_user($alert['uid']);
+      $aboutuserlink = build_profile_link($about['username'], $about['uid'], "_blank");
 
-          eval("\$application_ucp_index_bit .= \"" . $templates->get("application_ucp_index_bit") . "\";");
-        } else {
+      // if (strtotime($alert['submission_time']) > strtotime($alert['modcorrection_time'])) {
+      //Noch kein Mod zugeteilt - Mod kann ihn übernehmen
+      if ($alert['uid_mod'] == "0") {
+        $alertflag = 1;
+        $message = $lang->sprintf($lang->application_ucp_index_mod_steckialert, $aboutuserlink, $alert['uid']);
+        eval("\$application_ucp_index_bit .= \"" . $templates->get("application_ucp_index_bit") . "\";");
+      } else {
+        //alle charas des mods bekommen
+        $mod_charas = application_ucp_allchars($uid);
+        //schauen ob der der übernommen hat, dieser Mod ist (uid müsste im array sein)
+        $charaflag = array_key_exists($alert['uid_mod'], $mod_charas);
+        if ($charaflag) {
+          echo "superfisch $aboutuserlink";
+          $alert['modcorrection_time'] = strtotime($alert['modcorrection_time']);
+          $alert['usercorrection_time'] = strtotime($alert['usercorrection_time']);
+          //man hat ihn selbst übernommen
+          //Man hat noch keine Korrektur vorgenommen
+          //modcorrection_time ist NULL oder //modcorrection_time < als usercorrection_time
+          if ($alert['modcorrection_time'] == NULL) {
+            $alertflag = 1;
+            $message = $lang->sprintf($lang->application_ucp_index_mod_steckialert_modturn, $aboutuserlink);
+            eval("\$application_ucp_index_bit .= \"" . $templates->get("application_ucp_index_bit") . "\";");
+          }
+          //Korrektur vorgenommen und warten auf user
+          //modcorrection time != null && usercorrectiontime == null || modcorrection_time > als usercorrectiontime
+          if (($alert['modcorrection_time'] != NULL && $alert['usercorrection_time'] == NULL)
+            || $alert['modcorrection_time'] > $alert['usercorrection_time']
+          ) {
+            $alertflag = 1;
+            $message = $lang->sprintf($lang->application_ucp_index_mod_steckialert_userturn, $aboutuserlink);
+            eval("\$application_ucp_index_bit .= \"" . $templates->get("application_ucp_index_bit") . "\";");
+          }
+          //User hat korrigiert
+          //usercorrection_time > modcorrectiontime
+          if ($alert['usercorrection_time'] > $alert['modcorrection_time']) {
+            $alertflag = 1;
+            $message = $lang->sprintf($lang->application_ucp_index_mod_steckialert_userhascorrected, $aboutuserlink);
+            eval("\$application_ucp_index_bit .= \"" . $templates->get("application_ucp_index_bit") . "\";");
+          }
         }
       }
+      // }
     }
   }
   if ($alertflag) {
@@ -3548,6 +3606,31 @@ function application_ucp_savefields($fields, $uid)
     }
   }
 }
+
+
+//GET USER
+function application_ucp_allchars($thisuser)
+{
+  global $mybb, $db;
+  //wir brauchen die id des Hauptcharas
+  $getas_uid = get_user($thisuser);
+  $as_uid = $getas_uid['as_uid'];
+  $charas = array();
+  if ($as_uid == 0) {
+    // as_uid = 0 wenn hauptaccount oder keiner angehangen
+    $get_all_users = $db->query("SELECT uid,username FROM " . TABLE_PREFIX . "users WHERE (as_uid = $thisuser) OR (uid = $thisuser) ORDER BY username");
+  } else if ($as_uid != 0) {
+    //id des users holen wo alle an gehangen sind 
+    $get_all_users = $db->query("SELECT uid,username FROM " . TABLE_PREFIX . "users WHERE (as_uid = $as_uid) OR (uid = $thisuser) OR (uid = $as_uid) ORDER BY username");
+  }
+  while ($users = $db->fetch_array($get_all_users)) {
+    $uid = $users['uid'];
+    $charas[$uid] = $users['username'];
+  }
+  return $charas;
+}
+
+
 /***
  * PN oder Alert an user, der betroffen ist.
  * @param 
@@ -3610,6 +3693,7 @@ function application_ucp_affected_alert($charakter, $touid, $tid, $editflag)
     //ja nichts halt, eh?
   }
 }
+
 
 /**************************** 
  * 
