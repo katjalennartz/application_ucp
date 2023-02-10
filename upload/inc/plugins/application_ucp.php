@@ -2338,10 +2338,28 @@ function application_ucp_usercp()
     //alle inputs durchgehen
     foreach ($fields_numerickey as $key => $value) {
       //ist das Feld ein Pflichtfeld
-      $mandatory = $db->fetch_field($db->simple_select("application_ucp_fields", "mandatory", "id = {$key}"), "mandatory");
+      $field = $db->fetch_array($db->simple_select("application_ucp_fields", "*", "id = {$key}"));
+      //wir müssen auch schauen, ob es eine abhängigkeit gibt. wenn ja dann nur pflicht berücksichtigen, wenn das entsprechende ausgewählt ist 
+      $ismandatory = 0;
+      if ($field['dependency'] != "") {
+        //es gibt eine Abhängigkeit
+        //hole id des felds
+        $fieldep = $db->fetch_array($db->simple_select("application_ucp_fields", "*", "fieldname = '{$field['dependency']}'"));
+        //ist
+        $values = explode(",", $field['dependency_value']);
+        //gibt es einen eintrag vom fieldid mit uid wo der wert schüler oder erwachsen ist 
 
+        foreach ($values as $val) {
+         
+          $val = trim($val);
+          $numrow = $db->num_rows($db->simple_select("application_ucp_userfields", "*", "fieldid = '{$fieldep['id']}' and value = '$val' and uid='{$mybb->user['uid']}'"));
+          if ($numrow > 0) $ismandatory = 1;
+        }
+      } else {
+        $ismandatory = $db->fetch_field($db->simple_select("application_ucp_fields", "mandatory", "id = {$key}"), "mandatory");
+      }
       //pflichtfeld, aber nicht ausgefüllt.
-      if ($mandatory && empty($value)) {
+      if ($ismandatory && empty($value)) {
         // wir vergleichen kurz alte affected user und neue, wenn neue setzen wir den wert wieder auf die alten
         // dadurch muss zwar neu eingetragen werden, aber so wird sichergestellt, dass die neu eingetragenen user, 
         // noch informiert werden, wenn erneut losgeschickt wird
@@ -2352,9 +2370,6 @@ function application_ucp_usercp()
         }
         echo "<script>alert('" . $lang->application_ucp_saveerror . "')
         window.location = './usercp.php?action=application_ucp';</script>";
-
-        // echo "<script>alert('" . $lang->application_ucp_saveerror . "');</script>";
-        // redirect("usercp.php?action=application_ucp");
       }
     }
 
@@ -2392,11 +2407,15 @@ function application_ucp_usercp()
           "correctioncnt" => $add,
         );
         //speichern
-            $db->update_query("application_ucp_management", $update, "uid = {$mybb->user['uid']}");
+        $db->update_query("application_ucp_management", $update, "uid = {$mybb->user['uid']}");
       }
-      echo "<script>alert('Gerne kannst du noch im Thread Bescheid geben und etwas zu deiner Korrektur sagen.');</script>";
-   
-      redirect("newreply.php?tid={$managmentdata['tid']}");
+      echo "<script>
+      alert('Gerne kannst du noch im Thread Bescheid geben und etwas zu deiner Korrektur sagen.');
+      window.location = './newreply.php?tid={$managmentdata['tid']}';</script>";
+
+      // echo "<script>alert('Gerne kannst du noch im Thread Bescheid geben und etwas zu deiner Korrektur sagen.');</script>";
+
+      // redirect("newreply.php?tid={$managmentdata['tid']}");
     } else { //Der Steckbrief wird das erste Mal eingereicht
 
       //Wir wollen einen Thread erstellen, wenn der Stecki fertig ist und nutzen dafür den Posthandler von MyBB
@@ -3119,10 +3138,13 @@ function application_ucp_modoverview()
     $aucp_mod_steckilink = $aucp_mod_profillink = $aucp_mod_modlink = $aucp_mod_date = $correction = "";
 
     // Steckbriefe die vom User korrigiert werden müssen
-    $round_two = $db->simple_select("application_ucp_management", "*", 
-    "(modcorrection_time is not null && usercorrection_time is null) 
+    $round_two = $db->simple_select(
+      "application_ucp_management",
+      "*",
+      "(modcorrection_time is not null && usercorrection_time is null) 
     || (modcorrection_time > usercorrection_time)
-    ");
+    "
+    );
     while ($data = $db->fetch_array($round_two)) {
       $user = get_user($data['uid']);
       if ($data['uid_mod'] != "0") {
