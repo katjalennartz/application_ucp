@@ -7,7 +7,12 @@ https://github.com/katjalennartz/application_ucp/wiki
 
 
 **version: 1.0.1**  
-(last update 8.1.2023)		
+10.02.2023
+- Möglichkeit mehr als eine Abhängigkeit hinzuzufügen
+- Bugfixes: Vorallem bei der Anzeige der Mod Übersicht und Indexanzeige 
+- Möglichkeit im Thread anzuzeigen, welcher Mod die Korrektur übernommen hat. ( Variable: {$aucp_responsible_mod} )
+
+8.1.2023	
 **->Update Script durchführen aus dem root verzeichnis, es gibt neue Felder in der Datenbank!** 
 
 **geplante Features:** Automatische Listen - evt. als Add On Plugin
