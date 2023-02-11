@@ -3083,10 +3083,11 @@ function application_ucp_misc()
 $plugins->add_hook("misc_start", "application_ucp_modoverview");
 function application_ucp_modoverview()
 {
-  global $mybb, $db, $templates, $header, $footer, $theme, $headerinclude, $application_ucp_mods, $application_ucp_mods_readybit;
+  global $mybb, $db, $templates, $header, $lang, $footer, $theme, $headerinclude, $application_ucp_mods, $application_ucp_mods_readybit;
   $addtext = "";
   if ($mybb->get_input('action', MyBB::INPUT_STRING) == "application_mods" || $mybb->get_input('action', MyBB::INPUT_STRING) == "aplication_mods") {
     // get settings
+    $lang->load('application_ucp');
     $applicantgroup = $mybb->settings['application_ucp_applicants'];
     $app_deadline = $mybb->settings['application_ucp_applicationtime'];
     $app_corr_deadline = $mybb->settings['application_ucp_correctiontime'];
