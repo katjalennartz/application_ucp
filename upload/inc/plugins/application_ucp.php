@@ -3333,7 +3333,7 @@ function application_ucp_indexalert()
         //schauen ob der der übernommen hat, dieser Mod ist (uid müsste im array sein)
         $charaflag = array_key_exists($alert['uid_mod'], $mod_charas);
         if ($charaflag) {
-          echo "superfisch $aboutuserlink";
+          
           $alert['modcorrection_time'] = strtotime($alert['modcorrection_time']);
           $alert['usercorrection_time'] = strtotime($alert['usercorrection_time']);
           //man hat ihn selbst übernommen
