@@ -1420,7 +1420,7 @@ function application_ucp_admin_load()
           $form_container->output_row(
             $label,
             $descr,
-            "<input type=\"{$field['fieldtyp']}\" name=\"{$field['id']}\" value={$get_input} />"
+            "<input type=\"{$field['fieldtyp']}\" name=\"{$field['id']}\" value=\"{$get_input}\" />"
           );
         }
       }
@@ -1441,11 +1441,6 @@ function application_ucp_admin_load()
         if (empty($mybb->get_input('fieldname'))) {
           $errors[] = $lang->application_ucp_err_name;
         }
-        //Name muss eindeutig sein
-        $testname = $db->simple_select("application_ucp_fields", "*", "fieldname = '{$mybb->get_input('fieldname')}'");
-        if ($db->num_rows($testname)) {
-          $errors[] = $lang->application_ucp_err_name_exists;
-        }
         // Name darf keine Sonderzeichen enthalten
         if (!preg_match("#^[a-zA-Z\-\_]+$#", $mybb->get_input('fieldname'))) {
           $errors[] = $lang->application_ucp_err_name_sonder;
@@ -1454,15 +1449,6 @@ function application_ucp_admin_load()
         if (empty($mybb->get_input('fieldlabel'))) {
           $errors[] = $lang->application_ucp_err_label;
         }
-        // Feldtyp muss ausgewählt sein
-        if (empty($mybb->get_input('fieldtyp'))) {
-          $errors[] = $lang->application_ucp_err_fieldtyp;
-        }
-        // Feldtyp muss ausgewählt sein
-        if (empty($mybb->get_input('fieldtyp'))) {
-          $errors[] = $lang->application_ucp_err_fieldtyp;
-        }
-
         // fieldoptions muss bei folgenden ausgefüllt sein
         if (
           $mybb->get_input('fieldtyp') == "select" ||
@@ -1511,25 +1497,26 @@ function application_ucp_admin_load()
             "label" => $db->escape_string($mybb->get_input('fieldlabel')),
             "fielddescr" => $db->escape_string($mybb->get_input('fielddescr')),
             "options" => $db->escape_string($mybb->get_input('fieldoptions')),
-            "editable" => intval($mybb->get_input('fieldeditable')),
-            "mandatory" => intval($mybb->get_input('fieldmandatory')),
+            "editable" => $mybb->get_input('fieldeditable', MyBB::INPUT_INT),
+            "mandatory" => $mybb->get_input('fieldmandatory', MyBB::INPUT_INT),
             "dependency" => $db->escape_string($mybb->get_input('dependency')),
             "dependency_value" => $db->escape_string($mybb->get_input('dependency_value')),
-            "postbit" => intval($mybb->get_input('fieldpostbit')),
-            "profile" => intval($mybb->get_input('fieldprofile')),
-            "memberlist" => intval($mybb->get_input('fieldmember')),
+            "postbit" => $mybb->get_input('fieldpostbit', MyBB::INPUT_INT),
+            "profile" => $mybb->get_input('fieldprofile', MyBB::INPUT_INT),
+            "memberlist" => $mybb->get_input('fieldmember', MyBB::INPUT_INT),
             "template" => $db->escape_string($mybb->get_input('fieldtemplate')),
-            "sorting" => intval($mybb->get_input('fieldsort')),
-            "allow_html" => intval($mybb->get_input('fieldhtml')),
-            "allow_mybb" => intval($mybb->get_input('fieldmybb')),
-            "allow_img" => intval($mybb->get_input('fieldimg')),
-            "allow_video" => intval($mybb->get_input('fieldvideo')),
-            "searchable" => intval($mybb->get_input('searchable')),
-            "suggestion" => intval($mybb->get_input('suggestion')),
-            "active" => intval($mybb->get_input('active')),
-            "guest" => intval($mybb->get_input('guest')),
+            "sorting" => $mybb->get_input('fieldsort', MyBB::INPUT_INT),
+            "allow_html" => $mybb->get_input('fieldhtml', MyBB::INPUT_INT),
+            "allow_mybb" => $mybb->get_input('fieldmybb', MyBB::INPUT_INT),
+            "allow_img" => $mybb->get_input('fieldimg', MyBB::INPUT_INT),
+            "allow_video" => $mybb->get_input('fieldvideo', MyBB::INPUT_INT),
+            "searchable" => $mybb->get_input('searchable', MyBB::INPUT_INT),
+            "suggestion" => $mybb->get_input('suggestion', MyBB::INPUT_INT),
+            "active" => $mybb->get_input('active', MyBB::INPUT_INT),
+            "guest" => $mybb->get_input('guest', MyBB::INPUT_INT),
             "guest_content" => $guestcontent,
           ];
+
           $db->update_query("application_ucp_fields", $update, "id = {$fieldid}");
           flash_message($lang->application_ucp_success, 'success');
           admin_redirect("index.php?module=config-application_ucp");
@@ -1543,6 +1530,11 @@ function application_ucp_admin_load()
       $page->output_header($lang->application_ucp_editfieldtype);
       $sub_tabs = application_ucp_do_submenu();
       $page->output_nav_tabs($sub_tabs, 'application_ucp');
+      
+      if (isset($errors)) {
+        $page->output_inline_error($errors);
+      }
+
       $fieldid = $mybb->get_input('fieldid', MyBB::INPUT_INT);
       $get_field_data =  $db->simple_select("application_ucp_fields", "*", "id={$fieldid}");
       $field_data = $db->fetch_array($get_field_data);
@@ -1911,7 +1903,6 @@ function application_ucp_usercp()
 
   //felder durchgehen
   while ($type = $db->fetch_array($get_fields)) {
-
     //ist das Feld editierbar? -> wenn mitglied berücksichtigen
     if ($member &&  $type['editable'] == 0) {
       $readonly = "readonly"; //für textfelder/textarea
@@ -1953,26 +1944,27 @@ function application_ucp_usercp()
       $requiredstar = "";
       $required = "";
     }
+
     //prüfen ob Feld initial versteckt sein soll -> wenn es von einem anderen abhängig ist
     if ($type['dependency'] != "none") {
+
       $hide = true;
       //javascript dynamisch zusammen bauen.
       //wenn dependency, von welchem feld und welchem wert? Entsprechend element ein oder ausblenden.
       $application_ucp_js .= "
+      
         $('#" . $type['fieldname'] . "').hide();
         $('#label_" . $type['fieldname'] . "').hide();  
         $('#descr_" . $type['fieldname'] . "').hide(); 
-        var str = ','+'" . $type['dependency_value'] . "';
-
-        if(str.includes(','+$('#" . $type['dependency'] . "').val())) {
+        var str{$type['fieldname']} = ','+'" . $type['dependency_value'] . "';
+        if(str{$type['fieldname']}.includes(','+$('#" . $type['dependency'] . "').val())) {
           $('#hideinfo_" . $type['fieldname'] . "').val('true');
           $('#" . $type['fieldname'] . "').show(); 
           $('#label_{$type['fieldname']}').show(); 
           $('#descr_" . $type['fieldname'] . "').show(); 
         }
         
-        if(str.includes(','+$('#" . $type['dependency'] . ":checked').val())) {
-          console.log('blubber');
+        if(str{$type['fieldname']}.includes(','+$('#" . $type['dependency'] . ":checked').val())) {
           $('#hideinfo_" . $type['fieldname'] . "').val('true');
           $('#" . $type['fieldname'] . "').show(); 
           $('#label_{$type['fieldname']}').show(); 
@@ -1987,7 +1979,7 @@ function application_ucp_usercp()
             } else {
               var checked = '';
             }
-            if(str.includes(','+$('#" . $type['dependency'] . "'+checked+'').val())) {
+            if(str{$type['fieldname']}.includes(','+$('#" . $type['dependency'] . "'+checked+'').val())) {
                 $('#hideinfo_" . $type['fieldname'] . "').val('true');
                 $('#" . $type['fieldname'] . "').show(); 
                 $('#label_{$type['fieldname']}').show(); 
@@ -2155,13 +2147,13 @@ function application_ucp_usercp()
         $application_ucp_js .= "        
         $('.{$type['fieldname']}_check').on('change', function() {
           if($(this).val() == 'deleteinput' && this.checked) {
-            console.log('haifisch check')
+     
           $('.{$type['fieldname']}_check').not(this).prop('checked', false);
           $('.{$type['fieldname']}_check').not(this).prop('disabled', true); 
      
           }
           if($(this).val() == 'deleteinput' && this.checked === false) { 
-            console.log('haifisch uncheck')
+    
             $('.{$type['fieldname']}_check').not(this).prop('disabled', false); 
             $('.{$type['fieldname']}_check').not(this).removeAttr('disabled'); 
           }
@@ -2350,7 +2342,7 @@ function application_ucp_usercp()
         //gibt es einen eintrag vom fieldid mit uid wo der wert schüler oder erwachsen ist 
 
         foreach ($values as $val) {
-         
+
           $val = trim($val);
           $numrow = $db->num_rows($db->simple_select("application_ucp_userfields", "*", "fieldid = '{$fieldep['id']}' and value = '$val' and uid='{$mybb->user['uid']}'"));
           if ($numrow > 0) $ismandatory = 1;
@@ -2561,11 +2553,12 @@ function application_ucp_usercp()
 
   //Steckbrieffrist verlängern
   if ($mybb->get_input('application_ucp_extend')) {
-    $update = array(
-      "aucp_extend" => '+1',
-      "aucp_extenddate" => date("Y-m-d")
-    );
-    $db->update_query("users", $update, "uid = {$mybb->user['uid']}");
+    // $update = array(
+    //   "aucp_extend" => '(CAST(aucp_extend AS INT) + 1)',
+    //   "aucp_extenddate" => date("Y-m-d")
+    // );
+    // $db->update_query("users", $update, "uid = {$mybb->user['uid']}");
+    $db->write_query("UPDATE " . TABLE_PREFIX . "users SET `aucp_extend`= aucp_extend + 1,`aucp_extenddate`= '" . date("Y-m-d") . "' WHERE uid = {$mybb->user['uid']}");
     redirect("usercp.php?action=application_ucp");
   }
 
@@ -2916,7 +2909,7 @@ function application_ucp_showthread()
 $plugins->add_hook("misc_start", "application_ucp_misc");
 function application_ucp_misc()
 {
-  global $mybb, $db, $templates, $header, $footer, $theme, $headerinclude, $application_ucp_mods, $application_ucp_mods_readybit;
+  global $mybb, $db, $templates, $header, $footer, $lang, $theme, $headerinclude, $application_ucp_mods, $application_ucp_mods_readybit;
 
   //wob in showthread vergeben 
   if ($mybb->input['action']  == 'wob') {
@@ -3083,7 +3076,7 @@ function application_ucp_misc()
 $plugins->add_hook("misc_start", "application_ucp_modoverview");
 function application_ucp_modoverview()
 {
-  global $mybb, $db, $templates, $header, $lang, $footer, $theme, $headerinclude, $application_ucp_mods, $application_ucp_mods_readybit;
+  global $mybb, $db, $templates, $lang, $header, $footer, $theme, $headerinclude, $application_ucp_mods, $application_ucp_mods_readybit;
   $addtext = "";
   if ($mybb->get_input('action', MyBB::INPUT_STRING) == "application_mods" || $mybb->get_input('action', MyBB::INPUT_STRING) == "aplication_mods") {
     // get settings
@@ -3334,7 +3327,6 @@ function application_ucp_indexalert()
         //schauen ob der der übernommen hat, dieser Mod ist (uid müsste im array sein)
         $charaflag = array_key_exists($alert['uid_mod'], $mod_charas);
         if ($charaflag) {
-          
           $alert['modcorrection_time'] = strtotime($alert['modcorrection_time']);
           $alert['usercorrection_time'] = strtotime($alert['usercorrection_time']);
           //man hat ihn selbst übernommen
@@ -3592,7 +3584,6 @@ function application_ucp_build_view($uid, $location, $kind)
 function application_ucp_save_single_field($fields, $key, $uid)
 {
   global $db, $mybb;
-  var_dump($fields);
   if (is_array($fields[$key])) {
     $fields[$key] = implode(",", $fields[$key]);
   }
