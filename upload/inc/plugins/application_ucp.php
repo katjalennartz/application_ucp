@@ -1383,7 +1383,7 @@ function application_ucp_admin_load()
             } else {
               $check = 0;
             }
-            $checkboxes .= $form->generate_check_box($field['id'], $option, $option, array('checked' => $check)) . "<br/>";
+            $checkboxes .= $form->generate_check_box("{$field['id']}[]", $option, $option, array('checked' => $check)) . "<br/>";
           }
           $form_container->output_row(
             $label,
@@ -2104,7 +2104,7 @@ function application_ucp_usercp()
       }
       //auswahl löschen hinzufügen, damit man das feld auch wieder leeren kann
       $inner .= "
-      <input type=\"{$typ}\" class=\"{$type['fieldname']}_check\" id=\"{$type['fieldname']}\" name=\"{$type['id']}[]\" value=\"deleteinput\" {$checked} {$required} {$disabled} > 
+      <input type=\"{$typ}\" class=\"{$type['fieldname']}_check\" id=\"{$type['fieldname']}\" name=\"{$type['id']}[]\" value=\"deleteinput\" > 
       <label for=\"{$type['fieldname']}\">Auswahl löschen</label><br/>";
 
       // dann hier das außenrum
@@ -2933,6 +2933,7 @@ function application_ucp_misc()
       "additionalgroups" => $additionalgroups_string,
     );
     $db->update_query("users", $new_record, "uid = '$threadauthor'");
+    $db->delete_query("application_ucp_management", "uid = '$threadauthor' ");
 
     if ($textwelcome_flag) {
       // Antwort-Post erstellen (für Annahme)
@@ -2963,7 +2964,6 @@ function application_ucp_misc()
         "lastposteruid" => $uid,
         "lastposttid" => $posttid
       );
-      // $insert_array = $db->update_query("forums", $new_record, "fid = '$fid'");
       $db->update_query("forums", $new_record, "fid = '$fid'");
     }
     redirect("showthread.php?tid={$posttid}");
