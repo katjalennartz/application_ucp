@@ -1530,7 +1530,7 @@ function application_ucp_admin_load()
       $page->output_header($lang->application_ucp_editfieldtype);
       $sub_tabs = application_ucp_do_submenu();
       $page->output_nav_tabs($sub_tabs, 'application_ucp');
-      
+
       if (isset($errors)) {
         $page->output_inline_error($errors);
       }
@@ -2867,38 +2867,44 @@ function application_ucp_showthread()
   global $lang, $db, $mybb, $templates, $thread, $tid, $give_wob, $aucp_responsible_mod;
   //Sprachvariable laden
   $lang->load('application_ucp');
+  $mods = $mybb->settings['application_ucp_stecki_mods'];
 
-  // Gruppen holen und sortieren
-  $usergroups_query = $db->query("SELECT * FROM " . TABLE_PREFIX . "usergroups ORDER by usertitle ASC");
-  $usergroups_bit = "";
-  // Select bauen
-  while ($usergroups = $db->fetch_array($usergroups_query)) {
-    $usergroups_bit .= "<option value=\"{$usergroups['gid']}\">{$usergroups['title']}</option>";
-  }
+  // Nur Moderatoren haben Zugriff auf die Seite.
+  if (is_member($mods, $mybb->user['uid'])) {
 
-  // Sekundäre Gruppen hinzufügen
-  $additionalgroups_query = $db->query("SELECT * FROM " . TABLE_PREFIX . "usergroups ORDER by usertitle ASC");
 
-  $additionalgroups_bit = "";
-  // Select basteln
-  while ($additionalgroups = $db->fetch_array($additionalgroups_query)) {
-    $additionalgroups_bit .= "<option value=\"{$additionalgroups['gid']}\">{$additionalgroups['title']}</option>";
-  }
-  // var_dump($thread);
-  // echo "fid".$mybb->setting['application_ucp_steckiarea'];
-  // application_ucp_wobbutton
-  if ($thread['fid'] == $mybb->settings['application_ucp_steckiarea']) {
-
-    $responsible_uid = $db->fetch_field($db->simple_select("application_ucp_management", "uid_mod", "tid = {$tid}"), "uid_mod");
-
-    if ($responsible_uid != 0) {
-      $responsible = get_user($responsible_uid);
-      $responsible_link = build_profile_link($responsible['username'], $responsible_uid);
-      $aucp_responsible_mod = $lang->sprintf($lang->application_ucp_responsible, $responsible_link);
-    } else {
-      $aucp_responsible_mod = $lang->application_ucp_noresponsible;
+    // Gruppen holen und sortieren
+    $usergroups_query = $db->query("SELECT * FROM " . TABLE_PREFIX . "usergroups ORDER by usertitle ASC");
+    $usergroups_bit = "";
+    // Select bauen
+    while ($usergroups = $db->fetch_array($usergroups_query)) {
+      $usergroups_bit .= "<option value=\"{$usergroups['gid']}\">{$usergroups['title']}</option>";
     }
-    eval("\$give_wob .= \"" . $templates->get("application_ucp_wobbutton") . "\";");
+
+    // Sekundäre Gruppen hinzufügen
+    $additionalgroups_query = $db->query("SELECT * FROM " . TABLE_PREFIX . "usergroups ORDER by usertitle ASC");
+
+    $additionalgroups_bit = "";
+    // Select basteln
+    while ($additionalgroups = $db->fetch_array($additionalgroups_query)) {
+      $additionalgroups_bit .= "<option value=\"{$additionalgroups['gid']}\">{$additionalgroups['title']}</option>";
+    }
+    // var_dump($thread);
+    // echo "fid".$mybb->setting['application_ucp_steckiarea'];
+    // application_ucp_wobbutton
+    if ($thread['fid'] == $mybb->settings['application_ucp_steckiarea']) {
+
+      $responsible_uid = $db->fetch_field($db->simple_select("application_ucp_management", "uid_mod", "tid = {$tid}"), "uid_mod");
+
+      if ($responsible_uid != 0) {
+        $responsible = get_user($responsible_uid);
+        $responsible_link = build_profile_link($responsible['username'], $responsible_uid);
+        $aucp_responsible_mod = $lang->sprintf($lang->application_ucp_responsible, $responsible_link);
+      } else {
+        $aucp_responsible_mod = $lang->application_ucp_noresponsible;
+      }
+      eval("\$give_wob .= \"" . $templates->get("application_ucp_wobbutton") . "\";");
+    }
   }
 }
 
