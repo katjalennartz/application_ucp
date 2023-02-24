@@ -5,6 +5,19 @@ Das Plugin ermöglicht es, unabhängig von Profilfeldern, Felder für den Steckb
 	
 https://github.com/katjalennartz/application_ucp/wiki
 
+**Update: 24.02.2023**  
+- 'Speichern & Kontrolle' verstecken wenn angenommen
+- Verlängern nur anzeigen, wenn noch nicht angenommen
+- Templateänderung: application_ucp_ucp_main 
+	
+```        
+<input type="submit" class="button" name="application_ucp_ready" value="{$lang->application_ucp_readybtn}"/>
+```
+ersetzen mit: 
+```{$savebtn}```
+	
+		
+		
 
 **version: 1.0.1**  
 10.02.2023
