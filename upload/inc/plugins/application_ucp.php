@@ -418,8 +418,8 @@ function application_ucp_install()
         <div align="center" class="applucp-con__item applucp-buttons">
          {$extend_button}
          <input type="submit" class="button" name="application_ucp_save" value="{$lang->application_ucp_save}" />
-         <input type="submit" class="button" name="application_ucp_ready" value="{$lang->application_ucp_readybtn}"/>
-        </div>
+         {$savebtn}
+         </div>
         </div>
       </td>
       </tr>
@@ -1838,7 +1838,6 @@ function application_ucp_usercp()
 {
   global $mybb, $db, $templates, $cache, $lang, $templates, $themes, $headerinclude, $header, $footer, $usercpnav, $application_ucp_ucp_main, $fields;
 
-
   if ($mybb->input['action'] != "application_ucp") {
     return false;
   }
@@ -1864,20 +1863,25 @@ function application_ucp_usercp()
 
 
   //Infos angezeigt
-  if ($member === false) {
+  if ($member == false) {
     //Anzeige Frist
     $extend_cnt = intval($db->fetch_field($db->simple_select("users", "aucp_extend", "uid = {$thisuser}"), "aucp_extend"));
     $regdate_read = date("d.m.Y", $regdate);
-
+    //noch nicht verlängert. Fristdatum also ganz normal reg datum + erlaubte zeit#
+    $savebtn = "<input type=\"submit\" class=\"button\" name=\"application_ucp_ready\" value=\"{$lang->application_ucp_readybtn}\" >";
     if ($extend_cnt == 0) {
       $add = $adddays;
       $fristdate = date("d.m.Y", strtotime("+{$add} day", $regdate));
       $extend_cnt = 0;
       $application_ucp_correction_status = "";
     }
+    //Die Frist wurde schon einmal verlängert
     if ($extend_cnt > 0) {
+      // ext = erlaubte frist zum verlängern * wie oft wurde verlängert
       $ext = $ext * $extend_cnt;
+      //Normale frist + verlängerung
       $add = $adddays + $ext;
+      //datum für frist berechnen
       $fristdate = date("d.m.Y", strtotime("+{$add} day", $regdate));
       $regdate = date("d.m.Y", $regdate);
       $application_ucp_correction_status = "";
@@ -1886,6 +1890,7 @@ function application_ucp_usercp()
 
     $korrektur = $db->simple_select("application_ucp_management", "*", "uid = {$thisuser} AND submission_time < modcorrection_time AND usercorrection_time < modcorrection_time");
     if ($db->num_rows($korrektur) > 0) {
+      //Der Steckbrief wurde eingereicht.
       $application_ucp_correction_status =  $lang->application_ucp_correction;
     }
 
@@ -1896,7 +1901,6 @@ function application_ucp_usercp()
   //UCP bauen
   // alle aktiven Felder holen
   $get_fields = $db->simple_select("application_ucp_fields", "*", "active = 1", array('order_by' => 'sorting'));
-
 
   //start für javascript das wir brauchen
   $application_ucp_js = "<script> $(function() {";
@@ -1917,15 +1921,15 @@ function application_ucp_usercp()
       $readonly = "";
       $disabled = "";
     }
-    //gibt es schon inhalte für die felder? 
 
+    //gibt es schon inhalte für die felder? 
     $get_value = $db->fetch_array($db->simple_select("application_ucp_userfields", "*", "uid = {$thisuser} AND fieldid={$type['id']}"));
     if (empty($get_value['value'])) {
       $get_value['value'] = "";
     }
+
     //wenn nein, gibt es eine vorlage für das feld?
     if ($type['template'] != "") {
-
       if ($get_value['value'] == "") {
         //Es gibt eine Vorlage und der user hat das Feld noch nicht bearbeitet
         $get_value['value'] = $type['template'];
@@ -1952,7 +1956,6 @@ function application_ucp_usercp()
       //javascript dynamisch zusammen bauen.
       //wenn dependency, von welchem feld und welchem wert? Entsprechend element ein oder ausblenden.
       $application_ucp_js .= "
-      
         $('#" . $type['fieldname'] . "').hide();
         $('#label_" . $type['fieldname'] . "').hide();  
         $('#descr_" . $type['fieldname'] . "').hide(); 
@@ -2059,13 +2062,11 @@ function application_ucp_usercp()
           }
         } else {
           if (trim($option) == trim($getselects)) {
-
             $selected = "selected=\"selected\"";
           } else {
             $selected = "";
           }
         }
-
         $selects .= "<option value=\"{$option}\" {$selected} >{$option}</option>";
       }
 
@@ -2135,9 +2136,6 @@ function application_ucp_usercp()
           checkboxes.attr('required', 'required');
         }
         });
-
-
-
         ";
       }
 
@@ -2153,7 +2151,6 @@ function application_ucp_usercp()
      
           }
           if($(this).val() == 'deleteinput' && this.checked === false) { 
-    
             $('.{$type['fieldname']}_check').not(this).prop('disabled', false); 
             $('.{$type['fieldname']}_check').not(this).removeAttr('disabled'); 
           }
@@ -2161,11 +2158,8 @@ function application_ucp_usercp()
       ";
       }
     }
-
     $fields .= "</div>";
   }
-
-
 
   //ende Javascript
   $application_ucp_js .= "});</script>";
@@ -2201,7 +2195,7 @@ function application_ucp_usercp()
       $wantedurl = $get_url_data['value'];
     }
 
-    //Die Checkboxen
+    //Die Checkboxen für wanted
     $inner .= "
         <input type=\"radio\" class=\"wanted_check\" id=\"wanted\" name=\"-1\" value=\"1\" {$checked_yes}\> 
         <label for=\"wanted\">Ja</label><br/>
@@ -2288,12 +2282,15 @@ function application_ucp_usercp()
     //wurde schon häufiger als erlaubt verlängert?
     $extend_cnt = $db->fetch_field($db->simple_select("users", "aucp_extend", "uid = {$mybb->user['uid']}"), "aucp_extend");
     if ($extend_cnt < $mybb->settings['application_ucp_extend_cnt']) {
-      $extend_button = "<input type=\"submit\" class=\"button\" name=\"application_ucp_extend\" value=\"" . $lang->application_ucp_extbtn . "\"/>";
+      if ($member == false) {
+        $extend_button = "<input type=\"submit\" class=\"button\" name=\"application_ucp_extend\" value=\"" . $lang->application_ucp_extbtn . "\"/>";
+      } else {
+        $extend_button = "";
+      }
     }
   }
 
   //Steckbrief speichern, aber nicht abgeben
-
   if ($mybb->get_input('application_ucp_save')) {
     //Hier speichern wir, was eingetragen wurde
     //wir bekommen ein array mit allen werten
@@ -2342,7 +2339,6 @@ function application_ucp_usercp()
         //gibt es einen eintrag vom fieldid mit uid wo der wert schüler oder erwachsen ist 
 
         foreach ($values as $val) {
-
           $val = trim($val);
           $numrow = $db->num_rows($db->simple_select("application_ucp_userfields", "*", "fieldid = '{$fieldep['id']}' and value = '$val' and uid='{$mybb->user['uid']}'"));
           if ($numrow > 0) $ismandatory = 1;
@@ -2435,7 +2431,6 @@ function application_ucp_usercp()
         $affectedusers = "";
         //Zu den betroffenen den Link bauen
         foreach ($get_affected_names as $name) {
-
           //Mention me oder nicht? 
           if ($mybb->settings['application_ucp_stecki_affected_alert'] == 2) {
             $affectedusers .= " @\"{$name}\", ";
@@ -2445,7 +2440,7 @@ function application_ucp_usercp()
         }
         // das letzte Komma und leertase entfernen
         $affectedusers = (substr($affectedusers, 0, -2));
-        $affected = $lang->application_ucp_affected_label . " <br/> {$affectedusers}";
+        $affected = "<strong>" . $lang->application_ucp_affected_label . ":</strong> {$affectedusers}";
       } else {
         $affected = "Keine anderen Charaktere betroffen";
       }
@@ -2455,17 +2450,47 @@ function application_ucp_usercp()
       //Die admin cp message holen und die variable $wanted ersetzen
       $threadmessage = $threadmessage ? str_replace("\$wanted", $wanted, $threadmessage) : "";
 
-      // $threadmessage = str_replace("\$wanted", $wanted, $mybb->settings['application_ucp_stecki_message']);
-
-
-      // $output = $output ? str_replace(array('{elapsed_time}', '{memory_usage}'), array($elapsed, $memory), $output): "";
-
       //Die Variable affected ersetzen
       $threadmessage =  $threadmessage ? str_replace("\$affected", $affected, $threadmessage) : "";
       // $threadmessage = str_replace("\$affected", $affected, $threadmessage);
 
       //Den usernamen ersetzen
-      $threadmessage = str_replace("\$username", $mybb->user['username'], $threadmessage);
+      $threadmessage = str_replace("\$username", build_profile_link($mybb->user['username'], $mybb->user['uid']), $threadmessage);
+      //das Avatar ersetzen 
+      $threadmessage = str_replace("\$avatar", "<img src=\"{$mybb->user['avatar']}\">", $threadmessage);
+
+      //blurred lines kram mit abfangen für den fall, dass ich es vergesse vorm upload ins gitlab rauszunehmen :D
+      //kann gerne als beispiel für eigenen ergänzungen genommen werden. Wir checken hier ob bestimmte Dinge eingetragen/ausgefüllt wurden
+      // $firststeps_check = "";
+      // //jobliste
+      // if ($db->table_exists("jl_entry")) {
+      //   $fetch_job = $db->simple_select("jl_entry", "*", "je_uid= {$mybb->user['uid']}");
+      //   if ($db->num_rows($fetch_job) > 0) {
+      //     $firststeps_check .= "<li><i class=\"fa-solid fa-check\"></i> In Jobliste eingetragen</li>";
+      //   } else {
+      //     $firststeps_check .= "<li><i class=\"fa-solid fa-xmark\"></i> Nicht in Jobliste eingetragen</li>";
+      //   }
+      // }
+      // //wohnort
+      // if ($db->table_exists("residences_user")) {
+      //   $fetch_job = $db->simple_select("residences_user", "*", "uid= {$mybb->user['uid']}");
+      //   if ($db->num_rows($fetch_job) > 0) {
+      //     $firststeps_check .= "<li><i class=\"fa-solid fa-check\"></i> In Residences eingetragen</li>";
+      //   } else {
+      //     $firststeps_check .= "<li><i class=\"fa-solid fa-xmark\"></i> Nicht in Residences eingetragen</li>";
+      //   }
+      // }
+      // //relas
+      // //wohnort
+      // if ($db->table_exists("relas_entries")) {
+      //   $fetch_job = $db->simple_select("relas_entries", "*", "r_from = {$mybb->user['uid']}");
+      //   if ($db->num_rows($fetch_job) > 0) {
+      //     $firststeps_check .= "<li><i class=\"fa-solid fa-check\"></i> Es sind Relations eingetragen</li>";
+      //   } else {
+      //     $firststeps_check .= "<li><i class=\"fa-solid fa-xmark\"></i> Keine Relations eingetragen</li>";
+      //   }
+      // }
+      // $threadmessage = str_replace("\$firststeps_check", $firststeps_check, $threadmessage);
 
       // Kopiert aus newthread.php
       // Set up posthandler. (Wir nutzen hier einfach komplett die funktion aus newthread.php)
