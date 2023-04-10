@@ -1328,7 +1328,7 @@ function application_ucp_admin_load()
         $label = $field['label'] . $required . ":";
         $descr = $dep . " " . $notactive;
         //wenn es schon input gibt, ausgeben
-        $get_input = $db->fetch_field($db->simple_select("application_ucp_userfields", "value", "uid = {$uid} AND fieldid = {$field['id']}"), "value");
+        $get_input = $db->fetch_field($db->simple_select("application_ucp_userfields", "value", "uid = '{$uid}' AND fieldid = '{$field['id']}'"), "value");
         //je nach art des felds, formularfeld bauen
         if ($field['fieldtyp'] == "text") {
           $form_container->output_row(
@@ -1923,7 +1923,7 @@ function application_ucp_usercp()
     }
 
     //gibt es schon inhalte für die felder? 
-    $get_value = $db->fetch_array($db->simple_select("application_ucp_userfields", "*", "uid = {$thisuser} AND fieldid={$type['id']}"));
+    $get_value = $db->fetch_array($db->simple_select("application_ucp_userfields", "*", "uid = '{$thisuser}' AND fieldid='{$type['id']}'"));
     if (empty($get_value['value'])) {
       $get_value['value'] = "";
     }
@@ -2086,7 +2086,7 @@ function application_ucp_usercp()
       $inner = "";
       $options = explode(",", $type['options']);
 
-      $getval = $db->fetch_field($db->simple_select("application_ucp_userfields", "value", "fieldid = {$type['id']} AND uid = {$thisuser}"), "value");
+      $getval = $db->fetch_field($db->simple_select("application_ucp_userfields", "value", "fieldid = '{$type['id']}' AND uid = '{$thisuser}'"), "value");
 
       //die checkboxes basteln - erst einmal die einzelnen pro option
       foreach ($options as $option) {
@@ -2174,7 +2174,7 @@ function application_ucp_usercp()
     //Die Angabe ist Pflicht
     $requiredstar = "<span class=\"app_ucp_star\">" . $lang->application_ucp_mandatory . "</span>";
     //testen ob schon einmal ausgefüllt und entsprechend die Checkbox vorauswählen oder nicht
-    $get_checked = $db->simple_select("application_ucp_userfields", "*", "uid = {$mybb->user['uid']} AND fieldid = '-1'");
+    $get_checked = $db->simple_select("application_ucp_userfields", "*", "uid = '{$mybb->user['uid']}' AND fieldid = '-1'");
     $get_checked_row = $db->num_rows($get_checked);
     $get_checked_data = $db->fetch_array($get_checked);
     if ($get_checked_row > 0) {
@@ -2189,7 +2189,7 @@ function application_ucp_usercp()
       $checked = "";
     }
     //Daten für URL
-    $get_url = $db->simple_select("application_ucp_userfields", "*", "uid = {$mybb->user['uid']} AND fieldid = -2");
+    $get_url = $db->simple_select("application_ucp_userfields", "*", "uid = '{$mybb->user['uid']}' AND fieldid = '-2'");
     if ($db->num_rows($get_url) > 0) {
       $get_url_data = $db->fetch_array($get_url);
       $wantedurl = $get_url_data['value'];
@@ -2216,7 +2216,7 @@ function application_ucp_usercp()
     $requiredstar = "";
     //input basteln
     //Daten für affected
-    $get_affected = $db->simple_select("application_ucp_userfields", "*", "uid = {$mybb->user['uid']} AND fieldid = '-3'");
+    $get_affected = $db->simple_select("application_ucp_userfields", "*", "uid = '{$mybb->user['uid']}' AND fieldid = '-3'");
     if ($db->num_rows($get_affected) > 0) {
       $get_affected_data = $db->fetch_array($get_affected);
       $affected_data = $get_affected_data['value'];
@@ -2317,7 +2317,7 @@ function application_ucp_usercp()
       }
     }
     //wir speichern hier den alten wert (Alte betroffene User suchen), um ihn später zu vergleichen
-    $old_affected = $db->fetch_field($db->simple_select("application_ucp_userfields", "value", "uid = {$mybb->user['uid']} AND fieldid='-3'"), "value");
+    $old_affected = $db->fetch_field($db->simple_select("application_ucp_userfields", "value", "uid = '{$mybb->user['uid']}' AND fieldid='-3'"), "value");
 
     //dann speichern wir alle felder, damit nichts verloren geht
     application_ucp_savefields($fields_numerickey, $mybb->user['uid']);
@@ -2339,7 +2339,8 @@ function application_ucp_usercp()
         //gibt es einen eintrag vom fieldid mit uid wo der wert schüler oder erwachsen ist 
 
         foreach ($values as $val) {
-          $val = trim($val);
+          $val = $db->escape_string(trim($val));
+
           $numrow = $db->num_rows($db->simple_select("application_ucp_userfields", "*", "fieldid = '{$fieldep['id']}' and value = '$val' and uid='{$mybb->user['uid']}'"));
           if ($numrow > 0) $ismandatory = 1;
         }
@@ -2421,9 +2422,9 @@ function application_ucp_usercp()
       } else {
         $wanted = "Kein Gesuch";
       }
-
+      $get_affected_names = "";
       //Gibt es betroffene User?
-      $get_affected = $db->simple_select("application_ucp_userfields", "*", "uid = {$mybb->user['uid']} AND fieldid = -3 AND value != ''");
+      $get_affected = $db->simple_select("application_ucp_userfields", "*", "uid = '{$mybb->user['uid']}' AND fieldid = '-3' AND value != ''");
       $get_affected_row = $db->num_rows($get_affected);
       if ($get_affected_row > 0) {
         // Welche Mitglieder sind betroffen?
@@ -2440,7 +2441,7 @@ function application_ucp_usercp()
         }
         // das letzte Komma und leertase entfernen
         $affectedusers = (substr($affectedusers, 0, -2));
-        $affected = "<strong>" . $lang->application_ucp_affected_label . ":</strong> {$affectedusers}";
+        $affected = "<strong>" . $lang->application_ucp_affected_label . "</strong> {$affectedusers}";
       } else {
         $affected = "Keine anderen Charaktere betroffen";
       }
@@ -2558,11 +2559,13 @@ function application_ucp_usercp()
       //Bis hier (abschnittsweise) kopiert aus new thread kopiert
 
       //user informieren
-      foreach ($get_affected_names as $name) {
-        // Daten des Users bekommen
-        $user = get_user_by_username($name);
-        //betroffene user informieren
-        application_ucp_affected_alert($mybb->user['uid'], $user['uid'], $tid, 0);
+      if ($get_affected_names != "") {
+        foreach ($get_affected_names as $name) {
+          // Daten des Users bekommen
+          $user = get_user_by_username($name);
+          //betroffene user informieren
+          application_ucp_affected_alert($mybb->user['uid'], $user['uid'], $tid, 0);
+        }
       }
 
       //und jetzt noch einen eintrag in der Management Tabelle
@@ -2894,7 +2897,7 @@ function application_ucp_showthread()
   $lang->load('application_ucp');
   $mods = $mybb->settings['application_ucp_stecki_mods'];
 
-  // Nur Moderatoren haben Zugriff auf die Seite.
+  // Nur Moderatoren 
   if (is_member($mods, $mybb->user['uid'])) {
 
 
@@ -3038,9 +3041,9 @@ function application_ucp_misc()
         if (substr($key, 0, 4) == "pdf_") {
           $key = substr($key, 4);
 
-          if (strpos($value, "bild")) {
-          } else {
-            $html .= '
+          // if (strpos($key, "bild")) {
+          // } else {
+          $html .= '
             <tr>
             <td width="30%"> 
               <p style="padding:5px;"> ' . $key . ': </p> 
@@ -3049,7 +3052,7 @@ function application_ucp_misc()
             <p style="padding:5px;"> ' . $value . '</p>
               </td>
               </tr>';
-          }
+          // }
         }
       }
       $html .= "
@@ -3430,7 +3433,7 @@ function application_ucp_checkdep($dep, $deptestvalue, $uid)
   if ($dep != "none") {
 
     $depid = $db->fetch_field($db->simple_select("application_ucp_fields", "id", "fieldname = '{$dep}'"), "id");
-    $depvalue = $db->fetch_field($db->simple_select("application_ucp_userfields", "value", "fieldid = {$depid} and uid = {$uid}"), "value");
+    $depvalue = $db->fetch_field($db->simple_select("application_ucp_userfields", "value", "fieldid = '{$depid}' and uid = '{$uid}'"), "value");
 
     $depvalue = "," . $depvalue;
     $deptestvalue = "," . $deptestvalue;
@@ -3663,10 +3666,10 @@ function application_ucp_allchars($thisuser)
   $charas = array();
   if ($as_uid == 0) {
     // as_uid = 0 wenn hauptaccount oder keiner angehangen
-    $get_all_users = $db->query("SELECT uid,username FROM " . TABLE_PREFIX . "users WHERE (as_uid = $thisuser) OR (uid = $thisuser) ORDER BY username");
+    $get_all_users = $db->query("SELECT uid,username FROM " . TABLE_PREFIX . "users WHERE ((as_uid = $thisuser) OR (uid = $thisuser)) ORDER BY username");
   } else if ($as_uid != 0) {
     //id des users holen wo alle an gehangen sind 
-    $get_all_users = $db->query("SELECT uid,username FROM " . TABLE_PREFIX . "users WHERE (as_uid = $as_uid) OR (uid = $thisuser) OR (uid = $as_uid) ORDER BY username");
+    $get_all_users = $db->query("SELECT uid,username FROM " . TABLE_PREFIX . "users WHERE ((as_uid = $as_uid) OR (uid = $thisuser) OR (uid = $as_uid)) ORDER BY username");
   }
   while ($users = $db->fetch_array($get_all_users)) {
     $uid = $users['uid'];
@@ -3767,9 +3770,10 @@ function application_ucp_myalert()
     public function formatAlert(MybbStuff_MyAlerts_Entity_Alert $alert, array $outputAlert)
     {
       $alertContent = $alert->getExtraDetails();
+      $from = get_user($alertContent['fromuser']);
       return $this->lang->sprintf(
         $this->lang->application_ucp_affected,
-        $outputAlert['touid'],
+        $from['username'],
         $alertContent['tid'],
         $outputAlert['dateline']
       );
