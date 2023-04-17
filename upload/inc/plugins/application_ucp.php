@@ -1349,6 +1349,7 @@ function application_ucp_admin_load()
           $get_options = array();
           $get_options = array("keineangabe" => "keine Angabe");
           foreach ($options as $option) {
+            $option = trim($option);
             $get_options[$option] = $option;
           }
           $form_container->output_row(
@@ -1361,6 +1362,7 @@ function application_ucp_admin_load()
           $options = explode(",", $field['options']);
           $get_options = array("keineangabe" => "keine Angabe");
           foreach ($options as $option) {
+            $option = trim($option);
             $get_options[$option] = $option;
           }
           $get_inputs = explode(",",  $get_input);
@@ -1375,6 +1377,7 @@ function application_ucp_admin_load()
           $options = explode(",", $field['options']);
           $get_options = array();
           foreach ($options as $option) {
+            $option = trim($option);
             $get_options[$option] = $option;
           }
           foreach ($options as $option) {
@@ -1396,6 +1399,7 @@ function application_ucp_admin_load()
           $options = explode(",", $field['options']);
           $get_options = array();
           foreach ($options as $option) {
+            $option = trim($option);
             $get_options[$option] = $option;
           }
 
@@ -2586,6 +2590,12 @@ function application_ucp_usercp()
     //   "aucp_extenddate" => date("Y-m-d")
     // );
     // $db->update_query("users", $update, "uid = {$mybb->user['uid']}");
+
+    //Speichern damit nichts verloren geht.
+    $fields = $mybb->input;
+    //Hilfsunktion - wir übergeben den input und handeln da alles, weil wir das gleiche so oft machen müssen
+    application_ucp_savefields($fields, $mybb->user['uid']);
+
     $db->write_query("UPDATE " . TABLE_PREFIX . "users SET `aucp_extend`= aucp_extend + 1,`aucp_extenddate`= '" . date("Y-m-d") . "' WHERE uid = {$mybb->user['uid']}");
     redirect("usercp.php?action=application_ucp");
   }
