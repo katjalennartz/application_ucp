@@ -3820,3 +3820,18 @@ function application_ucp_myalert()
     );
   }
 }
+
+/**
+ * Was passiert wenn ein User gelöscht wird
+ */
+$plugins->add_hook("admin_user_users_delete_commit_end", "application_ucp_delete");
+function application_ucp_delete()
+{
+    global $db, $cache, $mybb, $user;
+
+    $db->delete_query('application_ucp_management', "uid = " . (int)$user['uid'] . "");
+    $db->delete_query('application_ucp_userfields', "uid = " . (int)$user['uid'] . "");
+
+    // add_task_log($task, "Reservierungen bereinigt uid war {$user['uid']} {$username}");
+}
+
