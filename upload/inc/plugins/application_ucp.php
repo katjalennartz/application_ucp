@@ -583,6 +583,8 @@ function application_ucp_uninstall()
 
   // Templates löschen
   $db->delete_query("templates", "title LIKE 'application_ucp%'");
+  $db->delete_query("templategroups", "prefix = 'application'");
+
 
   // CSS löschen
   require_once MYBB_ADMIN_DIR . "inc/functions_themes.php";
