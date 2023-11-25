@@ -3519,7 +3519,7 @@ function application_ucp_build_view($uid, $location, $kind)
         " . TABLE_PREFIX . "application_ucp_fields f 
         ON f.id = uf.fieldid 
         and uid = {$uid} AND {$location} = 1 
-        AND fieldid > 0 AND active = 1 and value != 'deleteinput'");
+        AND fieldid > 0 AND active = 1 and value != 'deleteinput' ORDER by sorting");
     //Felder durchgehen
     while ($field = $db->fetch_array($fieldquery)) {
       //erst testen wir die abhängigkeit, das feld hat eine, also schauen wir ob die bedingung erfüllt ist
