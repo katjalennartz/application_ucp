@@ -180,7 +180,7 @@ if ($mybb->usergroup['canmodcp'] == 1) {
     }
   }
 
-  echo "<h1>Update Script für Stckbrief Plugin</h1>";
+  echo "<h1>Update Script für Steckbrief Plugin</h1>";
   echo "<p>Updatescript wurde zuletzt am 6.12.23 aktualisiert</p>";
   echo "<p>Das Skript muss nur ausgeführt werden, wenn von einer alten auf eine neue Version geupdatet wird.<br> Bei Neuinstallation, muss hier nichts getan werden!</p>";
   if ($setcheck == 0) {
