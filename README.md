@@ -5,6 +5,10 @@ Das Plugin ermöglicht es, unabhängig von Profilfeldern, Felder für den Steckb
 	
 https://github.com/katjalennartz/application_ucp/wiki
 
+**Updates**		
+forenadresse/update_application.php 
+im Browser aufrufen
+
 **Update: 6.12.2023**  
 - status angenommen in forumdisplay
 - wob_date in user tabelle speichern
