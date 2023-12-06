@@ -5,6 +5,11 @@ Das Plugin ermöglicht es, unabhängig von Profilfeldern, Felder für den Steckb
 	
 https://github.com/katjalennartz/application_ucp/wiki
 
+**Update: 6.12.2023**  
+- status angenommen in forumdisplay
+- wob_date in user tabelle speichern
+- javascript fixes
+
 **Update: 24.02.2023**  
 - 'Speichern & Kontrolle' verstecken wenn angenommen
 - Verlängern nur anzeigen, wenn noch nicht angenommen

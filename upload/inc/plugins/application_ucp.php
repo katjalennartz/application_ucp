@@ -34,7 +34,7 @@ function application_ucp_info()
     "website" => "https://github.com/katjalennartz/application_ucp",
     "author" => "risuena",
     "authorsite" => "https://github.com/katjalennartz",
-    "version" => "1.0",
+    "version" => "1.1",
     "compatibility" => "18*"
   );
 }
@@ -67,7 +67,7 @@ function application_ucp_install()
     `postbit` int(1) NOT NULL DEFAULT 0,
     `profile` int(1) NOT NULL DEFAULT 0,
     `memberlist` int(1) NOT NULL DEFAULT 0,
-    `template` varchar(2500) NOT NULL DEFAULT '',
+    `template` LONGTEXT CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
     `sorting` int(10) NOT NULL DEFAULT 0,
     `active` int(1) NOT NULL DEFAULT 1,
     `allow_html` int(1) NOT NULL DEFAULT 1,
@@ -105,6 +105,7 @@ function application_ucp_install()
   //Verlängerung
   $db->add_column("users", "aucp_extend", "INT(10) NOT NULL DEFAULT 0");
   $db->add_column("users", "aucp_extenddate", "DATE NULL");
+  $db->add_column("users", "wob_date", "INT(10) NOT NULL DEFAULT 0");
   // ALTER TABLE `mybb_users` ADD `aucp_extenddate` DATE NOT NULL AFTER `aucp_extend`;
 
   // Admin Einstellungen
@@ -123,6 +124,13 @@ function application_ucp_install()
       'description' => 'Wähle deine Gruppe für Bewerber aus.',
       'optionscode' => 'groupselectsingle',
       'value' => '2', // Default
+      'disporder' => 1
+    ),
+    'application_ucp_approved' => array(
+      'title' => 'Gruppen der angenommenen User',
+      'description' => 'Bitte wähle alle Benutzergruppen für angenommene Charaktere aus.',
+      'optionscode' => 'groupselect',
+      'value' => '3', // Default
       'disporder' => 1
     ),
     'application_ucp_applicationtime' => array(
@@ -577,6 +585,9 @@ function application_ucp_uninstall()
   if ($db->field_exists("aucp_extenddate", "users")) {
     $db->write_query("ALTER TABLE " . TABLE_PREFIX . "users DROP aucp_extenddate");
   }
+  if ($db->field_exists("wob_date", "users")) {
+    $db->write_query("ALTER TABLE " . TABLE_PREFIX . "users DROP wob_date");
+  }
   // Einstellungen entfernen
   $db->delete_query("settings", "name LIKE 'application_ucp%'");
   $db->delete_query('settinggroups', "name = 'application_ucp'");
@@ -679,6 +690,23 @@ function application_ucp_deactivate()
     $alertTypeManager->deleteByCode('application_ucp_affected');
   }
   change_admin_permission("config", "application_ucp", -1);
+}
+
+//Hinzufügen  upgrade Hinweis
+$plugins->add_hook("admin_settings_print_peekers", "application_ucp_settings_peek");
+function application_ucp_settings_peek(&$peekers)
+{
+  global $db, $mybb;
+  if (
+    empty($mybb->settings['application_ucp_approved'])
+    || !$db->field_exists("guest", "application_ucp_fields")
+    || !$db->field_exists("guest_content", "application_ucp_fields")
+    || !$db->field_exists("wob_date", "users")
+  ) {
+    $peekers[] = "
+    $('a:contains(\"Steckbrief im UCP\")').after('<br><span style=\"color:red; font-weight:bold;\">Bitte das Updatescript ausführen! </span>');
+    ";
+  }
 }
 
 /**
@@ -1954,7 +1982,6 @@ function application_ucp_usercp()
       $requiredstar = "";
       $required = "";
     }
-
     //prüfen ob Feld initial versteckt sein soll -> wenn es von einem anderen abhängig ist
     if ($type['dependency'] != "none") {
 
@@ -1962,15 +1989,19 @@ function application_ucp_usercp()
       //javascript dynamisch zusammen bauen.
       //wenn dependency, von welchem feld und welchem wert? Entsprechend element ein oder ausblenden.
       $application_ucp_js .= "
+      //initiales verstecken von feldern mit abhängigkeit
         $('#" . $type['fieldname'] . "').hide();
         $('#label_" . $type['fieldname'] . "').hide();  
         $('#descr_" . $type['fieldname'] . "').hide(); 
+//string bauen
         var str{$type['fieldname']} = ','+'" . $type['dependency_value'] . "';
-        if(str{$type['fieldname']}.includes(','+$('#" . $type['dependency'] . "').val())) {
-          $('#hideinfo_" . $type['fieldname'] . "').val('true');
-          $('#" . $type['fieldname'] . "').show(); 
-          $('#label_{$type['fieldname']}').show(); 
-          $('#descr_" . $type['fieldname'] . "').show(); 
+        if($('#" . $type['dependency'] . "').val() != '') {
+          if(str{$type['fieldname']}.includes(','+$('#" . $type['dependency'] . "').val())) {
+            $('#hideinfo_" . $type['fieldname'] . "').val('true');
+            $('#" . $type['fieldname'] . "').show(); 
+            $('#label_{$type['fieldname']}').show(); 
+            $('#descr_" . $type['fieldname'] . "').show(); 
+          }
         }
         
         if(str{$type['fieldname']}.includes(','+$('#" . $type['dependency'] . ":checked').val())) {
@@ -2315,7 +2346,6 @@ function application_ucp_usercp()
     // $fields = $mybb->input;
     //einmal fürs später speichern, evt. doppelt gemoppelt aber well.
     $fields = $mybb->input;
-
     //wir wollen nur unsere fields in dem array
     foreach ($fields as $key => $value) {
       if (is_numeric($key)) {
@@ -2332,26 +2362,68 @@ function application_ucp_usercp()
     //Einreichen abbrechen, wenn nicht alle Pflichtfelder ausgefüllt sind.
     //alle inputs durchgehen
     foreach ($fields_numerickey as $key => $value) {
-      //ist das Feld ein Pflichtfeld
+      //array mit werten des Felds
       $field = $db->fetch_array($db->simple_select("application_ucp_fields", "*", "id = {$key}"));
       //wir müssen auch schauen, ob es eine abhängigkeit gibt. wenn ja dann nur pflicht berücksichtigen, wenn das entsprechende ausgewählt ist 
+      //ist das Feld ein Pflichtfeld
       $ismandatory = 0;
+      $ismandatory =  $field['mandatory'];
+      // $ismandatory = $db->fetch_field($db->write_query("SELECT mandatory FROM " . TABLE_PREFIX . "application_ucp_fields WHERE id = '" . $key . "'"), "mandatory");
       if ($field['dependency'] != "") {
+        //pflicht zurücksetzen, weil wir sie hier neu bewerten müssen
+        $ismandatory = 0;
         //es gibt eine Abhängigkeit
-        //hole id des felds
-        $fieldep = $db->fetch_array($db->simple_select("application_ucp_fields", "*", "fieldname = '{$field['dependency']}'"));
-        //ist
-        $values = explode(",", $field['dependency_value']);
-        //gibt es einen eintrag vom fieldid mit uid wo der wert schüler oder erwachsen ist 
+        //Von welchem Feld ist es abhängig? 
+        $fielddep = $db->fetch_array($db->simple_select("application_ucp_fields", "*", "fieldname = '{$field['dependency']}'"));
+        //ID bekommen um aktuellen input des Felds zu bekommen
+        $fielddep_id = $fielddep['id'];
+        //input kriegen
+        $fielddep_value = $fields_numerickey[$fielddep_id];
+        // Wenn es ein Array ist (select, multiselect) müssen wir es anders behandeln
+        if (is_array($fielddep_value)) {
+          //schauen ob der wert einmal gleich ist, dann muss pflicht
+          foreach ($fielddep_value as $val) {
+            if ($val == $field['dependency_value']) {
 
-        foreach ($values as $val) {
-          $val = $db->escape_string(trim($val));
-
-          $numrow = $db->num_rows($db->simple_select("application_ucp_userfields", "*", "fieldid = '{$fieldep['id']}' and value = '$val' and uid='{$mybb->user['uid']}'"));
-          if ($numrow > 0) $ismandatory = 1;
+              $ismandatory = 1;
+            }
+          }
+        } else {
+          //ist der wert von dem es abhängig sein soll = dem wert der im abhängigen ausgewählt wurde
+          if ($fielddep_value === $field['dependency']) {
+            // ist gleich -> Pflicht ja
+            $ismandatory = 1;
+          } else {
+            // pflicht nein
+            $ismandatory = 0;
+          }
         }
-      } else {
-        $ismandatory = $db->fetch_field($db->simple_select("application_ucp_fields", "mandatory", "id = {$key}"), "mandatory");
+
+        //ABHÄNGIGKEIT von Wert bla
+
+        //female -> zeige bla
+        //divers -> zeige bla 
+        //male -> zeuge bla nicht, bla kann leer sein obwohl pflicht
+
+        //hole die Abhänigkeiten des felds
+        // female
+        // wenn input != female  dann ist die pflicht egal
+
+
+
+        //hole id des felds
+        // $fieldep = $db->fetch_array($db->simple_select("application_ucp_fields", "*", "fieldname = '{$field['dependency']}'"));
+        // //ist
+        // $values = explode(",", $field['dependency_value']);
+
+        //ist der value (der evt. leer ist = dem value der abhängigkeit)
+        // foreach ($values as $val) {
+        //   $val = $db->escape_string(trim($val));
+        //   echo ("valist.".$val."fielddep.". $key.$value);
+        //   $numrow = $db->num_rows($db->simple_select("application_ucp_userfields", "*", "fieldid = '{$fieldep['id']}' and value = '$val' and uid='{$mybb->user['uid']}'"));
+        //   if ($numrow > 0) $ismandatory = 1;
+
+        // } die();
       }
       //pflichtfeld, aber nicht ausgefüllt.
       if ($ismandatory && empty($value)) {
@@ -2367,6 +2439,7 @@ function application_ucp_usercp()
         window.location = './usercp.php?action=application_ucp';</script>";
       }
     }
+
 
     //Inputs waren in Ordnung - alle Pflichfelder ausgefüllt
     //Schauen ob es schon einen eintrag im managenent gibt
@@ -2497,8 +2570,15 @@ function application_ucp_usercp()
       //     $firststeps_check .= "<li><i class=\"fa-solid fa-xmark\"></i> Keine Relations eingetragen</li>";
       //   }
       // }
-      // $threadmessage = str_replace("\$firststeps_check", $firststeps_check, $threadmessage);
+      // $fetch_ava = $db->fetch_field($db->simple_select("application_ucp_userfields", "value", "uid= {$mybb->user['uid']} AND fieldid = '20'"), "value");
+      // if ($fetch_ava != "") {
+      //   $firststeps_check .= "<li><strong>Avatarperson:</strong> {$fetch_ava}</li>";
+      // } else {
+      //   $firststeps_check .= "<li><i class=\"fa-solid fa-xmark\"></i> Keine Avaperson eingetragen</li>";
+      // }
+      // $firststeps_check .= "<li>gespielt von {$mybb->user['fid4']}</li>";
 
+      // $threadmessage = str_replace("\$firststeps_check", $firststeps_check, $threadmessage);
       // Kopiert aus newthread.php
       // Set up posthandler. (Wir nutzen hier einfach komplett die funktion aus newthread.php)
       // Post key
@@ -2511,11 +2591,11 @@ function application_ucp_usercp()
       // Set the thread data that came from the input to the $thread array.
       $new_thread = array(
         "fid" => $steckbriefarea,
-        "subject" => $db->escape_string($mybb->user['username']),
+        "subject" => $mybb->user['username'],
         "prefix" => "",
         "icon" => "",
         "uid" => $mybb->user['uid'],
-        "username" => $db->escape_string($mybb->user['username']),
+        "username" => $mybb->user['username'],
         "message" => $threadmessage,
         "ipaddress" => $session->packedip,
         "posthash" => $mybb->get_input('posthash')
@@ -2668,7 +2748,7 @@ function application_ucp_showinmemberlist(&$user)
 $plugins->add_hook("memberlist_intermediate", "application_ucp_filter");
 function application_ucp_filter()
 {
-  global $mybb, $db, $search_query, $js_getinputs, $filterurl, $fieldvalue, $filter, $templates, $applicationfilter, $selectfield, $selectstring, $filterjs;
+  global $mybb, $db, $search_query, $js_getinputs, $filterurl, $fieldvalue, $filter, $templates, $applicationfilter, $selectfield, $selectstring, $filterjs, $search_url;
   if ($mybb->settings['application_ucp_search']) {
     //Hier fangen wir an unseren queriy zu bauen. Wir müssten die felder der noch dazu kommenden tabelle mit auswählen
     $selectfield = ", fields.* ";
@@ -2790,12 +2870,12 @@ function application_ucp_filter()
 
         $value = $mybb->input[$searchfield['fieldname']];
 
-        if ($searchfield['fieldtyp'] == "text" || $searchfield['fieldtyp'] == "textarea") {
+        if ($searchfield['fieldtyp'] == "text" || $searchfield['fieldtyp'] == "textarea" || $searchfield['fieldtyp'] == "checkbox" || $searchfield['fieldtyp'] == "select_multiple") {
           $search_query .= " AND " . $searchfield['fieldname'] . " LIKE '%" . $value . "%'";
         }
         if (
           $searchfield['fieldtyp'] == "select" ||
-          $searchfield['fieldtyp'] == "select_multiple" || $searchfield['fieldtyp'] == "radio" || $searchfield['fieldtyp'] == "date"
+          $searchfield['fieldtyp'] == "radio" || $searchfield['fieldtyp'] == "date"
         ) {
           $search_query .= " AND trim(" . $searchfield['fieldname'] . ") = '" . $value . "'";
         }
@@ -2809,6 +2889,7 @@ function application_ucp_filter()
       } else {
         $search_query .= "AND TIMESTAMPDIFF(YEAR, geburtstag, CURDATE()) > {$mybb->input['age_range']} ";
       }
+      $filterurl .= "age_range=" . $mybb->input['age_range'];
     }
 
     if (!empty($mybb->input['fid4'])) {
@@ -2935,6 +3016,7 @@ function application_ucp_showthread()
     if ($thread['fid'] == $mybb->settings['application_ucp_steckiarea']) {
 
       $responsible_uid = $db->fetch_field($db->simple_select("application_ucp_management", "uid_mod", "tid = {$tid}"), "uid_mod");
+      $usergroup = $db->fetch_field($db->simple_select("users", "usergroup", "uid = {$thread['uid']}"), "usergroup");
 
       if ($responsible_uid != 0) {
         $responsible = get_user($responsible_uid);
@@ -2942,8 +3024,36 @@ function application_ucp_showthread()
         $aucp_responsible_mod = $lang->sprintf($lang->application_ucp_responsible, $responsible_link);
       } else {
         $aucp_responsible_mod = $lang->application_ucp_noresponsible;
+        if ($usergroup == "$mybb->settings['application_ucp_approved']") {
+          $aucp_responsible_mod = "Charakter angenommen.";
+        }
       }
       eval("\$give_wob .= \"" . $templates->get("application_ucp_wobbutton") . "\";");
+    }
+  }
+}
+
+$plugins->add_hook("forumdisplay_thread", "application_ucp_forumdisplay");
+function application_ucp_forumdisplay()
+{
+  global $fid, $db, $mybb, $lang, $thread, $aucp_responsible_mod;
+  //Sprachvariable laden
+  $lang->load('application_ucp');
+  $mods = $mybb->settings['application_ucp_stecki_mods'];
+
+  if ($fid == $mybb->settings['application_ucp_steckiarea']) {
+    $responsible_uid = $db->fetch_field($db->simple_select("application_ucp_management", "uid_mod", "tid = {$thread['tid']}"), "uid_mod");
+    $usergroup = $db->fetch_field($db->simple_select("users", "usergroup", "uid = {$thread['uid']}"), "usergroup");
+
+    if ($responsible_uid != 0) {
+      $responsible = get_user($responsible_uid);
+      $responsible_link = build_profile_link($responsible['username'], $responsible_uid);
+      $aucp_responsible_mod = $lang->sprintf($lang->application_ucp_responsible, $responsible_link);
+    } else {
+      $aucp_responsible_mod = $lang->application_ucp_noresponsible;
+      if ($usergroup == 8) {
+        $aucp_responsible_mod = "Charakter angenommen.";
+      }
     }
   }
 }
@@ -2955,10 +3065,13 @@ function application_ucp_showthread()
 $plugins->add_hook("misc_start", "application_ucp_misc");
 function application_ucp_misc()
 {
-  global $mybb, $db, $templates, $header, $footer, $lang, $theme, $headerinclude, $application_ucp_mods, $application_ucp_mods_readybit;
+  global $mybb, $db, $cache, $groupscache, $templates, $header, $footer, $lang, $theme, $headerinclude, $application_ucp_mods, $application_ucp_mods_readybit;
+  //php 8 fix
 
+  $mybb->input['action'] = $mybb->get_input('action');
   //wob in showthread vergeben 
   if ($mybb->input['action']  == 'wob') {
+
     //daten die wir brauchen
     $textwelcome =  $mybb->settings['application_ucp_wobtext'];
     $textwelcome_flag =  $mybb->settings['application_ucp_wobtext_yesno'];
@@ -2971,6 +3084,7 @@ function application_ucp_misc()
     $uid = $mybb->user['uid'];
     $ownip = $db->fetch_field($db->query("SELECT ip FROM " . TABLE_PREFIX . "sessions WHERE " . TABLE_PREFIX . "sessions.uid = '$uid'"), "ownip");
 
+    //sekundäre usergruppe eintragen wenn vorhanden
     if ($_POST['additionalgroups'] != '') {
       $additionalgroups_string = implode(', ', $mybb->input['additionalgroups']);
     }
@@ -2978,9 +3092,20 @@ function application_ucp_misc()
       "usergroup" => $newusergroup,
       "additionalgroups" => $additionalgroups_string,
     );
+
+    //wob date speichern - falls das feld existiert. (später hinzugefügt :D evt. manuell in der DB users tabelle anlegen, wenn gewünscht)
+    if ($db->field_exists("wob_date", "users")) {
+      $new_record["wob_date"] =  time();
+    }
+
+    //speichern
     $db->update_query("users", $new_record, "uid = '$threadauthor'");
+
+    //aus management tabelle schmeißen
     $db->delete_query("application_ucp_management", "uid = '$threadauthor' ");
 
+
+    //wenn im acp angegeben den welcometext/wob text automatisch posten
     if ($textwelcome_flag) {
       // Antwort-Post erstellen (für Annahme)
       $new_record = array(
@@ -3012,10 +3137,11 @@ function application_ucp_misc()
       );
       $db->update_query("forums", $new_record, "fid = '$fid'");
     }
+    //zurück zum post leiten
     redirect("showthread.php?tid={$posttid}");
   }
 
-  //Steckbrief übernehmen
+  //Moderator übernimmt Steckbrief
   if ($mybb->input['action'] == "take_application") {
     //modcorrection time aktualisieren
     $uid = intval($mybb->input['uid']);
@@ -3231,7 +3357,7 @@ function application_ucp_modoverview()
         $extend_cnt = $db->fetch_field($db->simple_select("users", "aucp_extend", "uid = {$user['uid']}"), "aucp_extend");
         if ($extend_cnt > 0) {
           $to_add = $mybb->settings['application_ucp_extend'] * $extend_cnt;
-          $add_extend = date("d.m.Y", strtotime("+7 day", strtotime($aucp_mod_date)));
+          $add_extend = date("d.m.Y", strtotime("+{$to_add} day", strtotime($aucp_mod_date)));
           $addtext = " ({$extend_cnt}x verlängert.)";
           $aucp_mod_date = $add_extend . $addtext;
         }
@@ -3248,7 +3374,7 @@ function application_ucp_modoverview()
  * Mod antwortet auf Steckbriefthread -> also Korrektur keine Annahme
  * Datum muss in Management Tabelle gespeichert werden
  */
-$plugins->add_hook("newreply_do_newreply_end", "application_ucp_do_reply");
+$plugins->add_hook("newreply_do_newreply_end", "application_ucp_do_reply", "0");
 function application_ucp_do_reply()
 {
   global $mybb, $db, $fid, $tid;
@@ -3508,7 +3634,7 @@ function application_ucp_build_view($uid, $location, $kind)
   //wir gehen davon aus, das feld ist erst einmal von nichts abhängig, deswegen setzen wir die flag auf true
   $depflag = true;
   $thisuser = $mybb->user['uid'];
-  //soll als plan html ausgegeben werden - wir bauen direk das markup
+  //soll als plane html ausgegeben werden - wir bauen direk das markup
   if ($kind == "html") {
     //äußerer Container
     $buildhtml = "<div class=\"aucp_fieldContainer aucp_{$location}\">";
@@ -3647,7 +3773,11 @@ function application_ucp_save_single_field($fields, $key, $uid)
  */
 function application_ucp_savefields($fields, $uid)
 {
-  global $db, $mybb;
+  global $db, $mybb, $lang;
+
+  if (!verify_post_check($mybb->get_input('my_post_key'))) {
+    error($lang->invalid_post_code);
+  }
   foreach ($fields as $key => $value) {
     //key -> id des felds  //Value -> der wert
     //checkboxen kriegen wir als array, wir müssen es erst in einen string umwandeln, den wir speichern können
@@ -3829,11 +3959,10 @@ function application_ucp_myalert()
 $plugins->add_hook("admin_user_users_delete_commit_end", "application_ucp_delete");
 function application_ucp_delete()
 {
-    global $db, $cache, $mybb, $user;
+  global $db, $cache, $mybb, $user;
 
-    $db->delete_query('application_ucp_management', "uid = " . (int)$user['uid'] . "");
-    $db->delete_query('application_ucp_userfields', "uid = " . (int)$user['uid'] . "");
+  $db->delete_query('application_ucp_management', "uid = " . (int)$user['uid'] . "");
+  $db->delete_query('application_ucp_userfields', "uid = " . (int)$user['uid'] . "");
 
-    // add_task_log($task, "Reservierungen bereinigt uid war {$user['uid']} {$username}");
+  // add_task_log($task, "Reservierungen bereinigt uid war {$user['uid']} {$username}");
 }
-
