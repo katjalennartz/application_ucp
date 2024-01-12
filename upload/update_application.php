@@ -263,10 +263,16 @@ if ($mybb->usergroup['canmodcp'] == 1) {
     }
 
     // Einfügen der Trackeroptionen in die user tabelle
-    if (!$db->field_exists("", "users")) {
-      $db->query("ALTER TABLE `" . TABLE_PREFIX . "users` ADD `tracker_index` INT(1) NOT NULL DEFAULT '1', ADD `tracker_indexall` INT(1) NOT NULL DEFAULT '1', ADD `tracker_reminder` INT(1) NOT NULL DEFAULT '1';");
+    if (!$db->field_exists("tracker_index", "users")) {
+      $db->query("ALTER TABLE `" . TABLE_PREFIX . "users` ADD `tracker_index` INT(1) NOT NULL DEFAULT '1';");
     }
-
+    if (!$db->field_exists("tracker_indexall", "users")) {
+      $db->query("ALTER TABLE `" . TABLE_PREFIX . "users` ADD `tracker_indexall` INT(1) NOT NULL DEFAULT '1';");
+    }
+    if (!$db->field_exists("tracker_reminder", "users")) {
+      $db->query("ALTER TABLE `" . TABLE_PREFIX . "users` ADD `tracker_reminder` INT(1) NOT NULL DEFAULT '1';");
+    }
+        
     // Neue Tabelle um Szenen zu speichern und informationen, wie die benachrichtigungen sein sollen.
     if (!$db->table_exists("scenetracker")) {
       $db->write_query("CREATE TABLE `" . TABLE_PREFIX . "scenetracker` (
