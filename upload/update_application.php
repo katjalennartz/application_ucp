@@ -5,7 +5,10 @@ error_reporting(-1);
 ini_set('display_errors', 1);
 
 global $db, $mybb, $lang;
-
+echo '<html lang="de">
+<head>
+<meta http-equiv="Content-Type" 
+      content="text/html; charset=utf-8">';
 echo (
   '<style type="text/css">
 body {
@@ -22,7 +25,9 @@ fieldset {
 legend {
   font-weight: bold;
 }
-</style>'
+</style>
+</head>
+<body>'
 );
 $gid = $db->fetch_field($db->write_query("SELECT gid FROM `" . TABLE_PREFIX . "settings` WHERE name like 'application_ucp%' LIMIT 1;"), "gid");
 
@@ -180,7 +185,7 @@ if ($mybb->usergroup['canmodcp'] == 1) {
     }
   }
 
-  echo "<h1>Update Script für Steckbrief Plugin</h1>";
+  echo "<h1>Update Script für Stckbrief Plugin</h1>";
   echo "<p>Updatescript wurde zuletzt am 6.12.23 aktualisiert</p>";
   echo "<p>Das Skript muss nur ausgeführt werden, wenn von einer alten auf eine neue Version geupdatet wird.<br> Bei Neuinstallation, muss hier nichts getan werden!</p>";
   if ($setcheck == 0) {
@@ -213,18 +218,18 @@ if ($mybb->usergroup['canmodcp'] == 1) {
     echo "<p>Datenbankfelder durchgehen</p>";
     $dbcheck = 0;
 
-    if (!$db->field_exists("application_ucp_fields", "guest")) {
+    if (!$db->field_exists("guest", "application_ucp_fields")) {
       $db->add_column("guest", "application_ucp_fields", "int(1) NOT NULL DEFAULT 1");
       echo "Feld guest wurde zu application_ucp_fields hinzugefügt.";
       $dbcheck = 1;
     }
-    if (!$db->field_exists("application_ucp_fields", "guest_content")) {
+    if (!$db->field_exists("guest_content", "application_ucp_fields")) {
       $db->add_column("application_ucp_fields", "guest_content", "varchar(500) NOT NULL DEFAULT ''");
       echo "Feld guest_content wurde zu application_ucp_fields hinzugefügt.";
       $dbcheck = 1;
     }
 
-    $db->modify_column("application_ucp_fields", "template", "CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL");
+    $db->write_query("ALTER TABLE `" . TABLE_PREFIX . "application_ucp_fields` CHANGE `template` `template` LONGTEXT CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '';");
 
     if (!$db->field_exists("aucp_extend", "users")) {
       $db->add_column("users", "aucp_extend", "INT(10) NOT NULL DEFAULT 0");
@@ -278,7 +283,7 @@ if ($mybb->usergroup['canmodcp'] == 1) {
     }
   }
   echo "<h1>CSS Nachträglich hinzufügen?</h1>";
-  echo "<p>Nach einem MyBB Upgrade fehlen die Stylesheets? <br> Hier kannst du den Standard Stylesheet neu hinzufügen.</p>";
+  echo "<p>Nach einem MyBB Upgrade fehlen die Stylesheets? <br> Hier kannst du den Standard Stylesheet nachträglich zum Master style neu hinzufügen.</p>";
   echo '<form action="" method="post">';
   echo '<input type="submit" name="css" value="css hinzufügen">';
   echo '</form>';
@@ -357,10 +362,12 @@ if ($mybb->usergroup['canmodcp'] == 1) {
   }
 
   echo '<div style="width:100%; background-color: rgb(121 123 123 / 50%); display: flex; position:absolute; bottom:0;right:0; height:50px; justify-content: center; align-items:center; gap:20px;">
-<div> <a href="https://github.com/katjalennartz/scenetracker" target="_blank">Github Rep</a></div>
+<div> <a href="https://github.com/katjalennartz/application_ucp/" target="_blank">Github Rep</a></div>
 <div> <b>Kontakt:</b> risuena (Discord)</div>
 <div> <b>Support:</b>  <a href="https://storming-gates.de/showthread.php?tid=1030089">SG Thread</a> oder via Discord</div>
-</div>';
+</div>
+</body>
+</html>';
 } else {
   echo "<h1>Kein Zugriff</h1>";
 }
