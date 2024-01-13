@@ -596,7 +596,6 @@ function application_ucp_uninstall()
   $db->delete_query("templates", "title LIKE 'application_ucp%'");
   $db->delete_query("templategroups", "prefix = 'application'");
 
-
   // CSS löschen
   require_once MYBB_ADMIN_DIR . "inc/functions_themes.php";
   $db->delete_query("themestylesheets", "name = 'application_ucp.css'");
@@ -1984,6 +1983,12 @@ function application_ucp_usercp()
     }
     //prüfen ob Feld initial versteckt sein soll -> wenn es von einem anderen abhängig ist
     if ($type['dependency'] != "none") {
+//get name of inout (id of field)
+      if ($type['fieldtyp'] == 'select_multiple' || $type['fieldtyp'] == 'checkbox') {
+        $inputname = $type['id'] . "[]";
+      } else {
+        $inputname = $type['id'];
+      }
 
       $hide = true;
       //javascript dynamisch zusammen bauen.
@@ -1995,6 +2000,20 @@ function application_ucp_usercp()
         $('#descr_" . $type['fieldname'] . "').hide(); 
 //string bauen
         var str{$type['fieldname']} = ','+'" . $type['dependency_value'] . "';
+
+      //das feld ist eine checkbox - mehrere werte können aktiviert sein, deswegen brauchen wir eine foreacht schleife
+      //wenn das fehld abhäng von einem wert ist, und dieser wert bei dem entsprechenden feld ausgefüllt ist, zeige es initial. 
+      //wir gehen hier über den klassenname des entsprechenden feldes und holen uns alle ausgewählten
+      $.each($(\".{$type['dependency']}_check:checked\"), function(){
+        if($(this).val() == '{$type['dependency_value']}') {
+            $('#hideinfo_" . $type['fieldname'] . "').val('true');
+            $('#" . $type['fieldname'] . "').show(); 
+            $('#label_{$type['fieldname']}').show(); 
+            $('#descr_" . $type['fieldname'] . "').show(); 
+        }
+      });
+      //keine checkbox deswegen ziehen wir das feld über die id und zeigen es an, wenn der wert von dem es abhängig ist ausgewählt wurde
+      //nur wenn das feld nicht leer ist. (leer trift im vergleich sonst immer zu)
         if($('#" . $type['dependency'] . "').val() != '') {
           if(str{$type['fieldname']}.includes(','+$('#" . $type['dependency'] . "').val())) {
             $('#hideinfo_" . $type['fieldname'] . "').val('true');
@@ -2010,16 +2029,49 @@ function application_ucp_usercp()
           $('#label_{$type['fieldname']}').show(); 
           $('#descr_" . $type['fieldname'] . "').show(); 
         }
+
+      //es wird etwas aktivert / deaktiviert
         $('#" . $type['dependency'] . "').change(function(){
           
           var inputtyp = $('#" . $type['dependency'] . ":checked').attr('type');
+
          
             if( inputtyp == 'checkbox' || inputtyp == 'radio') {
                 var checked = ':checked';
             } else {
               var checked = '';
             }
-            if(str{$type['fieldname']}.includes(','+$('#" . $type['dependency'] . "'+checked+'').val())) {
+            
+           //wir haben eine mehrfachauswahl
+         
+          if( inputtyp == 'checkbox' || $('#" . $type['dependency'] . "').prop('multiple')) {
+            
+                var str{$type['fieldname']} = ','+'" . $type['dependency_value'] . "';
+                //wir gehen das elemnt durch und holen uns alle checkbox inputs von diesem
+                $.each($(\".{$type['dependency']}_check\"), function(){
+                  //ist es angeklickt? 
+                  if($(this).prop('checked')) {
+                    //wenn die werte gleich sind element anzeigen 
+                      if($(this).val() == '{$type['dependency_value']}') {
+                            $('#hideinfo_" . $type['fieldname'] . "').val('true');
+                            $('#" . $type['fieldname'] . "').show(); 
+                            $('#label_{$type['fieldname']}').show(); 
+                            $('#descr_" . $type['fieldname'] . "').show(); 
+                        }  
+                  }else {
+                    // die werte sind gleich, aber jetzt wollen wir es verstecken, weil uncheck! 
+                      if ($(this).val() == '{$type['dependency_value']}') {
+                          $('#hideinfo_" . $type['fieldname'] . "').val('false');
+                          $('#" . $type['fieldname'] . "').hide(); 
+                          $('#label_" . $type['fieldname'] . "').hide(); 
+                          $('#descr_" . $type['fieldname'] . "').hide(); 
+                      } 
+                  }
+                });
+
+        } else {
+          //keine mehrfachauswahl möglich
+          if(str{$type['fieldname']}.includes(','+$('#" . $type['dependency'] . "'+checked+'').val()) && $('#" . $type['dependency'] . "'+checked+'').val() != '') {
                 $('#hideinfo_" . $type['fieldname'] . "').val('true');
                 $('#" . $type['fieldname'] . "').show(); 
                 $('#label_{$type['fieldname']}').show(); 
@@ -2033,6 +2085,7 @@ function application_ucp_usercp()
                 $('#label_" . $type['fieldname'] . "').hide(); 
                 $('#descr_" . $type['fieldname'] . "').hide(); 
                 // $('#" . $type['fieldname'] . "').removeAttr('required');
+} 
             } 
         });
       ";
@@ -3409,7 +3462,7 @@ function application_ucp_indexalert()
   $mods = $mybb->settings['application_ucp_stecki_mods'];
   $friststecki = $mybb->settings['application_ucp_applicationtime'];
   $fristkorrektur = $mybb->settings['application_ucp_correctiontime'];
-  $application_ucp_index_bit = $application_ucp_index_modbit = $application_ucp_index = "";
+  $application_ucp_index_bit = $application_ucp_index = $application_ucp_index_modbit = "";
   $alertflag = 0;
 
   $lang->load('application_ucp');
@@ -3593,13 +3646,17 @@ function application_ucp_checkdep($dep, $deptestvalue, $uid)
  * Helper Function for building SQL String. 
  * ****
  */
-function application_ucp_buildsql()
+function application_ucp_buildsql($type = "searchable")
 {
   global $db, $mybb;
 
   $selectstring = "LEFT JOIN (select um.uid as auid,";
+if ($type == "searchable") {
   $getfields = $db->simple_select("application_ucp_fields", "*", "searchable = 1 and active = 1");
-
+}
+  if ($type == "all") {
+    $getfields = $db->simple_select("application_ucp_fields", "*", "active = 1");
+  }
   while ($searchfield = $db->fetch_array($getfields)) {
     //weiter im Querie, hier modeln wir unsere Felder ders users (apllication_ucp_fields taballe) zu einer Tabellenreihe um -> name der Spalte ist fieldname, wert wie gehabt value
     $selectstring .= " max(case when um.fieldid ='{$searchfield['id']}' then um.value end) AS '{$searchfield['fieldname']}',";
@@ -3674,12 +3731,12 @@ function application_ucp_build_view($uid, $location, $kind)
           $fieldvalue = $field['guest_content'];
           $fieldvalue = str_replace('$themepath', $theme['imgdir'], $fieldvalue);
           $buildhtml .= "<div class=\"aucp_fieldContainer__item\"><div class=\"aucp_fieldContainer__field label\">{$field['label']}:</div>
-          <div class=\"aucp_fieldContainer__field field {$field['fieldname}']}\">" . $parser->parse_message($fieldvalue, $parser_options) . "</div>
+          <div class=\"aucp_fieldContainer__field field {$field['fieldname']}\">" . $parser->parse_message($fieldvalue, $parser_options) . "</div>
           </div>
           ";
         } else {
           $buildhtml .= "<div class=\"aucp_fieldContainer__item\"><div class=\"aucp_fieldContainer__field label\">{$field['label']}:</div>
-    <div class=\"aucp_fieldContainer__field field {$field['fieldname}']}\">" . $parser->parse_message($fieldvalue, $parser_options) . "</div>
+    <div class=\"aucp_fieldContainer__field field {$field['fieldname']}\">" . $parser->parse_message($fieldvalue, $parser_options) . "</div>
     </div>
     ";
         }
