@@ -1875,6 +1875,7 @@ function application_ucp_usercp()
     return false;
   }
   $lang->load('application_ucp');
+  $savebtn = "";
   $extend_button = $fristdate = $application_ucp_correction_status = $fields =  $regdate = $regdate_read = $adddays = $application_ucp_infos = "";
   $thisuser = $mybb->user['uid'];
   $adddays = $mybb->settings['application_ucp_applicationtime'];
@@ -1983,7 +1984,7 @@ function application_ucp_usercp()
     }
     //prüfen ob Feld initial versteckt sein soll -> wenn es von einem anderen abhängig ist
     if ($type['dependency'] != "none") {
-//get name of inout (id of field)
+      //get name of inout (id of field)
       if ($type['fieldtyp'] == 'select_multiple' || $type['fieldtyp'] == 'checkbox') {
         $inputname = $type['id'] . "[]";
       } else {
@@ -3651,9 +3652,9 @@ function application_ucp_buildsql($type = "searchable")
   global $db, $mybb;
 
   $selectstring = "LEFT JOIN (select um.uid as auid,";
-if ($type == "searchable") {
-  $getfields = $db->simple_select("application_ucp_fields", "*", "searchable = 1 and active = 1");
-}
+  if ($type == "searchable") {
+    $getfields = $db->simple_select("application_ucp_fields", "*", "searchable = 1 and active = 1");
+  }
   if ($type == "all") {
     $getfields = $db->simple_select("application_ucp_fields", "*", "active = 1");
   }
