@@ -3409,7 +3409,7 @@ function application_ucp_indexalert()
   $mods = $mybb->settings['application_ucp_stecki_mods'];
   $friststecki = $mybb->settings['application_ucp_applicationtime'];
   $fristkorrektur = $mybb->settings['application_ucp_correctiontime'];
-  $application_ucp_index_bit = $application_ucp_index_modbit = "";
+  $application_ucp_index_bit = $application_ucp_index_modbit = $application_ucp_index = "";
   $alertflag = 0;
 
   $lang->load('application_ucp');
