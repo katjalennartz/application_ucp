@@ -846,6 +846,7 @@ function application_ucp_admin_load()
             <li><b>Anzeige im Postbit:</b> </li>
             <li>Label & Value: &#x007B;&dollar;post['labelvalue_{$field['fieldname']}']&#x007D;
             <li>Label & Value in div: &#x007B;&dollar;post['labelvalue_div_{$field['fieldname']}']&#x007D;
+            <li>Label & Value in div + elemente in div: &#x007B;&dollar;post['labelvalue_divcon_{$field['fieldname']}']&#x007D;
             <li>Label: &#x007B;&dollar;post['label_{$field['fieldname']}']&#x007D;
             <li>Label in div: &#x007B;&dollar;post['label_div_{$field['fieldname']}']&#x007D;
             <li>Value: &#x007B;&dollar;post['value_{$field['fieldname']}']&#x007D;
@@ -860,11 +861,11 @@ function application_ucp_admin_load()
             <li><b>Anzeige im Profil:</b> </li>
             <li>Label & Value: &#x007B;&dollar;fields['labelvalue_{$field['fieldname']}']&#x007D;
             <li>Label & Value in div: &#x007B;&dollar;fields['labelvalue_div_{$field['fieldname']}']&#x007D;
+            <li>Label & Value in div + elemente in div: &#x007B;&dollar;fields['labelvalue_divcon_{$field['fieldname']}']&#x007D;
             <li>Label: &#x007B;&dollar;fields['label_{$field['fieldname']}']&#x007D;
             <li>Label in div: &#x007B;&dollar;fields['label_div_{$field['fieldname']}']&#x007D;
             <li>Value: &#x007B;&dollar;fields['value_{$field['fieldname']}']&#x007D;	
             <li>Value in div: &#x007B;&dollar;fields['value_div_{$field['fieldname']}']&#x007D;	</ul>";
-
           } else {
             $view_profile = "<ul>
             <li><b>Anzeige im Profile:</b> automatisch</li>
@@ -875,6 +876,7 @@ function application_ucp_admin_load()
             <li><b>Anzeige in der Memberlist:</b> </li>
             <li>Label & Value: &#x007B;&dollar;user['labelvalue_{$field['fieldname']}']&#x007D;
             <li>Label & Value in div: &#x007B;&dollar;user['labelvalue_div_{$field['fieldname']}']&#x007D;
+            <li>Label & Value in div + elemente in div: &#x007B;&dollar;user['labelvalue_divcon_{$field['fieldname']}']&#x007D;
             <li>Label: &#x007B;&dollar;user['label_{$field['fieldname']}']&#x007D;
             <li>Label in div: &#x007B;&dollar;user['label_div_{$field['fieldname']}']&#x007D;
             <li>Value: &#x007B;&dollar;user['value_{$field['fieldname']}']&#x007D;
@@ -3798,30 +3800,44 @@ function application_ucp_build_view($uid, $location, $kind)
         }
         // Wir bauen unsere Variablen zusammen
         // Label & Value in div: {$application['labelvalue_vorname']}
+        if ($fieldvalue == "") {
+          $emptyflag = "is_empty";
+        }
+
+        // Wir bauen unsere Variablen zusammen
+        // Label & Value in div Container, mit divs um elemente: {$application['labelvalue_vorname']}
+        $arrayfieldlabelvalue = "labelvalue_divcon_{$field['fieldname']}";
+        $array[$arrayfieldlabelvalue] = "
+          <div class=\"labelvalue_divcon_{$field['fieldname']} {$emptyflag} \">
+            <div class=\"aucp_divcon_label\">". $field['label'] . ":</div> 
+            <div class=\"aucp_divcon_value\">" . $parser->parse_message($fieldvalue, $parser_options) . "</div>
+          </div>";
+
+        // Label & Value in div: {$application['labelvalue_vorname']}
         $arrayfieldlabelvalue = "labelvalue_div_{$field['fieldname']}";
-        $array[$arrayfieldlabelvalue] = "<div class=\"labelvalue_div_{$field['fieldname']}\">" . $field['label'] . ": " . $parser->parse_message($fieldvalue, $parser_options) . "</div>";
+        $array[$arrayfieldlabelvalue] = "<div class=\"labelvalue_div_{$field['fieldname']} {$emptyflag} \">" . $field['label'] . ": " . $parser->parse_message($fieldvalue, $parser_options) . "</div>";
 
         // Wir bauen unsere Variablen zusammen
         // Label & Value: {$application['labelvalue_vorname']}
         $arrayfieldlabelvalue = "labelvalue_{$field['fieldname']}";
-        $array[$arrayfieldlabelvalue] = $field['label'] . ": " . $parser->parse_message($fieldvalue, $parser_options);
+        $array[$arrayfieldlabelvalue] = "<span class=\"{$emptyflag}\">" . $field['label'] . ": " . $parser->parse_message($fieldvalue, $parser_options) . "</span>";
 
 
         // Label: {$application['label_vorname']}
         $arraylabel = "label_{$field['fieldname']}";
-        $array[$arraylabel] = $field['label'];
+        $array[$arraylabel] = "<span class=\"{$emptyflag}\">" . $field['label'] . "</span>";
 
         // Label in div box: {$application['label_div_vorname']}
         $arraylabel = "label_div_{$field['fieldname']}";
-        $array[$arraylabel] = "<div class=\"label_div_{$field['fieldname']}\">" . $field['label'] . "</div>";
+        $array[$arraylabel] = "<div class=\"label_div_{$field['fieldname']} {$emptyflag}\">" . $field['label'] . "</div>";
 
         // Value: {$application['value_vorname']}
         $arraylabel = "value_{$field['fieldname']}";
-        $array[$arraylabel] = $parser->parse_message($fieldvalue, $parser_options);
+        $array[$arraylabel] = "<span class=\"{$emptyflag}\">" . $parser->parse_message($fieldvalue, $parser_options) . "</span>";
 
         // Value in divbox: {$application['value_div_vorname']}
         $arraylabel = "value_div_{$field['fieldname']}";
-        $array[$arraylabel] = "<div class=\"value_div_{$field['fieldname']}\">" . $parser->parse_message($fieldvalue, $parser_options) . "</div>";
+        $array[$arraylabel] = "<div class=\"value_div_{$field['fieldname']} {$emptyflag}\">" . $parser->parse_message($fieldvalue, $parser_options) . "</div>";
 
         // label as key, value as value, needed for pdf: {$application['pdf_Vorname']}
         $arraylabel = "pdf_{$field['label']}";
