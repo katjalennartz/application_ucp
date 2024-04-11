@@ -847,7 +847,7 @@ function application_ucp_admin_load()
             <li>Label & Value: &#x007B;&dollar;post['labelvalue_{$field['fieldname']}']&#x007D;
             <li>Label & Value in div: &#x007B;&dollar;post['labelvalue_div_{$field['fieldname']}']&#x007D;
             <li>Label: &#x007B;&dollar;post['label_{$field['fieldname']}']&#x007D;
-            <li>Labe in divl: &#x007B;&dollar;post['label_div_{$field['fieldname']}']&#x007D;
+            <li>Label in div: &#x007B;&dollar;post['label_div_{$field['fieldname']}']&#x007D;
             <li>Value: &#x007B;&dollar;post['value_{$field['fieldname']}']&#x007D;
             <li>Value in div: &#x007B;&dollar;post['value_div_{$field['fieldname']}']&#x007D;	</ul>";
           } else {
