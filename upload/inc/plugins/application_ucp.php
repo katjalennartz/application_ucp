@@ -34,7 +34,7 @@ function application_ucp_info()
     "website" => "https://github.com/katjalennartz/application_ucp",
     "author" => "risuena",
     "authorsite" => "https://github.com/katjalennartz",
-    "version" => "1.1",
+    "version" => "1.1.2",
     "compatibility" => "18*"
   );
 }
@@ -1949,7 +1949,41 @@ function application_ucp_usercp()
   $get_fields = $db->simple_select("application_ucp_fields", "*", "active = 1", array('order_by' => 'sorting'));
 
   //start für javascript das wir brauchen
-  $application_ucp_js = "<script> $(function() {";
+  $application_ucp_js = "<script> $(function() {
+    //initial alle abhängigen verstecken
+    $('.depends').hide();
+
+    //alle checkboxen einmal durchgehen und schauen welche aktiviert sind.
+
+    var checkboxen = $('input[type=checkbox]:checked');
+
+    checkboxen.each(function() {
+      var string = $(this).val();
+      var str = string.replace(/[^A-Za-z0-9]+/g, '');
+    
+      $('.dep_value_'+str).each(function() {
+        //checkbox ist aktiviert. - div box wrapper, label, hideinfo, etc. anzeigen
+        $(this).show();
+        $(this).children().show();
+      });
+    });
+
+    $('select').each(function() {
+      var selectName = $(this).attr('name');
+      var selectedOptions = $(this).find('option:selected');
+      
+      // Durchlaufe jede ausgewählte Option des aktuellen Select-Elements
+      selectedOptions.each(function() {
+        var string = $(this).val();
+        var str = string.replace(/[^A-Za-z0-9]+/g, '');
+        $('.dep_value_'+str).each(function() {
+          //checkbox ist aktiviert. - div box wrapper, label, hideinfo, etc. anzeigen
+          $(this).show();
+          $(this).children().show();
+        });
+      });
+    });
+    ";
 
   //felder durchgehen
   while ($type = $db->fetch_array($get_fields)) {
@@ -1985,6 +2019,7 @@ function application_ucp_usercp()
       }
     }
     //handelt es sich um ein Pflichtfeld
+    $dep_classname = "";
     if ($type['mandatory']) {
       $requiredstar = "<span class\"app_ucp_star\">" . $lang->application_ucp_mandatory . "</span>"; //markierung mit sternchen ux und so :D    
 
@@ -2002,102 +2037,64 @@ function application_ucp_usercp()
       } else {
         $inputname = $type['id'];
       }
-
+      $dep_classname = "has_dep dep_" . $type['dependency'];
+      $dep_classname_wrap = "depends wrap_dep_" . preg_replace('/[^A-Za-z0-9\_]/', '', $type['dependency']) . " dep_value_" . preg_replace('/[^A-Za-z0-9\_]/', '', $type['dependency_value']);
       $hide = true;
-      //javascript dynamisch zusammen bauen.
+
+            //javascript dynamisch zusammen bauen.
       //wenn dependency, von welchem feld und welchem wert? Entsprechend element ein oder ausblenden.
       $application_ucp_js .= "
-      //initiales verstecken von feldern mit abhängigkeit
-        $('#" . $type['fieldname'] . "').hide();
-        $('#label_" . $type['fieldname'] . "').hide();  
-        $('#descr_" . $type['fieldname'] . "').hide(); 
-//string bauen
-        var str{$type['fieldname']} = ','+'" . $type['dependency_value'] . "';
+      //checkbox wird aktiviert oder deaktiviert
 
-      //das feld ist eine checkbox - mehrere werte können aktiviert sein, deswegen brauchen wir eine foreacht schleife
-      //wenn das fehld abhäng von einem wert ist, und dieser wert bei dem entsprechenden feld ausgefüllt ist, zeige es initial. 
-      //wir gehen hier über den klassenname des entsprechenden feldes und holen uns alle ausgewählten
-      $.each($(\".{$type['dependency']}_check:checked\"), function(){
-        if($(this).val() == '{$type['dependency_value']}') {
-            $('#hideinfo_" . $type['fieldname'] . "').val('true');
-            $('#" . $type['fieldname'] . "').show(); 
-            $('#label_{$type['fieldname']}').show(); 
-            $('#descr_" . $type['fieldname'] . "').show(); 
-        }
-      });
-      //keine checkbox deswegen ziehen wir das feld über die id und zeigen es an, wenn der wert von dem es abhängig ist ausgewählt wurde
-      //nur wenn das feld nicht leer ist. (leer trift im vergleich sonst immer zu)
-        if($('#" . $type['dependency'] . "').val() != '') {
-          if(str{$type['fieldname']}.includes(','+$('#" . $type['dependency'] . "').val())) {
-            $('#hideinfo_" . $type['fieldname'] . "').val('true');
-            $('#" . $type['fieldname'] . "').show(); 
-            $('#label_{$type['fieldname']}').show(); 
-            $('#descr_" . $type['fieldname'] . "').show(); 
-          }
-        }
-        
-        if(str{$type['fieldname']}.includes(','+$('#" . $type['dependency'] . ":checked').val())) {
-          $('#hideinfo_" . $type['fieldname'] . "').val('true');
-          $('#" . $type['fieldname'] . "').show(); 
-          $('#label_{$type['fieldname']}').show(); 
-          $('#descr_" . $type['fieldname'] . "').show(); 
-        }
+      $('.{$type['dependency']}_check').off('change').on('change', function(){
 
-      //es wird etwas aktivert / deaktiviert
-        $('#" . $type['dependency'] . "').change(function(){
-          
-          var inputtyp = $('#" . $type['dependency'] . ":checked').attr('type');
-
+          //Hier testen wir, ob ein Feld versteckt / gezeigt werden muss, wenn eine Checkbox/Select aktiviert wird
          
-            if( inputtyp == 'checkbox' || inputtyp == 'radio') {
-                var checked = ':checked';
-            } else {
-              var checked = '';
-            }
-            
-           //wir haben eine mehrfachauswahl
-         
-          if( inputtyp == 'checkbox' || $('#" . $type['dependency'] . "').prop('multiple')) {
-            
-                var str{$type['fieldname']} = ','+'" . $type['dependency_value'] . "';
-                //wir gehen das elemnt durch und holen uns alle checkbox inputs von diesem
-                $.each($(\".{$type['dependency']}_check\"), function(){
-                  //ist es angeklickt? 
-                  if($(this).prop('checked')) {
-                    //wenn die werte gleich sind element anzeigen 
-                      if($(this).val() == '{$type['dependency_value']}') {
-                            $('#hideinfo_" . $type['fieldname'] . "').val('true');
-                            $('#" . $type['fieldname'] . "').show(); 
-                            $('#label_{$type['fieldname']}').show(); 
-                            $('#descr_" . $type['fieldname'] . "').show(); 
-                        }  
-                  }else {
-                    // die werte sind gleich, aber jetzt wollen wir es verstecken, weil uncheck! 
-                      if ($(this).val() == '{$type['dependency_value']}') {
-                          $('#hideinfo_" . $type['fieldname'] . "').val('false');
-                          $('#" . $type['fieldname'] . "').hide(); 
-                          $('#label_" . $type['fieldname'] . "').hide(); 
-                          $('#descr_" . $type['fieldname'] . "').hide(); 
-                      } 
-                  }
+          //Es handelt sich um ein SELECT Feld
+          if(this.nodeName == 'SELECT') {
+            //alle options bekommen
+            var selectedOptions = $(this).find('option');
+            //diese durchgehen
+            selectedOptions.each(function() {
+              //wert bekommen
+              var string = $(this).val();
+              // ersetzen
+              var str = string.replace(/[^A-Za-z0-9]+/g, '');
+
+              //wird es ausgewählt
+              if($(this).prop('selected')) {              
+                $('.wrap_dep_{$type['dependency']}.dep_value_'+str).each(function() {
+                  //checkbox ist aktiviert. - div box wrapper, label, hideinfo, etc. anzeigen
+                  $(this).show();
+                  $(this).children().show();
                 });
+              } else { // oder wieder abgewählt
+                $('.wrap_dep_{$type['dependency']}.dep_value_'+str).each(function() {
+                  $(this).hide();
+                  $(this).children().hide();
+                });
+              }
+            });
+          }  else if(this.nodeName == 'INPUT') {
+            //kein select sondern Radio oder Checkbox
 
-        } else {
-          //keine mehrfachauswahl möglich
-          if(str{$type['fieldname']}.includes(','+$('#" . $type['dependency'] . "'+checked+'').val()) && $('#" . $type['dependency'] . "'+checked+'').val() != '') {
-                $('#hideinfo_" . $type['fieldname'] . "').val('true');
-                $('#" . $type['fieldname'] . "').show(); 
-                $('#label_{$type['fieldname']}').show(); 
-                $('#descr_" . $type['fieldname'] . "').show(); 
-                // if(document.getElementById('label_{$type['fieldname']}').textContent.includes('*')) {
-                  // $('#" . $type['fieldname'] . "').addAttr('required');
-                // }
-            } else {
-                $('#hideinfo_" . $type['fieldname'] . "').val('false');
-                $('#" . $type['fieldname'] . "').hide(); 
-                $('#label_" . $type['fieldname'] . "').hide(); 
-                $('#descr_" . $type['fieldname'] . "').hide(); 
-                // $('#" . $type['fieldname'] . "').removeAttr('required');
+              //wert bekommen
+              var string = $(this).val();
+              // ersetzen
+              var str = string.replace(/[^A-Za-z0-9]+/g, '');
+              //wird es ausgewählt
+              if($(this).is(':checked')){
+                //dann abhängige einblenden
+                $('.wrap_dep_{$type['dependency']}.dep_value_'+str).each(function() {
+                //checkbox ist aktiviert. - div box wrapper, label, hideinfo, etc. anzeigen
+                $(this).show();
+                $(this).children().show();
+                });
+              } else { //oder abgewählt - dann wieder verstecken
+                $('.wrap_dep_{$type['dependency']}.dep_value_'+str).each(function() {
+                $(this).hide();
+                $(this).children().hide();
+                });
 } 
             } 
         });
@@ -2108,7 +2105,12 @@ function application_ucp_usercp()
     }
     //was für einen feldtyp haben wir
     $typ = $type['fieldtyp'];
-    $fields .= "<div class=\"applucp-con__item\">";
+    if ($hide == true) {
+      // $hidden = "display: none;"
+    } else {
+      $hidden = "";
+    }
+    $fields .= "<div class=\"applucp-con__item {$dep_classname_wrap}\" id=\"container_{$type['fieldname']}\" style=\"{$hidden}\">";
     //Felder bauen
     //Das Feld ist initial versteckt, das brauchen wir um vorm speichern zu prüfen ob der inhalt gespeichert werden soll
     if ($hide == true) {
@@ -2125,14 +2127,14 @@ function application_ucp_usercp()
     if ($typ == "text" || $typ == "date" || $typ == "datetime-local" || $typ == "url") {
       $fields .= "<label  class=\"app_ucp_label\" for=\"{$type['fieldname']}\" style=\"{$hidden}\" id=\"label_{$type['fieldname']}\">{$type['label']}{$requiredstar}:</label> 
       " . $fielddescr . "
-      <input type=\"{$typ}\" class=\"{$type['fieldname']}\" value=\"{$get_value['value']}\" name=\"{$type['id']}\" id=\"{$type['fieldname']}\" style=\"{$hidden}\" {$required} {$readonly}/>
+      <input type=\"{$typ}\" class=\"{$type['fieldname']} $dep_classname \" value=\"{$get_value['value']}\" name=\"{$type['id']}\" id=\"{$type['fieldname']}\" style=\"{$hidden}\" {$required} {$readonly}/>
       ";
     }
     //Feld ist Textarea
     else if ($typ == "textarea") {
       $fields .= "<label for=\"{$type['fieldname']}\" class=\"app_ucp_label\" style=\"{$hidden}\" id=\"label_{$type['fieldname']}\">{$type['label']}{$requiredstar}:</label>
       " . $fielddescr . "
-      <textarea class=\"{$type['fieldname']}\" name=\"{$type['id']}\"  id=\"{$type['fieldname']}\" rows=\"4\" cols=\"50\" style=\"{$hidden}\" {$readonly} {$required} >{$get_value['value']}</textarea>";
+      <textarea class=\"{$type['fieldname']}\" name=\"{$type['id']}\"  id=\"{$type['fieldname']} {$dep_classname}\" rows=\"4\" cols=\"50\" style=\"{$hidden}\" {$readonly} {$required} >{$get_value['value']}</textarea>";
     }
     //Feld ist Select
     else if ($typ == "select" || $typ == "select_multiple") {
@@ -2177,7 +2179,7 @@ function application_ucp_usercp()
       $fields .= " <label class=\"app_ucp_label {$type['fieldname']}\" for=\"{$type['fieldname']}\"  style=\"{$hidden}\" id=\"label_{$type['fieldname']}\">
       {$type['label']}{$requiredstar}:</label>
       " . $fielddescr . "
-      <select name=\"{$type['id']}[]\" id=\"{$type['fieldname']}\" style=\"{$hidden}\"  {$multiple} {$required} {$disabled}>
+      <select name=\"{$type['id']}[]\" class=\"{$type['fieldname']}_check  {$dep_classname}\" id=\"{$type['fieldname']}\" style=\"{$hidden}\"  {$multiple} {$required} {$disabled}>
       {$selects} 
       </select>";
       // Variable leeren
@@ -2203,7 +2205,7 @@ function application_ucp_usercp()
         }
         //und alles zusammenbasteln
         $inner .= "
-        <input type=\"{$typ}\" class=\"{$type['fieldname']}_check\" id=\"{$type['fieldname']}\" name=\"{$type['id']}[]\" value=\"{$option}\" {$checked} {$required} {$disabled} > 
+        <input type=\"{$typ}\" class=\"{$type['fieldname']}_check {$dep_classname} \" id=\"{$type['fieldname']}\" name=\"{$type['id']}[]\" value=\"{$option}\" {$checked} {$required} {$disabled} > 
         <label for=\"{$type['fieldname']}\">{$option}</label><br/>";
       }
       //auswahl löschen hinzufügen, damit man das feld auch wieder leeren kann
@@ -2645,6 +2647,12 @@ function application_ucp_usercp()
       // $firststeps_check .= "<li>gespielt von {$mybb->user['fid4']}</li>";
 
       // $threadmessage = str_replace("\$firststeps_check", $firststeps_check, $threadmessage);
+      
+      
+      // Für den Steckbrief zur Threadmessage hinzu
+      // $aucp_fields = application_ucp_build_view($mybb->user['uid'], "profile", "html");
+      // $threadmessage = str_replace("\$aucp_fields", $aucp_fields, $threadmessage);
+
       // Kopiert aus newthread.php
       // Set up posthandler. (Wir nutzen hier einfach komplett die funktion aus newthread.php)
       // Post key
@@ -2681,7 +2689,6 @@ function application_ucp_usercp()
         "subscriptionmethod" => 0,
         "disablesmilies" => 0
       );
-
 
       // Apply moderation options if we have them
       $new_thread['modoptions'] = $mybb->get_input('modoptions', MyBB::INPUT_ARRAY);
