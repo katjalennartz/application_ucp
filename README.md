@@ -9,6 +9,14 @@ https://github.com/katjalennartz/application_ucp/wiki
 - forenadresse/update_application.php 		 
 - im Browser aufrufen
 
+**Update: Mai 2024**  
+- version 1.1.2 
+- Optimierung Javascript für Abhängigkeiten - Checkboxen, Radiobuttons, Selects und Multiselects sollten jetzt gehen
+- Einführung Triggerwarnung fürs Profil. Im ACP kann nun eingestellt werden, dass eine Triggerwarnung fürs Profil angegeben werden kann/soll
+- Es kann nun pro Feld im ACP eingestellt werden, ob die Ausgabe vom reinen Text, bzw. Label von einem div oder span Element umklammert werden soll.
+- Für die Einstellungen im ACP für den Thread, kann nun auch die Variable $aucp_fields verwendet werden, die den gesamten Stecki ausgibt.
+- **Updatescript nötig, da es neue Settings und Datenbankfelder gibt.**
+
 **Update: 6.12.2023**  
 - status angenommen in forumdisplay
 - wob_date in user tabelle speichern
@@ -24,7 +32,6 @@ https://github.com/katjalennartz/application_ucp/wiki
 ```
 ersetzen mit: 
 ```{$savebtn}```
-	
 		
 		
 

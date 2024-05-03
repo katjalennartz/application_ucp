@@ -103,6 +103,8 @@ $l['application_ucp_add_guest_content'] = 'alternativer Inhalt für Gäste';
 $l['application_ucp_add_guest_content_descr'] = 'Was sollen Gäste anstatt des eigentlichen sehen? Leer lassen wenn es nur ausgeblendet werden soll.
 Für den themeordner $themepath angeben also z.B. $themepath/default.png';
 
+$l['application_ucp_add_container'] = 'Html Element um Value?';
+$l['application_ucp_add_container_descr'] = 'Soll um die Variable, die den reinen Textwert ausgibt noch ein html Element gelegt werden? Dieses enthält zusätzlich die klasse "is_empty", welche sich in css dann mit display:none; ausblenden lässt.';
 
 $l['application_ucp_add_active'] = 'Aktiv?';
 $l['application_ucp_add_active_descr'] = 'Bei Nein: Die Daten der User werden nicht gelöscht, das Feld wird nur ausgeblendet, ist nicht mehr bearbeitbar und wird nirgends mehr angezeigt.';
