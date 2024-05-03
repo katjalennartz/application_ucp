@@ -259,7 +259,7 @@ function application_ucp_add_settings($type = 'install')
     ),
     'application_ucp_stecki_message' => array(
       'title' => 'Steckbriefthread',
-      'description' => 'Hier kannst du die Nachricht für den Stecki einfügen. HTML möglich. $wanted ist für die Angabe ob es sich um ein Gesuch handelt und welches, $affected für die mitbetroffenen Mitglieder. ',
+      'description' => 'Hier kannst du die Nachricht für den Stecki einfügen. HTML möglich. $wanted ist für die Angabe ob es sich um ein Gesuch handelt und welches, $affected für die mitbetroffenen Mitglieder, $avatar und $username möglich, sowie $aucp_fields für den kompletten Steckbrief im Thread.',
       'optionscode' => 'textarea',
       'value' => '
       <div style="width:80%;">
@@ -4194,5 +4194,5 @@ function application_ucp_delete()
   $db->delete_query('application_ucp_management', "uid = " . (int)$user['uid'] . "");
   $db->delete_query('application_ucp_userfields', "uid = " . (int)$user['uid'] . "");
 
-  add_task_log($task, "Steckbrief daten gelöscht von: uid war {$user['uid']} {$username}");
+  // add_task_log($task, "Reservierungen bereinigt uid war {$user['uid']} {$username}");
 }
