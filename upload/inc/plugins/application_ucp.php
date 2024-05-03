@@ -689,7 +689,8 @@ function application_ucp_activate()
   find_replace_templatesets("member_profile", "#" . preg_quote('<strong>{$formattedname}</strong>') . "#i", '
   <strong>{$formattedname}</strong> {$exportbtn}
   ');
-
+  find_replace_templatesets("member_profile", "#" . preg_quote('<td width="75%">') . "#i", '<td width="75%"> {$application_ucp_profile_trigger}');
+	
   //showthread wob form
   find_replace_templatesets("showthread", "#" . preg_quote('{$posts}
 	</div>') . "#i", '
@@ -741,6 +742,7 @@ function application_ucp_deactivate()
   find_replace_templatesets("memberlist", "#" . preg_quote('<tr><td colspan="3">{$applicationfilter}</tr></td>') . "#i", '');
   find_replace_templatesets("memberlist", "#" . preg_quote('{$filterjs}') . "#i", '');
   find_replace_templatesets("index", "#" . preg_quote('{$application_ucp_index}') . "#i", '');
+  find_replace_templatesets("member_profile", "#" . preg_quote('{$application_ucp_profile_trigger}') . "#i", '');
 
   //My alerts wieder löschen
   if (class_exists('MybbStuff_MyAlerts_AlertTypeManager')) {
