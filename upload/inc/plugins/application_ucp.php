@@ -2760,8 +2760,8 @@ function application_ucp_usercp()
 
       //Wenn ihr den ganzen Steckbrief im Thread haben wollt, könnt ihr euch, die zwei Zeilen hier einfach einkommentieren
       // Im ACP dann einfach $aucp_fields einfügen.
-      // $aucp_fields = application_ucp_build_view($mybb->user['uid'], "profile", "html");
-      // $threadmessage = str_replace("\$aucp_fields", $aucp_fields, $threadmessage);
+      $aucp_fields = application_ucp_build_view($mybb->user['uid'], "profile", "html");
+      $threadmessage = str_replace("\$aucp_fields", $aucp_fields, $threadmessage);
 
       // Kopiert aus newthread.php
       // Set up posthandler. (Wir nutzen hier einfach komplett die funktion aus newthread.php)
@@ -2850,11 +2850,6 @@ function application_ucp_usercp()
 
   //Steckbrieffrist verlängern
   if ($mybb->get_input('application_ucp_extend')) {
-    // $update = array(
-    //   "aucp_extend" => '(CAST(aucp_extend AS INT) + 1)',
-    //   "aucp_extenddate" => date("Y-m-d")
-    // );
-    // $db->update_query("users", $update, "uid = {$mybb->user['uid']}");
 
     //Speichern damit nichts verloren geht.
     $fields = $mybb->input;
@@ -4199,5 +4194,5 @@ function application_ucp_delete()
   $db->delete_query('application_ucp_management', "uid = " . (int)$user['uid'] . "");
   $db->delete_query('application_ucp_userfields', "uid = " . (int)$user['uid'] . "");
 
-  // add_task_log($task, "Reservierungen bereinigt uid war {$user['uid']} {$username}");
+  add_task_log($task, "Steckbrief daten gelöscht von: uid war {$user['uid']} {$username}");
 }
