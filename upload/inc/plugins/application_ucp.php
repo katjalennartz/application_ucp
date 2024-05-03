@@ -78,6 +78,7 @@ function application_ucp_install()
     `suggestion` int(1) NOT NULL DEFAULT 0,
     `guest` int(1) NOT NULL DEFAULT 1,
     `guest_content` varchar(500) NOT NULL DEFAULT '',
+    `container` varchar(500) NOT NULL DEFAULT '',
     PRIMARY KEY (`id`)
 ) ENGINE=MyISAM CHARACTER SET utf8 COLLATE utf8_general_ci;");
 
@@ -117,6 +118,87 @@ function application_ucp_install()
     'isdefault' => 0
   );
   $gid = $db->insert_query("settinggroups", $setting_group);
+
+  application_ucp_add_settings();
+
+  application_ucp_add_templates();
+
+
+  $css = array(
+    'name' => 'application_ucp.css',
+    'tid' => 1,
+    'attachedto' => '',
+    "stylesheet" =>    '
+       
+    /*showthread*/
+    .aucp_showthread-wob {
+        margin: 10px;
+        display: flex;
+        align-items: start;
+        justify-content: center;
+        gap: 20px;
+    }
+    
+    .aucp_showthread-wob__item:last-child {
+        align-self: center;
+    }
+    
+    /*Benutzer CP */
+    .applucp-con {
+        display: grid;
+        width: 80%;
+        margin: auto;
+        gap: 19px 15px;
+    }
+    
+    .app_ucp_label {
+        font-weight: 600;
+        text-align: left;
+    }
+    
+    .applucp-con__item {
+        display: grid;
+    }
+    
+    .applucp-con__item.applucp-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+  }
+    
+    /*Display Profil and Postbit */
+    .aucp_fieldContainer {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+    
+    .aucp_fieldContainer__item {
+        display: flex;
+        gap: 10px;
+    }
+    ',
+    'cachefile' => $db->escape_string(str_replace('/', '', 'application_ucp.css')),
+    'lastmodified' => time()
+  );
+
+  require_once MYBB_ADMIN_DIR . "inc/functions_themes.php";
+
+  $sid = $db->insert_query("themestylesheets", $css);
+  $db->update_query("themestylesheets", array("cachefile" => "css.php?stylesheet=" . $sid), "sid = '" . $sid . "'", 1);
+
+  $tids = $db->simple_select("themes", "tid");
+  while ($theme = $db->fetch_array($tids)) {
+    update_theme_stylesheet_list($theme['tid']);
+  }
+}
+
+/**
+ * Funktion um die Settings hinzuzufügen - einfachere Verwendung für Upgrades 
+ */
+function application_ucp_add_settings($type = 'install')
+{
+
+  global $db;
 
   $setting_array = array(
     'application_ucp_applicants' => array(
@@ -256,27 +338,58 @@ function application_ucp_install()
       'value' => '0', // Default
       'disporder' => 16
     ),
+    'application_ucp_trigger' => array(
+      'title' => 'Trigger',
+      'description' => 'Soll eine Triggerwarnung für Profile angegeben werden können?',
+      'optionscode' => 'yesno',
+      'value' => '0', // Default
+      'disporder' => 17
+    ),
   );
 
-  foreach ($setting_array as $name => $setting) {
-    $setting['name'] = $name;
-    $setting['gid'] = $gid;
-    $db->insert_query('settings', $setting);
+  $gid = $db->fetch_field($db->write_query("SELECT gid FROM `" . TABLE_PREFIX . "settinggroups` WHERE name like 'application_ucp%' LIMIT 1;"), "gid");
+
+  if ($type == 'install') {
+    foreach ($setting_array as $name => $setting) {
+      $setting['name'] = $name;
+      $setting['gid'] = $gid;
+      $db->insert_query('settings', $setting);
+    }
+  }
+  if ($type == 'update') {
+    foreach ($setting_array as $name => $setting) {
+      $setting['name'] = $name;
+      $check = $db->write_query("SELECT name FROM `" . TABLE_PREFIX . "settings` WHERE name = '{$name}'");
+      $check = $db->num_rows($check);
+      $setting['gid'] = $gid;
+      if ($check == 0) {
+        $db->insert_query('settings', $setting);
+        echo "Setting: {$name} wurde hinzugefügt.";
+      }
+    }
+    echo "<p>Einstellungen wurden aktualisiert</p>";
   }
   rebuild_settings();
+}
 
-  //Templates erstellen
-  // templategruppe
-  $templategrouparray = array(
-    'prefix' => 'application',
-    'title'  => $db->escape_string('Steckbrief im UCP'),
-    'isdefault' => 1
-  );
-
-  $db->insert_query("templategroups", $templategrouparray);
-
+/**
+ * Funktion um die Templates hinzuzufügen - einfachere Verwendung für Upgrades 
+ */
+function application_ucp_add_templates($type = 'install')
+{
+  global $db;
 
   //Templates erstellen:
+  if ($type == 'install') {
+    // templategruppe
+    $templategrouparray = array(
+      'prefix' => 'application',
+      'title'  => $db->escape_string('Steckbrief im UCP'),
+      'isdefault' => 1
+    );
+    $db->insert_query("templategroups", $templategrouparray);
+  }
+
   $template[0] = array(
     "title" => 'application_ucp_index',
     "template" => '<div class="red_alert">
@@ -489,77 +602,29 @@ function application_ucp_install()
     "dateline" => TIME_NOW
   );
 
-  foreach ($template as $row) {
-    $db->insert_query("templates", $row);
-  }
-
-  $css = array(
-    'name' => 'application_ucp.css',
-    'tid' => 1,
-    'attachedto' => '',
-    "stylesheet" =>    '
-       
-    /*showthread*/
-    .aucp_showthread-wob {
-        margin: 10px;
-        display: flex;
-        align-items: start;
-        justify-content: center;
-        gap: 20px;
-    }
-    
-    .aucp_showthread-wob__item:last-child {
-        align-self: center;
-    }
-    
-    /*Benutzer CP */
-    .applucp-con {
-        display: grid;
-        width: 80%;
-        margin: auto;
-        gap: 19px 15px;
-    }
-    
-    .app_ucp_label {
-        font-weight: 600;
-        text-align: left;
-    }
-    
-    .applucp-con__item {
-        display: grid;
-    }
-    
-    .applucp-con__item.applucp-buttons {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 10px;
-  }
-    
-    /*Display Profil and Postbit */
-    .aucp_fieldContainer {
-        display: grid;
-        grid-template-columns: 1fr;
-    }
-    
-    .aucp_fieldContainer__item {
-        display: flex;
-        gap: 10px;
-    }
-    ',
-    'cachefile' => $db->escape_string(str_replace('/', '', 'application_ucp.css')),
-    'lastmodified' => time()
+  $template[10] = array(
+    "title" => 'application_ucp_profile_trigger',
+    "template" => '<div class="aucp_trigger">
+    {$trigger}
+    </div>',
+    "sid" => "-2",
+    "version" => "1.0",
+    "dateline" => TIME_NOW
   );
 
-  require_once MYBB_ADMIN_DIR . "inc/functions_themes.php";
 
-  $sid = $db->insert_query("themestylesheets", $css);
-  $db->update_query("themestylesheets", array("cachefile" => "css.php?stylesheet=" . $sid), "sid = '" . $sid . "'", 1);
-
-  $tids = $db->simple_select("themes", "tid");
-  while ($theme = $db->fetch_array($tids)) {
-    update_theme_stylesheet_list($theme['tid']);
+  foreach ($template as $row) {
+    $check = $db->num_rows($db->simple_select("templates", "title", "title LIKE '{$row['title']}'"));
+    if ($check == 0) {
+      $db->insert_query("templates", $row);
+      echo "Neues Template {$row['title']} wurde hinzugefügt.<br>";
+      if ($row['title' == 'application_ucp_profile_trigger']) {
+        echo '<b>Achtung</b>: Variable {$application_ucp_profile_trigger} in member_profile an die Stelle einfügen, wo die Trigger Warnung angezeigt werden soll.</br>';
+      }
+    }
   }
 }
+
 
 function application_ucp_uninstall()
 {
@@ -676,8 +741,6 @@ function application_ucp_deactivate()
   find_replace_templatesets("memberlist", "#" . preg_quote('<tr><td colspan="3">{$applicationfilter}</tr></td>') . "#i", '');
   find_replace_templatesets("memberlist", "#" . preg_quote('{$filterjs}') . "#i", '');
   find_replace_templatesets("index", "#" . preg_quote('{$application_ucp_index}') . "#i", '');
-
-
 
   //My alerts wieder löschen
   if (class_exists('MybbStuff_MyAlerts_AlertTypeManager')) {
@@ -951,14 +1014,6 @@ function application_ucp_admin_load()
 
 
     $action = $mybb->get_input('action');
-    // if ($action == "upgrade" && $mybb->request_method == "post") {
-    //          // if ($mybb->get_input('action') == 'upgrade') {
-    //       // if (!$db->field_exists("guest", "application_ucp_fields")) {
-    //       //   echo "hau";
-    //       // }
-    //       // if (!$db->field_exists("guest", "application_ucp_fields")) {
-    //       // }
-    // }
 
     if ($action == "update_order" && $mybb->request_method == "post") {
       $sorting = $mybb->get_input('sorting', MyBB::INPUT_ARRAY);
@@ -1066,6 +1121,7 @@ function application_ucp_admin_load()
             "suggestion" => intval($mybb->get_input('suggestion')),
             "guest" => intval($mybb->get_input('guest')),
             "guest_content" => $guestcontent,
+            "container" => $db->escape_string($mybb->get_input('container')),
           ];
           $db->insert_query("application_ucp_fields", $insert);
           $mybb->input['module'] = "application_ucp";
@@ -1120,7 +1176,7 @@ function application_ucp_admin_load()
       $form_container->output_row(
         $lang->application_ucp_add_fieldtyp,
         $lang->application_ucp_add_fieldtyp_descr,
-        $form->generate_select_box('fieldtyp', $select, $mybb->get_input('fieldtyp'), array('id' => 'fieldtype'))
+        $form->generate_select_box('fieldtyp', $select, $mybb->get_input('fieldtyp'), array('id' => 'fieldtyp'))
       );
       //Feldbeschreibung
       $form_container->output_row(
@@ -1242,6 +1298,17 @@ function application_ucp_admin_load()
         $lang->application_ucp_add_guest_content,
         $lang->application_ucp_add_guest_content_descr,
         $form->generate_text_box('guest_content', $mybb->get_input('guest_content'))
+      );
+      //Html Element um reines value Feld
+      $select = array(
+        "span" => "span",
+        "div" => "div",
+        "keins" => "keins",
+      );
+      $form_container->output_row(
+        $lang->application_ucp_add_container,
+        $lang->application_ucp_add_container_descr,
+        $form->generate_select_box('container', $select, $mybb->get_input('container'), array('id' => 'container'))
       );
       //anzeige reihenfolge
       $form_container->output_row(
@@ -1396,7 +1463,7 @@ function application_ucp_admin_load()
           $form_container->output_row(
             $label,
             $descr,
-            $form->generate_select_box($field['id'], $get_options, $get_input, array('checked' => "bla", 'id' => 'fieldtype'))
+            $form->generate_select_box($field['id'], $get_options, $get_input, array('checked' => "bla", 'id' => 'fieldtyp'))
           );
         }
         if ($field['fieldtyp'] == "select_multiple") {
@@ -1560,6 +1627,7 @@ function application_ucp_admin_load()
             "active" => $mybb->get_input('active', MyBB::INPUT_INT),
             "guest" => $mybb->get_input('guest', MyBB::INPUT_INT),
             "guest_content" => $guestcontent,
+            "container" => $db->escape_string($mybb->get_input('container')),
           ];
 
           $db->update_query("application_ucp_fields", $update, "id = {$fieldid}");
@@ -1619,7 +1687,7 @@ function application_ucp_admin_load()
       $form_container->output_row(
         $lang->application_ucp_add_fieldtyp,
         $lang->application_ucp_add_fieldtyp_descr,
-        $form->generate_select_box('fieldtyp', $select, array($field_data['fieldtyp']), array('id' => 'fieldtype'))
+        $form->generate_select_box('fieldtyp', $select, array($field_data['fieldtyp']), array('id' => 'fieldtyp'))
       );
       $form_container->output_row(
         $lang->application_ucp_add_fieldoptions,
@@ -1731,6 +1799,17 @@ function application_ucp_admin_load()
         $lang->application_ucp_add_guest_content,
         $lang->application_ucp_add_guest_content_descr,
         $form->generate_text_box('guest_content', $field_data['guest_content'])
+      );
+      //Html Element um reines value Feld
+      $select = array(
+        "span" => "span",
+        "div" => "div",
+        "keins" => "keins",
+      );
+      $form_container->output_row(
+        $lang->application_ucp_add_container,
+        $lang->application_ucp_add_container_descr,
+        $form->generate_select_box('container', $select, array($field_data['container']), array('id' => 'container'))
       );
       $form_container->output_row(
         $lang->application_ucp_add_fieldsort,
@@ -1907,7 +1986,6 @@ function application_ucp_usercp()
     $member = true;
   }
 
-
   //Infos angezeigt
   if ($member == false) {
     //Anzeige Frist
@@ -2041,7 +2119,7 @@ function application_ucp_usercp()
       $dep_classname_wrap = "depends wrap_dep_" . preg_replace('/[^A-Za-z0-9\_]/', '', $type['dependency']) . " dep_value_" . preg_replace('/[^A-Za-z0-9\_]/', '', $type['dependency_value']);
       $hide = true;
 
-            //javascript dynamisch zusammen bauen.
+      //javascript dynamisch zusammen bauen.
       //wenn dependency, von welchem feld und welchem wert? Entsprechend element ein oder ausblenden.
       $application_ucp_js .= "
       //checkbox wird aktiviert oder deaktiviert
@@ -2270,8 +2348,21 @@ function application_ucp_usercp()
   $application_ucp_js .= "});</script>";
 
   //admin einstellungen - Felder für Steckbrief thread
+  $setting_trigger = $mybb->settings['application_ucp_trigger'];
   $setting_wanted = $mybb->settings['application_ucp_stecki_wanted'];
   $setting_affected = $mybb->settings['application_ucp_stecki_affected'];
+  //Es soll eine Triggerwarnung geben können
+  if ($setting_trigger) {
+    $trigger = "";
+    $trigger = $db->fetch_field($db->simple_select("application_ucp_userfields", "value", "uid = '{$mybb->user['uid']}' AND fieldid = '-4'"), "value");
+    $fields .= "
+    <label class=\"app_ucp_label trigger\"  id=\"label_trigger\">
+   {$lang->application_ucp_trigger}</label>
+    <div class=\"application_ucp_checkboxes\"  id=\"box_trigger\">
+      <input type=\"text\" class=\"input_trigger\" placeholder=\"{$lang->application_ucp_trigger}\" id=\"trigger\" name=\"-4\" value=\"{$trigger}\" \>
+    </div>
+    ";
+  }
 
   //Es soll ausgewählt werden können, ob es sich um ein Gesuch handelt
   if ($setting_wanted) {
@@ -2299,6 +2390,7 @@ function application_ucp_usercp()
       $get_url_data = $db->fetch_array($get_url);
       $wantedurl = $get_url_data['value'];
     }
+
 
     //Die Checkboxen für wanted
     $inner .= "
@@ -2559,6 +2651,18 @@ function application_ucp_usercp()
       $steckbriefarea = $mybb->settings['application_ucp_steckiarea'];
 
       //Nachricht zusammenbauen
+      $trigger_div = "";
+      //Gibt es eine Trigger Warnung für den Steckbrief? 
+      //Wir schauen erst noch, ob angegeben wurde, ob der Charakter ein Gesuch ist. 
+      $get_trigger = $db->simple_select("application_ucp_userfields", "value", "uid = {$mybb->user['uid']} AND fieldid = -4");
+
+      $get_trigger_row = $db->num_rows($get_trigger);
+      if ($get_trigger_row && $mybb->settings['application_ucp_trigger']) {
+        //Trigger Div bauen
+        $trigger = $db->fetch_field($get_trigger, "value");
+        $trigger_div = "<div class=\"aucp_trigger--thread\"><strong>{$lang->application_ucp_thread_trigger}</strong> {$trigger}</div>";
+      }
+
       //Wir schauen erst noch, ob angegeben wurde, ob der Charakter ein Gesuch ist. 
       $get_wanted = $db->simple_select("application_ucp_userfields", "*", "uid = {$mybb->user['uid']} AND fieldid = -1 AND value = '1'");
       $get_wanted_row = $db->num_rows($get_wanted);
@@ -2567,7 +2671,7 @@ function application_ucp_usercp()
         $get_url_data = $db->fetch_field($db->simple_select("application_ucp_userfields", "value", "uid = {$mybb->user['uid']} AND fieldid = -2"), "value");
         $wanted = "<a href=\"" . $get_url_data . "\">{$lang->application_ucp_thread_wantedurltitle}</a>";
       } else {
-        $wanted = "Kein Gesuch";
+        $wanted = $lang->application_ucp_thread_nowanted;
       }
       $get_affected_names = "";
       //Gibt es betroffene User?
@@ -2590,9 +2694,9 @@ function application_ucp_usercp()
         $affectedusers = (substr($affectedusers, 0, -2));
         $affected = "<strong>" . $lang->application_ucp_affected_label . "</strong> {$affectedusers}";
       } else {
-        $affected = "Keine anderen Charaktere betroffen";
+        $affected = $lang->application_ucp_noaffected;
       }
-      $threadmessage = "";
+      $threadmessage = $trigger_div;
 
       $threadmessage = $mybb->settings['application_ucp_stecki_message'];
       //Die admin cp message holen und die variable $wanted ersetzen
@@ -2610,12 +2714,15 @@ function application_ucp_usercp()
       //blurred lines kram mit abfangen für den fall, dass ich es vergesse vorm upload ins gitlab rauszunehmen :D
       //kann gerne als beispiel für eigenen ergänzungen genommen werden. Wir checken hier ob bestimmte Dinge eingetragen/ausgefüllt wurden
       // $firststeps_check = "";
-      // //jobliste
+      // //jobliste - abfangen ob es die Tabelle gibt oder nicht
       // if ($db->table_exists("jl_entry")) {
+      //   //gibt es einen Eintrag
       //   $fetch_job = $db->simple_select("jl_entry", "*", "je_uid= {$mybb->user['uid']}");
       //   if ($db->num_rows($fetch_job) > 0) {
+      //     //wenn ja mit Häkchen in den Thread schreiben
       //     $firststeps_check .= "<li><i class=\"fa-solid fa-check\"></i> In Jobliste eingetragen</li>";
       //   } else {
+      //     //wenn nein mit Kreuz
       //     $firststeps_check .= "<li><i class=\"fa-solid fa-xmark\"></i> Nicht in Jobliste eingetragen</li>";
       //   }
       // }
@@ -2638,18 +2745,21 @@ function application_ucp_usercp()
       //     $firststeps_check .= "<li><i class=\"fa-solid fa-xmark\"></i> Keine Relations eingetragen</li>";
       //   }
       // }
+      // //Wir holen uns die Avaperson, weil wir die Info direkt im Thread sehen wollen (id für avatarperson bei uns = 20 )
       // $fetch_ava = $db->fetch_field($db->simple_select("application_ucp_userfields", "value", "uid= {$mybb->user['uid']} AND fieldid = '20'"), "value");
       // if ($fetch_ava != "") {
       //   $firststeps_check .= "<li><strong>Avatarperson:</strong> {$fetch_ava}</li>";
       // } else {
       //   $firststeps_check .= "<li><i class=\"fa-solid fa-xmark\"></i> Keine Avaperson eingetragen</li>";
       // }
+      // //und wir holen uns noch den Spielernamen der bei uns im Profilfeld mit ID 4 gespeichert ist 
       // $firststeps_check .= "<li>gespielt von {$mybb->user['fid4']}</li>";
 
+      // //das ganze wird in der Variable $firststeps_check gespeichert, schreiben wir diese nun ins ACP, wird in der Message der Inhalt eingefügt
       // $threadmessage = str_replace("\$firststeps_check", $firststeps_check, $threadmessage);
-      
-      
-      // Für den Steckbrief zur Threadmessage hinzu
+
+      //Wenn ihr den ganzen Steckbrief im Thread haben wollt, könnt ihr euch, die zwei Zeilen hier einfach einkommentieren
+      // Im ACP dann einfach $aucp_fields einfügen.
       // $aucp_fields = application_ucp_build_view($mybb->user['uid'], "profile", "html");
       // $threadmessage = str_replace("\$aucp_fields", $aucp_fields, $threadmessage);
 
@@ -2767,7 +2877,7 @@ function application_ucp_usercp()
 $plugins->add_hook("member_profile_end", "application_ucp_showinprofile");
 function application_ucp_showinprofile()
 {
-  global $db, $mybb, $memprofile, $templates, $aucp_fields, $exportbtn, $lang, $fields;
+  global $db, $mybb, $memprofile, $templates, $aucp_fields, $exportbtn, $lang, $fields, $application_ucp_profile_trigger;
   $lang->load('application_ucp');
   $userprofil = $memprofile['uid'];
   // Sollen die Felder automatisch zusammengebaut werden
@@ -2779,12 +2889,19 @@ function application_ucp_showinprofile()
     $fields = application_ucp_build_view($userprofil, "profile", "array");
   }
   $fields = application_ucp_build_view($userprofil, "profile", "array");
+
+  // Trigger Warnung. Wenn vorhanden, geben wir diese extra aus.
+  $trigger = $db->fetch_field($db->simple_select("application_ucp_userfields", "value", "uid = '{$userprofil}' AND fieldid = '-4'"), "value");
+  if ($mybb->settings['application_ucp_trigger'] && $trigger != "") {
+    eval("\$application_ucp_profile_trigger =\"" . $templates->get("application_ucp_profile_trigger") . "\";");
+  }
+
   //Export des Steckbriefes
   if ($mybb->settings['application_ucp_export'] && $mybb->user['uid'] != 0 && ($mybb->user['uid'] == $userprofil || $mybb->usergroup['canmodcp'] == 1)) {
     $exportbtn = "
     <form action=\"misc.php?action=exp_app\" method=\"post\" target=\"_blank\">
     <input type=\"hidden\" name=\"uid\" value=\"{$mybb->input['uid']}\" id=\"uid\" />
-    <input type=\"submit\" name=\"exp_app\" value=\"" . $lang->application_ucp_export . "\" id=\"exp_app\" />
+    <input type=\"submit\" name=\"exp_app\" class=\"bl-btn\" value=\"" . $lang->application_ucp_export . "\" id=\"exp_app\" />
     </form>";
   }
 }
@@ -3051,7 +3168,6 @@ function application_ucp_postbit(&$post)
   }
 }
 
-
 /***
  * WOB verteilen
  */
@@ -3065,8 +3181,6 @@ function application_ucp_showthread()
 
   // Nur Moderatoren 
   if (is_member($mods, $mybb->user['uid'])) {
-
-
     // Gruppen holen und sortieren
     $usergroups_query = $db->query("SELECT * FROM " . TABLE_PREFIX . "usergroups ORDER by usertitle ASC");
     $usergroups_bit = "";
@@ -3665,6 +3779,11 @@ function application_ucp_checkdep($dep, $deptestvalue, $uid)
  * ****
  * Helper Function for building SQL String. 
  * ****
+ * 
+ * Default wert für Parameter = searchable
+ * 
+ * searchable = Funktion ist durchsuchbar
+ * all = alle aktiven felder, auch die nicht durchsuchbaren
  */
 function application_ucp_buildsql($type = "searchable")
 {
@@ -3816,7 +3935,7 @@ function application_ucp_build_view($uid, $location, $kind)
         $arrayfieldlabelvalue = "labelvalue_divcon_{$field['fieldname']}";
         $array[$arrayfieldlabelvalue] = "
           <div class=\"labelvalue_divcon_{$field['fieldname']} {$emptyflag} \">
-            <div class=\"aucp_divcon_label\">". $field['label'] . ":</div> 
+            <div class=\"aucp_divcon_label\">" . $field['label'] . ":</div> 
             <div class=\"aucp_divcon_value\">" . $parser->parse_message($fieldvalue, $parser_options) . "</div>
           </div>";
 
@@ -3832,15 +3951,26 @@ function application_ucp_build_view($uid, $location, $kind)
 
         // Label: {$application['label_vorname']}
         $arraylabel = "label_{$field['fieldname']}";
-        $array[$arraylabel] = "<span class=\"{$emptyflag}\">" . $field['label'] . "</span>";
-
+        if ($field['container'] == 'span') {
+          $array[$arraylabel] = "<span class=\"{$emptyflag} label_{$field['fieldname']}\">" . $field['label'] . "</span>";
+        } else if ($field['container'] == 'div') {
+          $array[$arraylabel] = "<div class=\"{$emptyflag} label_{$field['fieldname']}\">" . $field['label'] . "</div>";
+        } else {
+          $array[$arraylabel] = $field['label'];
+        }
         // Label in div box: {$application['label_div_vorname']}
         $arraylabel = "label_div_{$field['fieldname']}";
         $array[$arraylabel] = "<div class=\"label_div_{$field['fieldname']} {$emptyflag}\">" . $field['label'] . "</div>";
 
         // Value: {$application['value_vorname']}
         $arraylabel = "value_{$field['fieldname']}";
-        $array[$arraylabel] = "<span class=\"{$emptyflag}\">" . $parser->parse_message($fieldvalue, $parser_options) . "</span>";
+        if ($field['container'] == 'span') {
+          $array[$arraylabel] = "<span class=\"{$emptyflag} value_{$field['fieldname']}\">" . $parser->parse_message($fieldvalue, $parser_options) . "</span>";
+        } else if ($field['container'] == 'div') {
+          $array[$arraylabel] = "<div class=\"{$emptyflag} value_{$field['fieldname']}\">" . $parser->parse_message($fieldvalue, $parser_options) . "</div>";
+        } else {
+          $array[$arraylabel] = $parser->parse_message($fieldvalue, $parser_options);
+        }
 
         // Value in divbox: {$application['value_div_vorname']}
         $arraylabel = "value_div_{$field['fieldname']}";
