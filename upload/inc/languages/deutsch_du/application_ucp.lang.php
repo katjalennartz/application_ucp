@@ -24,6 +24,7 @@ $l['application_ucp_temps_correctdate'] = 'eingereicht/korrigiert am';
 $l['application_ucp_usernav'] = 'Steckbrief';
 $l['application_ucp_fillapplication'] = 'Steckbrief ausfüllen';
 $l['application_ucp_mandatory'] = '*';
+$l['application_ucp_trigger'] = 'Gebe hier mögliche Trigger für das Profil ein.';
 $l['application_ucp_wanted'] = 'Ist der Charakter ein Gesuch?';
 $l['application_ucp_wanted_url'] = 'Titel des Gesuch, oder Name';
 $l['application_ucp_affected_ucp'] = 'Betroffene Mitglieder';
@@ -35,19 +36,24 @@ $l['application_ucp_export'] = 'Steckbrief exportieren';
 $l['application_ucp_infoheader'] = 'Du bist seit dem {1} registriert. Du hast {2} verlängert und Zeit bis zum {3}.';
 $l['application_ucp_correction'] = 'Dein Steckbrief wurde eingereicht.';
 
+//Memberprofile
+$l['application_ucp_profile_trigger'] = "Triggerwarnung:";
+
 //INDEX
 $l['application_ucp_index_extinfo'] = "Du hast {1} Mal verlängert.";
 $l['application_ucp_index_extinfo_deadline'] = "Du hast noch bis zum {1} Zeit deinen Steckbrief zu vervollständigen.{2}";
 $l['application_ucp_index_nomod'] = "Dein Steckbrief wurde noch von keinem Moderator übernommen.";
 $l['application_ucp_index_token'] = "Dein Steckbrief wurde von {1} übernommen.";
-$l['application_ucp_index_correction'] = "Dein Steckbrief wurde von {1} korrigiert.<br/> Du hast für die Korrektur Zeit bis zum {2}.";
-$l['application_ucp_index_mod_steckialert'] =  "{1} ist mit dem Steckbrief fertig.<br /> <a href=\"misc.php?action=take_application&uid={2}\">Korrektur übernehmen</a>";
+$l['application_ucp_index_correction'] = "Dein Steckbrief wurde von {1} korrigiert. Du hast für die Korrektur Zeit bis zum {2}.";
+$l['application_ucp_index_mod_steckialert'] =  "{1} ist mit dem Steckbrief fertig. <a href=\"misc.php?action=take_application&uid={2}\">Korrektur übernehmen</a>";
 $l['application_ucp_index_mod_steckialert_modturn'] =  "Du hast den Stecki von {1} übernommen. Du musst ihn noch korrigieren.";
 $l['application_ucp_index_mod_steckialert_userturn'] =  "Du hast den Stecki von {1} übernommen. Der User hat noch nicht korrigiert";
 $l['application_ucp_index_mod_steckialert_userhascorrected'] =  "Du hast den Stecki von {1} übernommen. Der User korrigiert hat und du musst drüberschauen.";
 
 //WOB - Thread
 $l['application_ucp_thread_wantedurltitle'] = "Charakter ist ein Gesuch";
+$l['application_ucp_thread_nowanted'] = "Kein Gesuch";
+$l['application_ucp_thread_trigger'] = "Triggerwarnung:";
 $l['application_ucp_wobgroups'] = 'Primäre Benutzergruppe *';
 $l['application_ucp_wobgroups2'] = 'Sekundäre Benutzergruppe';
 $l['application_ucp_nonewobgroups2'] = 'Keine sekundäre Gruppe';
@@ -55,6 +61,7 @@ $l['application_ucp_responsible'] ="<span class=\"aucp_respmod\">Korrektur über
 $l['application_ucp_noresponsible'] ="<span class=\"aucp_respmod\">Korrektur wurde noch nicht übernommen</span>";
 $l['application_ucp_wobbtn'] = 'WOB';
 $l['application_ucp_affected_label'] = 'Betroffene Charaktere:';
+$l['application_ucp_noaffected'] = 'Keine anderen Charaktere betroffen.';
 
 
 //My Alert
