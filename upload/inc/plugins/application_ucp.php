@@ -605,7 +605,7 @@ function application_ucp_add_templates($type = 'install')
   $template[10] = array(
     "title" => 'application_ucp_profile_trigger',
     "template" => '<div class="aucp_trigger">
-    {$trigger}
+{$lang->application_ucp_profile_trigger} {$trigger}
     </div>',
     "sid" => "-2",
     "version" => "1.0",
