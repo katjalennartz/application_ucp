@@ -34,7 +34,7 @@ function application_ucp_info()
     "website" => "https://github.com/katjalennartz/application_ucp",
     "author" => "risuena",
     "authorsite" => "https://github.com/katjalennartz",
-    "version" => "1.1.2",
+    "version" => "1.1.3",
     "compatibility" => "18*"
   );
 }
