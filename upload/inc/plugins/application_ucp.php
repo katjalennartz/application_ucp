@@ -345,6 +345,20 @@ function application_ucp_add_settings($type = 'install')
       'value' => '0', // Default
       'disporder' => 17
     ),
+    'application_ucp_acp_pagination' => array(
+      'title' => 'Seitenzahlen in der Userliste im ACP',
+      'description' => 'Sollen die User im ACP auf Seiten aufgeteilt werden? 0 wenn nicht, sonst anzahl der Einträge pro Seite',
+      'optionscode' => 'numeric',
+      'value' => '0', // Default
+      'disporder' => 17
+    ),
+    'application_ucp_acp_pagination_fields' => array(
+      'title' => 'Seitenzahlen in der Feldliste im ACP',
+      'description' => 'Sollen die Felder im ACP auf Seiten aufgeteilt werden? 0 wenn nicht, sonst anzahl der Einträge pro Seite',
+      'optionscode' => 'numeric',
+      'value' => '0', // Default
+      'disporder' => 17
+    ),
   );
 
   $gid = $db->fetch_field($db->write_query("SELECT gid FROM `" . TABLE_PREFIX . "settinggroups` WHERE name like 'application_ucp%' LIMIT 1;"), "gid");
@@ -689,8 +703,7 @@ function application_ucp_activate()
   find_replace_templatesets("member_profile", "#" . preg_quote('<strong>{$formattedname}</strong>') . "#i", '
   <strong>{$formattedname}</strong> {$exportbtn}
   ');
-  find_replace_templatesets("member_profile", "#" . preg_quote('<td width="75%">') . "#i", '<td width="75%"> {$application_ucp_profile_trigger}');
-	
+
   //showthread wob form
   find_replace_templatesets("showthread", "#" . preg_quote('{$posts}
 	</div>') . "#i", '
@@ -698,6 +711,10 @@ function application_ucp_activate()
 	</div>
   {$give_wob}
   ');
+
+  find_replace_templatesets("member_profile", "#" . preg_quote('<td width="75%">') . "#i", '<td width="75%"> {$application_ucp_profile_trigger}');
+
+
   find_replace_templatesets("showthread", "#" . preg_quote('{$thread[\'subject\']}') . "#i", '{$thread[\'subject\']} {$aucp_responsible_mod}');
   //postbit classic 
   find_replace_templatesets("postbit_classic", "#" . preg_quote('{$post[\'user_details\']}') . "#i", '{$post[\'user_details\']}{$post[\'aucp_fields\']}');
@@ -857,15 +874,97 @@ function application_ucp_admin_load()
         $form_container->end();
       }
 
+      //Form erstellen - Feld suchen
+      $search = new Form("index.php?module=config-application_ucp&action=browsefield", 'post', 'search_form');
+      echo "<div style=\"padding-bottom: 3px; margin-top: -9px; text-align: right;\">";
+
+      echo $search->generate_text_box('keywords', '', array('id' => 'search_keywords', 'class' => "field150 field_small")) . "\n";
+      echo "<input type=\"submit\" class=\"search_button\" value=\"Suchen\" />\n";
+      echo '
+      <link rel="stylesheet" href="../jscripts/select2/select2.css">
+      <script type="text/javascript" src="../jscripts/select2/select2.min.js?ver=1804"></script>
+      <script type="text/javascript">
+      <!--
+      $("#search_keywords").select2({
+        placeholder: "Feld suchen",
+        minimumInputLength: 2,
+        multiple: false,
+        ajax: { // instead of writing the function to execute the request we use Select2\'s convenient helper
+          url: "../xmlhttp.php?action=get_aucpfields",
+          dataType: \'json\',
+          data: function (term, page) {
+            return {
+              query: term, // search term
+            };
+          },
+          results: function (data, page) { // parse the results into the format expected by Select2.
+            // since we are using custom formatting functions we do not need to alter remote JSON data
+            return {results: data};
+          }
+        },
+        initSelection: function(element, callback) {
+          var query = $(element).val();
+          if (query !== "") {
+            $.ajax("../xmlhttp.php?action=get_aucpfields", {
+              data: {
+                query: query
+              },
+              dataType: "json"
+            }).done(function(data) { callback(data); });
+          }
+        },
+      });
+  
+      $(\'[for=search_keywords]\').on(\'click\', function(){
+        $("#search_keywords").select2(\'open\');
+        return false;
+      });
+      // -->
+      </script>';
+
+      echo "</div>\n";
+      echo $search->end();
+
       //Hier erstellen wir jetzt eine Übersicht über unsere ganzen Felder
       //erst brauchen wir einen Container und ein Formular - für delete, die Sortierung etc.
       $form = new Form("index.php?module=config-application_ucp&amp;action=update_order", "post");
       $form_container = new FormContainer($lang->application_ucp_overview);
+      $get_fields = $db->simple_select("application_ucp_fields", "*");
 
+      $fields_acp = $db->num_rows($get_fields, "id");
+      if ($fields_acp > 0) {
+        // Figure out if we need to display multiple pages.
+        $per_page = 0;
+        if ($mybb->settings['application_ucp_acp_pagination_fields'] != 0) {
+          $per_page = $mybb->settings['application_ucp_acp_pagination_fields'];
+        }
+        $mybb->input['page'] = $mybb->get_input('page', MyBB::INPUT_INT);
+        if ($mybb->input['page'] > 0) {
+          $current_page = $mybb->input['page'];
+          $start = ($current_page - 1) * $per_page;
+          $pages = $fields_acp / $per_page;
+          $pages = ceil($pages);
+          if ($current_page > $pages) {
+            $start = 0;
+            $current_page = 1;
+          }
+        } else {
+          $start = 0;
+          $current_page = 1;
+        }
+      }
+      if ($mybb->settings['application_ucp_acp_pagination_fields'] != 0) {
+        $get_field_pages = $db->write_query("SELECT *  FROM " . TABLE_PREFIX . "application_ucp_fields ORDER BY sorting
+			LIMIT {$start}, {$per_page}");
+        $pagination = draw_admin_pagination($current_page, $per_page, $fields_acp, "index.php?module=config-application_ucp&amp;page={page}");
+        echo $pagination;
+      } else {
+        $get_field_pages = $db->write_query("SELECT *  FROM " . TABLE_PREFIX . "application_ucp_fields ORDER BY sorting");
+      }
 
       //Alle existierenden Felder bekommen
-      $get_fields = $db->simple_select("application_ucp_fields", "*", "", ["order_by" => 'sorting']);
-      while ($field = $db->fetch_array($get_fields)) {
+      // $get_fields = $db->simple_select("application_ucp_fields", "*", "", ["order_by" => 'sorting']);
+      while ($field = $db->fetch_array($get_field_pages)) {
         //Infos zusammenbauen
         if ($field['editable']) {
           $editable = "editierbar nach Annahme |";
@@ -964,14 +1063,14 @@ function application_ucp_admin_load()
         {$mandatory}
         {$dependency}
         {$searchable}
-        <div class=\"appacp_con\" style=\"display: grid; grid-template-columns: 1fr 1fr 1fr;\">
+        <div class=\"appacp_con\" style=\"display: flex; flex-wrap:wrap;\">
         {$view}
         </div>
         <br/>Alle Elemente(textfeld, das zugehörige label etc) bekommen die Klasse \"{$field['fieldname']}\", die zum Stylen verwenden werden kann.
         " . $activ_end);
 
         //spalte reihenfolge
-        $form_container->output_cell($form->generate_text_box("sorting[{$field['id']}]", $field['sorting'], array('id' => 'sorting', 'style' => "width: 25px;", 'min' => 0)));
+        $form_container->output_cell($form->generate_text_box("sorting[{$field['id']}]", $field['sorting'], array('id' => 'sorting' . $field['id'], 'style' => "width: 25px;", 'min' => 0)));
         // $form_container->output_cell($form->generate_numeric_field("disporder[{$calendar['cid']}]", $calendar['disporder'], array('id' => 'disporder', 'style' => 'width: 80%', 'class' => 'align_center', 'min' => 0)));
 
         //spalte für options
@@ -1014,6 +1113,25 @@ function application_ucp_admin_load()
       die();
     }
 
+    //Suche von einem Feld
+    $action = $mybb->get_input('action');
+    if ($action == "browsefield") {
+      $keywords = "";
+      $fieldid = "";
+      if ($mybb->get_input('keywords')) {
+        $keywords = $db->escape_string($mybb->input['keywords']);
+        $fieldid = $db->fetch_field($db->simple_select("application_ucp_fields", "id", "fieldname = '{$keywords}'"), "id");
+        if ($fieldid == "") {
+          $error = "Kein Feld mit dieser Bezeichnung gefunden.";
+          if (isset($error)) {
+            flash_message($error, 'error');
+            admin_redirect("index.php?module=config-application_ucp&action=application_ucp_edit");
+          }
+        } else {
+          admin_redirect("index.php?module=config-application_ucp&action=application_ucp_edit&fieldid=" . $fieldid);
+        }
+      }
+    }
 
     $action = $mybb->get_input('action');
 
@@ -1337,15 +1455,98 @@ function application_ucp_admin_load()
       if (isset($errors)) {
         $page->output_inline_error($errors);
       }
+      $get_users = $db->simple_select("users", "*");
+      $users = $db->num_rows($get_users, "unapprovedthreads");
+
+      //Benutzer suchen 
+      //Form erstellen
+      $search = new Form("index.php?module=config-application_ucp&action=browse", 'post', 'search_form');
+      echo "<div style=\"padding-bottom: 3px; margin-top: -9px; text-align: right;\">";
+
+      echo $search->generate_text_box('keywords', '', array('id' => 'search_keywords', 'class' => "field150 field_small")) . "\n";
+      echo "<input type=\"submit\" class=\"search_button\" value=\"Suchen\" />\n";
+      echo '
+      <link rel="stylesheet" href="../jscripts/select2/select2.css">
+      <script type="text/javascript" src="../jscripts/select2/select2.min.js?ver=1804"></script>
+      <script type="text/javascript">
+      <!--
+      $("#search_keywords").select2({
+        placeholder: "Benutzer suchen",
+        minimumInputLength: 2,
+        multiple: false,
+        ajax: { // instead of writing the function to execute the request we use Select2\'s convenient helper
+          url: "../xmlhttp.php?action=get_users",
+          dataType: \'json\',
+          data: function (term, page) {
+            return {
+              query: term, // search term
+            };
+          },
+          results: function (data, page) { // parse the results into the format expected by Select2.
+            // since we are using custom formatting functions we do not need to alter remote JSON data
+            return {results: data};
+          }
+        },
+        initSelection: function(element, callback) {
+          var query = $(element).val();
+          if (query !== "") {
+            $.ajax("../xmlhttp.php?action=get_users&getone=1", {
+              data: {
+                query: query
+              },
+              dataType: "json"
+            }).done(function(data) { callback(data); });
+          }
+        },
+      });
+  
+      $(\'[for=username]\').on(\'click\', function(){
+        $("#username").select2(\'open\');
+        return false;
+      });
+      // -->
+      </script>';
+
+      echo "</div>\n";
+      echo $search->end();
 
       //alle registrierten User bekommen
-      $get_users = $db->simple_select("users", "*");
       $form = new Form("index.php?module=config-application_ucp&action=application_ucp_manageusers", "post");
       $form_container = new FormContainer($lang->application_ucp_manageusers_dscr);
       $form_container->output_row_header($lang->application_ucp_manageusers_all);
 
+      if ($users > 0) {
+        // Figure out if we need to display multiple pages.
+        $per_page = 0;
+        if ($mybb->settings['application_ucp_acp_pagination'] != 0) {
+          $per_page = $mybb->settings['application_ucp_acp_pagination'];
+        }
+        $mybb->input['page'] = $mybb->get_input('page', MyBB::INPUT_INT);
+        if ($mybb->input['page'] > 0) {
+          $current_page = $mybb->input['page'];
+          $start = ($current_page - 1) * $per_page;
+          $pages = $users / $per_page;
+          $pages = ceil($pages);
+          if ($current_page > $pages) {
+            $start = 0;
+            $current_page = 1;
+          }
+        } else {
+          $start = 0;
+          $current_page = 1;
+        }
+      }
+      if ($mybb->settings['application_ucp_acp_pagination'] != 0) {
+        $get_users_pages = $db->write_query("SELECT *  FROM " . TABLE_PREFIX . "users ORDER BY username
+			LIMIT {$start}, {$per_page}");
+        $pagination = draw_admin_pagination($current_page, $per_page, $users, "index.php?module=config-application_ucp&action=application_ucp_manageusers&amp;page={page}");
+        echo $pagination;
+      } else {
+        $get_users_pages = $db->write_query("SELECT *  FROM " . TABLE_PREFIX . "users ORDER BY username");
+      }
+
       //Bewerber oder angenommen?
-      while ($user = $db->fetch_array($get_users)) {
+      while ($user = $db->fetch_array($get_users_pages)) {
         if (is_member($mybb->settings['application_ucp_applicants'], $user['uid'])) {
           $userstatus = "Bewerber";
         } else {
@@ -1530,7 +1731,7 @@ function application_ucp_admin_load()
           );
         }
         //für date und url gibt es keine mybbfunktion, also bauen wir es selber
-        if ($field['fieldtyp'] == "date" or $field['fieldtyp'] == "date-local" or $field['fieldtyp'] == 'url') {
+        if ($field['fieldtyp'] == "date" or $field['fieldtyp'] == "datetime-local" or $field['fieldtyp'] == 'url') {
           $form_container->output_row(
             $label,
             $descr,
@@ -1544,6 +1745,24 @@ function application_ucp_admin_load()
       $form->output_submit_wrapper($buttons);
       $form->end();
       $page->output_footer();
+    }
+
+    //Ergebnis Benutzersuchen
+    if ($mybb->input['action'] == "browse") {
+      $user = array();
+      $keywords = "";
+      if ($mybb->get_input('keywords')) {
+        $keywords = $db->escape_string($mybb->input['keywords']);
+        $user = get_user_by_username($keywords);
+        if (!$user) {
+          $error = "Kein User mit diesem Username gefunden.";
+          if (isset($error)) {
+            $page->output_inline_error($error);
+          }
+        } else {
+          admin_redirect("index.php?module=config-application_ucp&action=application_ucp_manageusers_user&uid=" . $user['uid']);
+        }
+      }
     }
 
     //Editieren eines Felds
@@ -2100,6 +2319,7 @@ function application_ucp_usercp()
     }
     //handelt es sich um ein Pflichtfeld
     $dep_classname = "";
+    $dep_classname_wrap = "";
     if ($type['mandatory']) {
       $requiredstar = "<span class\"app_ucp_star\">" . $lang->application_ucp_mandatory . "</span>"; //markierung mit sternchen ux und so :D    
 
@@ -2948,6 +3168,7 @@ function application_ucp_filter()
     //und gehen sie durch
     $selectstring = application_ucp_buildsql();
 
+
     while ($searchfield = $db->fetch_array($getfields)) {
 
       // //weiter im Querie, hier modeln wir unsere Felder ders users (apllication_ucp_fields taballe) zu einer Tabellenreihe um -> name der Spalte ist fieldname, wert wie gehabt value
@@ -3117,6 +3338,27 @@ function application_ucp_getdata()
     while ($user = $db->fetch_array($query)) {
       $datacontent = strip_tags($user['value']);
       $data[] = array('fieldid' => $user['uid'], 'id' => $datacontent, 'text' => $datacontent);
+    }
+    //als JSON ausgeben, weil damit unser javascript arbeitet
+    echo json_encode($data);
+    exit;
+  }
+
+  if ($mybb->input['action'] == "get_aucpfields") {
+    //charset definieren
+    header("Content-type: application/json; charset={$charset}");
+
+    //Wert nach dem gesucht werden soll
+    $likestring = $db->escape_string_like($mybb->input['query']);
+    //welches feld
+    $fieldid = intval($mybb->input['fieldid']);
+    //Query um die daten zu bekommen
+    $query = $db->simple_select("application_ucp_fields", "fieldname", "fieldname LIKE '%{$likestring}%'");
+
+    //array zusammenbauen
+    while ($field = $db->fetch_array($query)) {
+      $datacontent = strip_tags($field['fieldname']);
+      $data[] = array('id' => $datacontent, 'text' => $datacontent);
     }
     //als JSON ausgeben, weil damit unser javascript arbeitet
     echo json_encode($data);
@@ -3799,11 +4041,11 @@ function application_ucp_buildsql($type = "searchable")
   }
 
   $selectstring = substr($selectstring, 0, -1);
-  $selectstring .= " from `" . TABLE_PREFIX . "application_ucp_userfields` as um group by uid) as fields ON auid = u.uid";
+  $selectstring .= " from `" . TABLE_PREFIX . "application_ucp_userfields` as um group by uid) as fields ON auid = uid";
 
   //Kein durchsuchbares feld, wir müssen so mysql fehler abfangen.
   if ($db->num_rows($getfields) == 0) {
-    $selectstring = "LEFT JOIN (select um.uid as auid from `" . TABLE_PREFIX . "application_ucp_userfields` as um group by uid) as fields ON auid = u.uid";
+    $selectstring = "LEFT JOIN (select um.uid as auid from `" . TABLE_PREFIX . "application_ucp_userfields` as um group by uid) as fields ON auid = uid";
   }
   return $selectstring;
 }
@@ -3813,7 +4055,6 @@ function application_ucp_buildsql($type = "searchable")
 /**
  * Anzeige der Felder im Profil und im Postbit
  * Wir sind faul und wollen das ganze nicht mehrmals schreiben :D 
- * @param uid
  * uid von wem sollen die Felder angezeigt werden, location 
  * location: wo, profil, memberlist oder postbit
  * return string oder array 
