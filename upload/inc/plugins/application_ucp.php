@@ -2337,8 +2337,15 @@ function application_ucp_usercp()
       } else {
         $inputname = $type['id'];
       }
+      //Klassen zusammen bauen für mehrere abhängigekeiten
+      $dep_val_arr = explode(",", $type['dependency_value']);
+      $dep_classes = "";
+      foreach ($dep_val_arr as $dep) {
+        $dep_classes .= " dep_value_" . preg_replace('/[^A-Za-z0-9\_]/', '', $dep);
+      }
+
       $dep_classname = "has_dep dep_" . $type['dependency'];
-      $dep_classname_wrap = "depends wrap_dep_" . preg_replace('/[^A-Za-z0-9\_]/', '', $type['dependency']) . " dep_value_" . preg_replace('/[^A-Za-z0-9\_]/', '', $type['dependency_value']);
+      $dep_classname_wrap = "depends wrap_dep_" . preg_replace('/[^A-Za-z0-9\_]/', '', $type['dependency']) . $dep_classes;
       $hide = true;
 
       //javascript dynamisch zusammen bauen.
