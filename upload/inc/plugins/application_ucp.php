@@ -2320,6 +2320,7 @@ function application_ucp_usercp()
     //handelt es sich um ein Pflichtfeld
     $dep_classname = "";
     $dep_classname_wrap = "";
+    $dep_classes = "";
     if ($type['mandatory']) {
       $requiredstar = "<span class\"app_ucp_star\">" . $lang->application_ucp_mandatory . "</span>"; //markierung mit sternchen ux und so :D    
 
@@ -2339,7 +2340,7 @@ function application_ucp_usercp()
       }
       //Klassen zusammen bauen für mehrere abhängigekeiten
       $dep_val_arr = explode(",", $type['dependency_value']);
-      $dep_classes = "";
+      
       foreach ($dep_val_arr as $dep) {
         $dep_classes .= " dep_value_" . preg_replace('/[^A-Za-z0-9\_]/', '', $dep);
       }
