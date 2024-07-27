@@ -3284,7 +3284,7 @@ function application_ucp_filter()
       //Query bauen zum suchen 
       if (trim($mybb->input[$searchfield['fieldname']])) {
 
-        $value = $mybb->input[$searchfield['fieldname']];
+        $value = $db->escape_string($mybb->input[$searchfield['fieldname']]);
 
         if ($searchfield['fieldtyp'] == "text" || $searchfield['fieldtyp'] == "textarea" || $searchfield['fieldtyp'] == "checkbox" || $searchfield['fieldtyp'] == "select_multiple") {
           $search_query .= " AND " . $searchfield['fieldname'] . " LIKE '%" . $value . "%'";
