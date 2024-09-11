@@ -685,8 +685,6 @@ function application_ucp_uninstall()
     $db->drop_table("application_ucp_userfields");
   }
 
-
-
   if ($db->field_exists("aucp_extend", "users")) {
     $db->write_query("ALTER TABLE " . TABLE_PREFIX . "users DROP aucp_extend");
   }
@@ -816,7 +814,7 @@ function application_ucp_settings_peek(&$peekers)
     || !$db->field_exists("guest", "application_ucp_fields")
     || !$db->field_exists("guest_content", "application_ucp_fields")
     || !$db->field_exists("wob_date", "users")
-    || !$db->table_exists("application_ucp_categories", "users")
+    || !$db->table_exists("application_ucp_categories")
   ) {
     $peekers[] = "
     $('a:contains(\"Steckbrief im UCP\")').after('<br><span style=\"color:red; font-weight:bold;\">Bitte das Updatescript ausführen!</span>');
@@ -2268,8 +2266,8 @@ function application_ucp_admin_load()
         echo "<h3 style='text-align: center; color:red;'><strong>Hinweis:</strong> Du hast aktuell Kategorien in den Einstellungen deaktiviert.</h2>";
       }
       //formular um eine neue Kategorie anzulegen
-      $form = new Form("index.php?module=config-application_ucp&amp;action=application_ucp_managecats_add", "post", "add_cat", 1);
-      echo $form->generate_hidden_field('fieldid', $fieldid);
+      $form = new Form("index.php?module=config-application_ucp&amp;action=application_ucp_managecats&amp;do=add", "post", "add_cat", 1);
+      // echo $form->generate_hidden_field('fieldid', $fieldid)."bla";
       $form_container = new FormContainer($lang->application_ucp_namecat);
       $form_container->output_row(
         $lang->application_ucp_add_cat_name,
@@ -3084,8 +3082,6 @@ function application_ucp_usercp()
         //hole die Abhänigkeiten des felds
         // female
         // wenn input != female  dann ist die pflicht egal
-
-
 
         //hole id des felds
         // $fieldep = $db->fetch_array($db->simple_select("application_ucp_fields", "*", "fieldname = '{$field['dependency']}'"));
