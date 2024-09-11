@@ -677,9 +677,15 @@ function application_ucp_uninstall()
     $db->drop_table("application_ucp_management");
   }
 
-  if ($db->table_exists("application_ucp_useralerts")) {
-    $db->drop_table("application_ucp_useralerts");
+  // if ($db->table_exists("application_ucp_useralerts")) {
+  //   $db->drop_table("application_ucp_useralerts");
+  // }  
+
+  if ($db->table_exists("application_ucp_userfields")) {
+    $db->drop_table("application_ucp_userfields");
   }
+
+
 
   if ($db->field_exists("aucp_extend", "users")) {
     $db->write_query("ALTER TABLE " . TABLE_PREFIX . "users DROP aucp_extend");
