@@ -32,11 +32,8 @@ legend {
 $gid = $db->fetch_field($db->write_query("SELECT gid FROM `" . TABLE_PREFIX . "settings` WHERE name like 'application_ucp%' LIMIT 1;"), "gid");
 
 if ($mybb->usergroup['canmodcp'] == 1) {
-
-
-
   echo "<h1>Update Script für Steckbrief Plugin</h1>";
-  echo "<p>Updatescript wurde zuletzt am 2.05.24 aktualisiert</p>";
+  echo "<p>Updatescript wurde zuletzt am 11.09.24 aktualisiert</p>";
   echo "<p>Das Skript muss nur ausgeführt werden, wenn von einer alten auf eine neue Version geupdatet wird.<br> Bei Neuinstallation, muss hier nichts getan werden!</p>";
 
   echo '<form action="" method="post">';
@@ -62,6 +59,8 @@ if ($mybb->usergroup['canmodcp'] == 1) {
       $dbcheck = 1;
     }
 
+    //Table hinzufügen 
+
     $db->write_query("ALTER TABLE `" . TABLE_PREFIX . "application_ucp_fields` CHANGE `template` `template` LONGTEXT CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '';");
 
     if (!$db->field_exists("aucp_extend", "users")) {
@@ -74,7 +73,16 @@ if ($mybb->usergroup['canmodcp'] == 1) {
       echo "Feld aucp_extenddate wurde zu users hinzugefügt.";
       $dbcheck = 1;
     }
-
+    if (!$db->table_exists("application_ucp_categories")) {
+      $db->write_query("CREATE TABLE `" . TABLE_PREFIX . "application_ucp_categories` (
+      `id` int(10) NOT NULL AUTO_INCREMENT,
+      `name` varchar(100) NOT NULL DEFAULT '',
+      `cat_order` int(10) NOT NULL DEFAULT '0',
+      PRIMARY KEY (`id`)
+      ) ENGINE=MyISAM CHARACTER SET utf8 COLLATE utf8_general_ci;");
+      echo "Tabelle application_ucp_categories wurde erstellt.";
+      $dbcheck = 1;
+    }
     if (!$db->field_exists("wob_date", "users")) {
       $db->add_column("users", "wob_date", "INT(10) NOT NULL DEFAULT 0");
       echo "Feld wob_date wurde zu users hinzugefügt.";
@@ -85,8 +93,47 @@ if ($mybb->usergroup['canmodcp'] == 1) {
       echo "Feld container wurde zu application_ucp_fields hinzugefügt.";
       $dbcheck = 1;
     }
+    if (!$db->field_exists("cat_id", "application_ucp_fields")) {
+      $db->add_column("application_ucp_fields", "cat_id", "INT(10) NOT NULL DEFAULT '0'");
+      echo "Feld cat_id wurde zu application_ucp_fields hinzugefügt.";
+      $dbcheck = 1;
+
+      include MYBB_ROOT . "/inc/adminfunctions_templates.php";
+      find_replace_templatesets("application_ucp_ucp_main", "#" . preg_quote('{$footer}') . "#i", '{$footer}{$application_ucpcats_js}{$application_ucp_js}');
+      echo "Template application_ucp_ucp_main - wurde aktualisiert. Variablen für Javascript wurden hinzugefügt  ";
+
+      echo "Achtung zum CSS folgendes hinzufügen: <textarea style='width: 80%; height: 300px;'>.cat_tabs {
+    margin: 0px;
+    padding: 0px;
+    list-style: none;
+    background:#000;
+    border-bottom: 5px #0072BC solid;
+}
+.cat_tabs li{
+    display: inline-block;
+    margin:0;
+    padding: 10px 20px 5px 20px;
+    cursor: pointer;
+    color:#FFF;
+}
+.cat_tabs li:hover {
+    background:#0072BC;
+}
+
+.cat_tabs li.current{
+    background: #0072BC;
+    color: #FFF;
+}
+.con_cat_content {
+    display: none;
+    background: #f2f2f2;
+}
+.con_cat_content.current{
+    display: inherit;
+}</teaxtarea> ";
+    }
   }
-  
+
   echo "<h1>CSS Nachträglich hinzufügen?</h1>";
   echo "<p>Nach einem MyBB Upgrade fehlen die Stylesheets? <br> Hier kannst du den Standard Stylesheet nachträglich zum Master style neu hinzufügen.</p>";
   echo '<form action="" method="post">';
@@ -140,6 +187,37 @@ if ($mybb->usergroup['canmodcp'] == 1) {
           grid-template-columns: 1fr 1fr 1fr;
           gap: 10px;
       }
+      
+      /*Styling for tabs */
+      .cat_tabs {
+          margin: 0px;
+          padding: 0px;
+          list-style: none;
+          background:#000;
+          border-bottom: 5px #0072BC solid;
+      }
+      .cat_tabs li{
+          display: inline-block;
+          margin:0;
+          padding: 10px 20px 5px 20px;
+          cursor: pointer;
+          color:#FFF;
+      }
+      .cat_tabs li:hover {
+          background:#0072BC;
+      }
+
+      .cat_tabs li.current{
+          background: #0072BC;
+          color: #FFF;
+      }
+      .con_cat_content {
+          display: none;
+          background: #f2f2f2;
+      }
+      .con_cat_content.current{
+          display: inherit;
+      }
         
         /*Display Profil and Postbit */
         .aucp_fieldContainer {
@@ -151,6 +229,8 @@ if ($mybb->usergroup['canmodcp'] == 1) {
             display: flex;
             gap: 10px;
         }
+        
+        
         ',
         'cachefile' => $db->escape_string(str_replace('/', '', 'application_ucp.css')),
         'lastmodified' => time()
