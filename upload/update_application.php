@@ -130,7 +130,7 @@ if ($mybb->usergroup['canmodcp'] == 1) {
 }
 .con_cat_content.current{
     display: inherit;
-}</teaxtarea> ";
+}</textarea> ";
     }
   }
 
