@@ -174,6 +174,37 @@ function application_ucp_install()
       grid-template-columns: 1fr 1fr 1fr;
       gap: 10px;
   }
+
+  /*tabstyling/*
+  .cat_tabs {
+    margin: 0px;
+    padding: 0px;
+    list-style: none;
+    background:#000;
+    border-bottom: 5px #0072BC solid;
+}
+.cat_tabs li{
+    display: inline-block;
+    margin:0;
+    padding: 10px 20px 5px 20px;
+    cursor: pointer;
+    color:#FFF;
+}
+.cat_tabs li:hover {
+    background:#0072BC;
+}
+
+.cat_tabs li.current{
+    background: #0072BC;
+    color: #FFF;
+}
+.con_cat_content {
+    display: none;
+    background: #f2f2f2;
+}
+.con_cat_content.current{
+    display: inherit;
+}
     
     /*Display Profil and Postbit */
     .aucp_fieldContainer {
