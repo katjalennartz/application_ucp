@@ -11,7 +11,9 @@ https://github.com/katjalennartz/application_ucp/wiki
 
 **Update: September 2024**  
 - version 1.1.4
-- Aufteilung im UCP der Steckbrieffelder auf Wunsch im UCP, entweder mit oder ohne Tabs. 
+- Aufteilung im UCP der Steckbrieffelder auf Wunsch im UCP, entweder mit oder ohne Tabs.
+- Neue Variablen im Template application_ucp_ucp_main: vor ``` {$footer} :  {$application_ucpcats_js}{$application_ucp_js} ```	 
+
 - **Updatescript UNBEDINGT(!)  nötig, da es eine neue Tabelle, neue Settings und Datenbankfelder gibt.**    
       
 **Update:  2024**  
