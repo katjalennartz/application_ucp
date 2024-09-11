@@ -9,6 +9,17 @@ https://github.com/katjalennartz/application_ucp/wiki
 - forenadresse/update_application.php 		 
 - im Browser aufrufen
 
+**Update: September 2024**  
+- version 1.1.4
+- Aufteilung im UCP der Steckbrieffelder auf Wunsch im UCP, entweder mit oder ohne Tabs. 
+- **Updatescript UNBEDINGT(!)  nötig, da es eine neue Tabelle, neue Settings und Datenbankfelder gibt.**    
+      
+**Update:  2024**  
+- version 1.1.3
+- Durchsuchbarkeit in ACP
+- Paginierung in ACP möglich
+- **Updatescript nötig, da es neue Settings.**
+  
 **Update: Mai 2024**  
 - version 1.1.2 
 - Optimierung Javascript für Abhängigkeiten - Checkboxen, Radiobuttons, Selects und Multiselects sollten jetzt gehen
