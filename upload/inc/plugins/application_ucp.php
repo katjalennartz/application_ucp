@@ -34,7 +34,7 @@ function application_ucp_info()
     "website" => "https://github.com/katjalennartz/application_ucp",
     "author" => "risuena",
     "authorsite" => "https://github.com/katjalennartz",
-    "version" => "1.1.3",
+    "version" => "1.1.4",
     "compatibility" => "18*"
   );
 }
@@ -90,7 +90,7 @@ function application_ucp_install()
   `fieldid` int(10) NOT NULL,
   UNIQUE KEY `uid_fieldidid` (`uid`,`fieldid`),
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM CHARACTER SET utf8 COLLATE utf8_general_ci;");
+  ) ENGINE=MyISAM CHARACTER SET utf8 COLLATE utf8_general_ci;");
 
   $db->write_query("CREATE TABLE `" . TABLE_PREFIX . "application_ucp_management` (
   `id` int(10) NOT NULL AUTO_INCREMENT,
@@ -690,9 +690,6 @@ function application_ucp_uninstall()
   if ($db->field_exists("wob_date", "users")) {
     $db->write_query("ALTER TABLE " . TABLE_PREFIX . "users DROP wob_date");
   }
-  if ($db->field_exists("wob_date", "users")) {
-    $db->write_query("ALTER TABLE " . TABLE_PREFIX . "users DROP wob_date");
-  }
 
   // Einstellungen entfernen
   $db->delete_query("settings", "name LIKE 'application_ucp%'");
@@ -752,8 +749,11 @@ function application_ucp_activate()
   find_replace_templatesets("memberlist", "#" . preg_quote('{$referrals_option}</select></td></tr>') . "#i", '{$referrals_option}</select></td></tr><tr><td colspan="3">{$applicationfilter}</tr></td>');
   find_replace_templatesets("memberlist", "#" . preg_quote('</body>') . "#i", '{$filterjs}</body>');
 
-  //Meldunng auf dem index
+  //Meldung auf dem index
   find_replace_templatesets("index", "#" . preg_quote('{$header}') . "#i", '{$header}{$application_ucp_index}');
+
+  //Javascript fürs Aufspalten 
+  find_replace_templatesets("application_ucp_ucp_main", "#" . preg_quote('{$footer}') . "#i", '{$footer}{$application_ucpcats_js}{$application_ucp_js}');
 
   if (function_exists('myalerts_is_activated') && myalerts_is_activated()) {
 
@@ -787,7 +787,7 @@ function application_ucp_deactivate()
   find_replace_templatesets("memberlist", "#" . preg_quote('{$filterjs}') . "#i", '');
   find_replace_templatesets("index", "#" . preg_quote('{$application_ucp_index}') . "#i", '');
   find_replace_templatesets("member_profile", "#" . preg_quote('{$application_ucp_profile_trigger}') . "#i", '');
-
+  find_replace_templatesets("application_ucp_ucp_main", "#" . preg_quote('{$application_ucpcats_js}{$application_ucp_js}') . "#i", '');
   //My alerts wieder löschen
   if (class_exists('MybbStuff_MyAlerts_AlertTypeManager')) {
     $alertTypeManager = MybbStuff_MyAlerts_AlertTypeManager::getInstance();
@@ -810,9 +810,10 @@ function application_ucp_settings_peek(&$peekers)
     || !$db->field_exists("guest", "application_ucp_fields")
     || !$db->field_exists("guest_content", "application_ucp_fields")
     || !$db->field_exists("wob_date", "users")
+    || !$db->table_exists("application_ucp_categories", "users")
   ) {
     $peekers[] = "
-    $('a:contains(\"Steckbrief im UCP\")').after('<br><span style=\"color:red; font-weight:bold;\">Bitte das Updatescript ausführen! </span>');
+    $('a:contains(\"Steckbrief im UCP\")').after('<br><span style=\"color:red; font-weight:bold;\">Bitte das Updatescript ausführen!</span>');
     ";
   }
 }
@@ -1193,12 +1194,7 @@ function application_ucp_admin_load()
       }
       //kategorie speichern
       $cats = $mybb->get_input('cat', MyBB::INPUT_ARRAY);
-      // var_dump($cats);
-      // die();
       foreach ($cats as $id => $cat) {
-
-        // $parts = explode(':', $cat);
-        // $catid = trim($parts[1]);
         $update_cat = array(
           "cat_id" => (int)$cat
         );
