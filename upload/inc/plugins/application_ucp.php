@@ -2294,7 +2294,7 @@ function application_ucp_admin_load()
 
       while ($cat = $db->fetch_array($get_cats)) {
         $form_container->output_cell($cat['name'], array('width' => '10%'));
-        $form_container->output_cell("<label for='cat_name" . $cat['id'] . "'>Name ändern zu </label> " . $form->generate_text_box("changename[{$cat['id']}]", $cat['name'], array('id' => 'cat_name' . $cat['id'], 'style' => "width: 50px;")));
+        $form_container->output_cell("<label for='cat_name" . $cat['id'] . "'>Name ändern zu </label><br>" . $form->generate_text_box("changename[{$cat['id']}]", $cat['name'], array('id' => 'cat_name' . $cat['id'], 'style' => "width: 150px;")));
 
         $form_container->output_cell($form->generate_text_box("sorting[{$cat['id']}]", $cat['cat_order'], array('id' => 'cat_order' . $cat['id'], 'style' => "width: 25px;", 'min' => 0)), array('width' => '10%'));
         $popup = new PopupMenu("cat_{$cat['id']}", $lang->application_ucp_manageusers_manage);
