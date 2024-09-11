@@ -2288,7 +2288,7 @@ function application_ucp_admin_load()
       //Header und Navigation
       $page->output_header($lang->application_ucp_managecats);
       $sub_tabs = application_ucp_do_submenu();
-      $page->output_nav_tabs($sub_tabs, 'application_ucp');
+      $page->output_nav_tabs($sub_tabs, 'application_ucp_managecats');
       //ausgabe wenn es Fehler gab
       if (isset($errors)) {
         $page->output_inline_error($errors);
