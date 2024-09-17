@@ -14,7 +14,8 @@ https://github.com/katjalennartz/application_ucp/wiki
 - Aufteilung im UCP der Steckbrieffelder auf Wunsch im UCP, entweder mit oder ohne Tabs.
 - Neue Variablen im Template application_ucp_ucp_main:   
          vor ``` {$footer} :  {$application_ucpcats_js}{$application_ucp_js} ```  
-	 nach ``` <div class="applucp-con"> :  {$cats_html} ```	  
+	 nach ``` <div class="applucp-con"> :  {$cats_html} ```
+- nicht vergessen das css hinzuzufügen! 
 
 - **Updatescript UNBEDINGT(!)  nötig, da es eine neue Tabelle, neue Settings und Datenbankfelder gibt.**    
       
