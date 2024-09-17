@@ -34,7 +34,7 @@ function application_ucp_info()
     "website" => "https://github.com/katjalennartz/application_ucp",
     "author" => "risuena",
     "authorsite" => "https://github.com/katjalennartz",
-    "version" => "1.1.3",
+    "version" => "1.1.4",
     "compatibility" => "18*"
   );
 }
@@ -79,6 +79,7 @@ function application_ucp_install()
     `guest` int(1) NOT NULL DEFAULT 1,
     `guest_content` varchar(500) NOT NULL DEFAULT '',
     `container` varchar(500) NOT NULL DEFAULT '',
+    `cat_id` int(10) NOT NULL DEFAULT 0,
     PRIMARY KEY (`id`)
 ) ENGINE=MyISAM CHARACTER SET utf8 COLLATE utf8_general_ci;");
 
@@ -89,7 +90,7 @@ function application_ucp_install()
   `fieldid` int(10) NOT NULL,
   UNIQUE KEY `uid_fieldidid` (`uid`,`fieldid`),
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM CHARACTER SET utf8 COLLATE utf8_general_ci;");
+  ) ENGINE=MyISAM CHARACTER SET utf8 COLLATE utf8_general_ci;");
 
   $db->write_query("CREATE TABLE `" . TABLE_PREFIX . "application_ucp_management` (
   `id` int(10) NOT NULL AUTO_INCREMENT,
@@ -103,10 +104,18 @@ function application_ucp_install()
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM CHARACTER SET utf8 COLLATE utf8_general_ci;");
 
+  $db->write_query("CREATE TABLE `" . TABLE_PREFIX . "application_ucp_categories` (
+  `id` int(10) NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) NOT NULL DEFAULT '',
+  `cat_order` int(10) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM CHARACTER SET utf8 COLLATE utf8_general_ci;");
+
   //Verlängerung
   $db->add_column("users", "aucp_extend", "INT(10) NOT NULL DEFAULT 0");
   $db->add_column("users", "aucp_extenddate", "DATE NULL");
   $db->add_column("users", "wob_date", "INT(10) NOT NULL DEFAULT 0");
+
   // ALTER TABLE `mybb_users` ADD `aucp_extenddate` DATE NOT NULL AFTER `aucp_extend`;
 
   // Admin Einstellungen
@@ -165,6 +174,37 @@ function application_ucp_install()
       grid-template-columns: 1fr 1fr 1fr;
       gap: 10px;
   }
+
+  /*tabstyling/*
+  .cat_tabs {
+    margin: 0px;
+    padding: 0px;
+    list-style: none;
+    background:#000;
+    border-bottom: 5px #0072BC solid;
+}
+.cat_tabs li{
+    display: inline-block;
+    margin:0;
+    padding: 10px 20px 5px 20px;
+    cursor: pointer;
+    color:#FFF;
+}
+.cat_tabs li:hover {
+    background:#0072BC;
+}
+
+.cat_tabs li.current{
+    background: #0072BC;
+    color: #FFF;
+}
+.con_cat_content {
+    display: none;
+    background: #f2f2f2;
+}
+.con_cat_content.current{
+    display: inherit;
+}
     
     /*Display Profil and Postbit */
     .aucp_fieldContainer {
@@ -350,15 +390,37 @@ function application_ucp_add_settings($type = 'install')
       'description' => 'Sollen die User im ACP auf Seiten aufgeteilt werden? 0 wenn nicht, sonst anzahl der Einträge pro Seite',
       'optionscode' => 'numeric',
       'value' => '0', // Default
-      'disporder' => 17
+      'disporder' => 18
     ),
     'application_ucp_acp_pagination_fields' => array(
       'title' => 'Seitenzahlen in der Feldliste im ACP',
       'description' => 'Sollen die Felder im ACP auf Seiten aufgeteilt werden? 0 wenn nicht, sonst anzahl der Einträge pro Seite',
       'optionscode' => 'numeric',
       'value' => '0', // Default
-      'disporder' => 17
+      'disporder' => 19
     ),
+    'application_ucp_acp_cats' => array(
+      'title' => 'Aufspaltung',
+      'description' => 'Sollen die Steckbrieffelder in Kategorien aufgespaltet werden?',
+      'optionscode' => 'yesno',
+      'value' => '1', // Default
+      'disporder' => 20
+    ),
+    'application_ucp_acp_cats_tabs' => array(
+      'title' => 'Aufspaltung - Tabs?',
+      'description' => 'Sollen diese Kategorien in Tabs angezeigt werden?',
+      'optionscode' => 'yesno',
+      'value' => '1', // Default
+      'disporder' => 21
+    ),
+    'application_ucp_acp_cat_defaultname' => array(
+      'title' => 'Defaultname Kategorie',
+      'description' => 'Wenn ein Feld keine Kategorie zugeordnet hat, wie soll der Defaultname für diese sein?',
+      'optionscode' => 'text',
+      'value' => 'Andere', // Default
+      'disporder' => 22
+    ),
+
   );
 
   $gid = $db->fetch_field($db->write_query("SELECT gid FROM `" . TABLE_PREFIX . "settinggroups` WHERE name like 'application_ucp%' LIMIT 1;"), "gid");
@@ -548,6 +610,7 @@ function application_ucp_add_templates($type = 'install')
       {$usercpnav}
       <td valign="top">
         <div class="applucp-con">
+        {$cats_html}
         {$application_ucp_infos}
         {$fields}
         <div align="center" class="applucp-con__item applucp-buttons">
@@ -560,7 +623,7 @@ function application_ucp_add_templates($type = 'install')
       </tr>
       </table>
       </form>
-      {$application_ucp_js}
+      {$application_ucpcats_js}{$application_ucp_js}
       {$footer}
         
       </body>
@@ -619,7 +682,7 @@ function application_ucp_add_templates($type = 'install')
   $template[10] = array(
     "title" => 'application_ucp_profile_trigger',
     "template" => '<div class="aucp_trigger">
-{$lang->application_ucp_profile_trigger} {$trigger}
+    {$lang->application_ucp_profile_trigger} {$trigger}
     </div>',
     "sid" => "-2",
     "version" => "1.0",
@@ -654,8 +717,12 @@ function application_ucp_uninstall()
     $db->drop_table("application_ucp_management");
   }
 
-  if ($db->table_exists("application_ucp_useralerts")) {
-    $db->drop_table("application_ucp_useralerts");
+  // if ($db->table_exists("application_ucp_useralerts")) {
+  //   $db->drop_table("application_ucp_useralerts");
+  // }  
+
+  if ($db->table_exists("application_ucp_userfields")) {
+    $db->drop_table("application_ucp_userfields");
   }
 
   if ($db->field_exists("aucp_extend", "users")) {
@@ -667,6 +734,7 @@ function application_ucp_uninstall()
   if ($db->field_exists("wob_date", "users")) {
     $db->write_query("ALTER TABLE " . TABLE_PREFIX . "users DROP wob_date");
   }
+
   // Einstellungen entfernen
   $db->delete_query("settings", "name LIKE 'application_ucp%'");
   $db->delete_query('settinggroups', "name = 'application_ucp'");
@@ -725,8 +793,11 @@ function application_ucp_activate()
   find_replace_templatesets("memberlist", "#" . preg_quote('{$referrals_option}</select></td></tr>') . "#i", '{$referrals_option}</select></td></tr><tr><td colspan="3">{$applicationfilter}</tr></td>');
   find_replace_templatesets("memberlist", "#" . preg_quote('</body>') . "#i", '{$filterjs}</body>');
 
-  //Meldunng auf dem index
+  //Meldung auf dem index
   find_replace_templatesets("index", "#" . preg_quote('{$header}') . "#i", '{$header}{$application_ucp_index}');
+
+  //Javascript fürs Aufspalten 
+  find_replace_templatesets("application_ucp_ucp_main", "#" . preg_quote('{$footer}') . "#i", '{$footer}{$application_ucpcats_js}{$application_ucp_js}');
 
   if (function_exists('myalerts_is_activated') && myalerts_is_activated()) {
 
@@ -760,7 +831,7 @@ function application_ucp_deactivate()
   find_replace_templatesets("memberlist", "#" . preg_quote('{$filterjs}') . "#i", '');
   find_replace_templatesets("index", "#" . preg_quote('{$application_ucp_index}') . "#i", '');
   find_replace_templatesets("member_profile", "#" . preg_quote('{$application_ucp_profile_trigger}') . "#i", '');
-
+  find_replace_templatesets("application_ucp_ucp_main", "#" . preg_quote('{$application_ucpcats_js}{$application_ucp_js}') . "#i", '');
   //My alerts wieder löschen
   if (class_exists('MybbStuff_MyAlerts_AlertTypeManager')) {
     $alertTypeManager = MybbStuff_MyAlerts_AlertTypeManager::getInstance();
@@ -783,9 +854,10 @@ function application_ucp_settings_peek(&$peekers)
     || !$db->field_exists("guest", "application_ucp_fields")
     || !$db->field_exists("guest_content", "application_ucp_fields")
     || !$db->field_exists("wob_date", "users")
+    || !$db->table_exists("application_ucp_categories")
   ) {
     $peekers[] = "
-    $('a:contains(\"Steckbrief im UCP\")').after('<br><span style=\"color:red; font-weight:bold;\">Bitte das Updatescript ausführen! </span>');
+    $('a:contains(\"Steckbrief im UCP\")').after('<br><span style=\"color:red; font-weight:bold;\">Bitte das Updatescript ausführen!</span>');
     ";
   }
 }
@@ -861,18 +933,18 @@ function application_ucp_admin_load()
         $page->output_inline_error($errors);
       }
 
-      if (!$db->field_exists("guest", "application_ucp_fields")) {
+      // if (!$db->field_exists("guest", "application_ucp_fields")) {
 
-        $form_container = new FormContainer("Upgrade!");
+      //   $form_container = new FormContainer("Upgrade!");
 
-        $form_container->output_row('<font style="color: red;">
-        <b>UPGRADE</b> Du musst noch das Upgradescript ausführen 
-        um neue Felder (Gast, und alternativer Inhalt für Gäste) hinzuzufügen!<bR>
-        Es gibt auch neue Sprachvariablen, languages also auch hochladen ;)<br>
-         <a href="' . $mybb->settings['bburl'] . '/update_fields.php" target="_blank">Jetzt ausführen</a></font><br/>
-        ', "", "", "", array("colspan" => "5"));
-        $form_container->end();
-      }
+      //   $form_container->output_row('<font style="color: red;">
+      //   <b>UPGRADE</b> Du musst noch das Upgradescript ausführen 
+      //   um neue Felder (Gast, und alternativer Inhalt für Gäste) hinzuzufügen!<bR>
+      //   Es gibt auch neue Sprachvariablen, languages also auch hochladen ;)<br>
+      //    <a href="' . $mybb->settings['bburl'] . '/update_fields.php" target="_blank">Jetzt ausführen</a></font><br/>
+      //   ', "", "", "", array("colspan" => "5"));
+      //   $form_container->end();
+      // }
 
       //Form erstellen - Feld suchen
       $search = new Form("index.php?module=config-application_ucp&action=browsefield", 'post', 'search_form');
@@ -929,7 +1001,14 @@ function application_ucp_admin_load()
       //erst brauchen wir einen Container und ein Formular - für delete, die Sortierung etc.
       $form = new Form("index.php?module=config-application_ucp&amp;action=update_order", "post");
       $form_container = new FormContainer($lang->application_ucp_overview);
-      $get_fields = $db->simple_select("application_ucp_fields", "*");
+      $get_fields = $db->simple_select("application_ucp_fields", "*", "", array(array("order_by" => "cat_id, sorting")));
+      $form_container->output_row_header("Details");
+      if ($mybb->settings['application_ucp_acp_cats'] == "1") {
+        $form_container->output_row_header($lang->application_ucp_overview_cat);
+      }
+      $form_container->output_row_header($lang->application_ucp_overview_sort);
+      $form_container->output_row_header($lang->application_ucp_overview_opt);
+
 
       $fields_acp = $db->num_rows($get_fields, "id");
       if ($fields_acp > 0) {
@@ -954,16 +1033,15 @@ function application_ucp_admin_load()
         }
       }
       if ($mybb->settings['application_ucp_acp_pagination_fields'] != 0) {
-        $get_field_pages = $db->write_query("SELECT *  FROM " . TABLE_PREFIX . "application_ucp_fields ORDER BY sorting
+        $get_field_pages = $db->write_query("SELECT *  FROM " . TABLE_PREFIX . "application_ucp_fields ORDER BY cat_id, sorting
 			LIMIT {$start}, {$per_page}");
         $pagination = draw_admin_pagination($current_page, $per_page, $fields_acp, "index.php?module=config-application_ucp&amp;page={page}");
         echo $pagination;
       } else {
-        $get_field_pages = $db->write_query("SELECT *  FROM " . TABLE_PREFIX . "application_ucp_fields ORDER BY sorting");
+        $get_field_pages = $db->write_query("SELECT *  FROM " . TABLE_PREFIX . "application_ucp_fields ORDER BY cat_id, sorting");
       }
 
       //Alle existierenden Felder bekommen
-      // $get_fields = $db->simple_select("application_ucp_fields", "*", "", ["order_by" => 'sorting']);
       while ($field = $db->fetch_array($get_field_pages)) {
         //Infos zusammenbauen
         if ($field['editable']) {
@@ -1056,23 +1134,37 @@ function application_ucp_admin_load()
         }
 
         //spalte name und Infos
-        $form_container->output_cell($activ_start . "<strong>" . htmlspecialchars_uni($field['label']) . "</strong> <br />
+        $form_container->output_cell(
+          $activ_start . "<strong>" . htmlspecialchars_uni($field['label']) . "</strong> <br />
         Typ: {$field['fieldtyp']} | Name (Identifikator): {$field['fieldname']} | Label: {$field['label']} | 
         {$editable} 
         {$options}
         {$mandatory}
         {$dependency}
         {$searchable}
+         <div style='max-height: 100px; overflow:auto;'>
         <div class=\"appacp_con\" style=\"display: flex; flex-wrap:wrap;\">
         {$view}
-        </div>
+        </div></div>
         <br/>Alle Elemente(textfeld, das zugehörige label etc) bekommen die Klasse \"{$field['fieldname']}\", die zum Stylen verwenden werden kann.
-        " . $activ_end);
+        " . $activ_end . "</div>"
+        );
 
+        //Kategorien
+        if ($mybb->settings['application_ucp_acp_cats'] == "1") {
+          //$cats bekommen
+          $cats = array();
+          $cats[0] = "keine Auswahl";
+          $get_cats = $db->simple_select("application_ucp_categories", "*", "", array("order_by" => "name"));
+          while ($cat = $db->fetch_array($get_cats)) {
+            $id = $cat['id'];
+            $name = $cat['name'];
+            $cats[$id] = $name;
+          }
+          $form_container->output_cell($form->generate_select_box("cat[{$field['id']}]", $cats, $field['cat_id'], array('id' => 'cat' . $field['id'], 'style' => "width: 30px;", 'min' => 0)));
+        }
         //spalte reihenfolge
         $form_container->output_cell($form->generate_text_box("sorting[{$field['id']}]", $field['sorting'], array('id' => 'sorting' . $field['id'], 'style' => "width: 25px;", 'min' => 0)));
-        // $form_container->output_cell($form->generate_numeric_field("disporder[{$calendar['cid']}]", $calendar['disporder'], array('id' => 'disporder', 'style' => 'width: 80%', 'class' => 'align_center', 'min' => 0)));
-
         //spalte für options
         //erst pop up dafür bauen
         $popup = new PopupMenu("application_ucp_{$field['id']}", "verwalten");
@@ -1137,11 +1229,20 @@ function application_ucp_admin_load()
 
     if ($action == "update_order" && $mybb->request_method == "post") {
       $sorting = $mybb->get_input('sorting', MyBB::INPUT_ARRAY);
+      //Reihenfolge speichern
       foreach ($sorting as $id => $order) {
         $update_query = array(
           "sorting" => (int)$order
         );
         $db->update_query("application_ucp_fields", $update_query, "id='" . (int)$id . "'");
+      }
+      //kategorie speichern
+      $cats = $mybb->get_input('cat', MyBB::INPUT_ARRAY);
+      foreach ($cats as $id => $cat) {
+        $update_cat = array(
+          "cat_id" => (int)$cat
+        );
+        $db->update_query("application_ucp_fields", $update_cat, "id='" . (int)$id . "'");
       }
       admin_redirect("index.php?module=config-application_ucp");
     }
@@ -2141,6 +2242,151 @@ function application_ucp_admin_load()
         }
       }
     }
+
+    //Verwalten von Kategorien
+    if ($mybb->get_input('action') == "application_ucp_managecats") {
+      //speichern
+      $action = $mybb->get_input('do');
+      if ($action == "add" && $mybb->request_method == "post") {
+
+        //speichern neue Kategorie
+        $catname = $db->escape_string($mybb->get_input('catname'));
+        $catorder = $mybb->get_input('catorder', MyBB::INPUT_INT);
+        //fehler test - schon kategorie name vorhanden? 
+        if (empty($mybb->get_input('catname'))) {
+          $errors[] = $lang->application_ucp_err_namecat;
+        }
+
+        $test_name = $db->simple_select("application_ucp_categories", "name", "name = '" . $catname . "'");
+        if ($db->num_rows($test_name) > 0) {
+          $errors[] = $lang->application_ucp_err_namecat_exists;
+        }
+        //Keine Fehler - erstellen der Kategorie
+        if (empty($errors)) {
+          $add_cat = [
+            "name" => $catname,
+            "cat_order" => $catorder,
+          ];
+          $db->insert_query("application_ucp_categories", $add_cat);
+        }
+        admin_redirect("index.php?module=config-application_ucp&action=application_ucp_managecats");
+      }
+
+      if ($action == "change" && $mybb->request_method == "post") {
+        //speichern neue Reihenfolge und namensänderung
+        $sorting = $mybb->get_input('sorting', MyBB::INPUT_ARRAY);
+        foreach ($sorting as $id => $order) {
+          $update_query = array(
+            "cat_order" => (int)$order
+          );
+          $db->update_query("application_ucp_categories", $update_query, "id='" . (int)$id . "'");
+        }
+
+        $changename = $mybb->get_input('changename', MyBB::INPUT_ARRAY);
+        foreach ($changename as $id => $name) {
+          $update_query = array(
+            "name" => $db->escape_string($name)
+          );
+          $db->update_query("application_ucp_categories", $update_query, "id='" . (int)$id . "'");
+        }
+        admin_redirect("index.php?module=config-application_ucp&action=application_ucp_managecats");
+      }
+
+      //Das Formular erstellen
+      $page->add_breadcrumb_item($lang->application_ucp_managecats);
+      //Header und Navigation
+      $page->output_header($lang->application_ucp_managecats);
+      $sub_tabs = application_ucp_do_submenu();
+      $page->output_nav_tabs($sub_tabs, 'application_ucp_managecats');
+      //ausgabe wenn es Fehler gab
+      if (isset($errors)) {
+        $page->output_inline_error($errors);
+      }
+      if ($mybb->settings['application_ucp_acp_cats'] == 0) {
+        echo "<h3 style='text-align: center; color:red;'><strong>Hinweis:</strong> Du hast aktuell Kategorien in den Einstellungen deaktiviert.</h2>";
+      }
+      //formular um eine neue Kategorie anzulegen
+      $form = new Form("index.php?module=config-application_ucp&amp;action=application_ucp_managecats&amp;do=add", "post", "add_cat", 1);
+      // echo $form->generate_hidden_field('fieldid', $fieldid)."bla";
+      $form_container = new FormContainer($lang->application_ucp_namecat);
+      $form_container->output_row(
+        $lang->application_ucp_add_cat_name,
+        $lang->application_ucp_add_cat_name_descr,
+        $form->generate_text_box('catname', "")
+      );
+      $form_container->output_row(
+        $lang->application_ucp_add_cat_order,
+        $lang->application_ucp_add_cat_order_descr,
+        $form->generate_numeric_field('catorder', "")
+      );
+
+      $buttons_add[] = $form->generate_submit_button($lang->application_ucp_save);
+      $form_container->end();
+      $form->output_submit_wrapper($buttons_add);
+      $form->end();
+      echo ("<br><br>");
+
+      //Ausgabe vorhandener Kategorien - Sortierung/Name ändern
+      $get_cats = $db->simple_select("application_ucp_categories", "*", "", array("order_by" => "cat_order"));
+      $cats = $db->num_rows($get_cats, "name");
+      $form = new Form("index.php?module=config-application_ucp&amp;action=application_ucp_managecats&amp;do=change", "post");
+      $form_container = new FormContainer($lang->application_ucp_managecats);
+
+      while ($cat = $db->fetch_array($get_cats)) {
+        $form_container->output_cell($cat['name'], array('width' => '10%'));
+        $form_container->output_cell("<label for='cat_name" . $cat['id'] . "'>Name ändern zu </label><br>" . $form->generate_text_box("changename[{$cat['id']}]", $cat['name'], array('id' => 'cat_name' . $cat['id'], 'style' => "width: 150px;")));
+
+        $form_container->output_cell($form->generate_text_box("sorting[{$cat['id']}]", $cat['cat_order'], array('id' => 'cat_order' . $cat['id'], 'style' => "width: 25px;", 'min' => 0)), array('width' => '10%'));
+        $popup = new PopupMenu("cat_{$cat['id']}", $lang->application_ucp_manageusers_manage);
+        $popup->add_item(
+          $lang->application_ucp_cat_delete,
+          "index.php?module=config-application_ucp&action=application_ucp_cat_delete&amp;id={$cat['id']}"
+            . "&amp;my_post_key={$mybb->post_code}"
+        );
+        $form_container->output_cell($popup->fetch(), array('width' => '150'));
+
+        $form_container->construct_row();
+      }
+      $form_container->end();
+      $buttons_manage[] = $form->generate_submit_button($lang->application_ucp_save, array('name' => 'manage'));
+      $form->output_submit_wrapper($buttons_manage);
+      $form->end();
+      $page->output_footer();
+    }
+
+    // Kategorie löschen
+    if ($mybb->input['action'] == "application_ucp_cat_delete") {
+      $catid = $mybb->get_input('id', MyBB::INPUT_INT);
+      if (empty($catid)) {
+        flash_message($lang->application_ucp_err_delete, 'error');
+        admin_redirect("index.php?module=config-application_ucp&action=application_ucp_managecats");
+      }
+
+      if (isset($mybb->input['no']) && $mybb->input['no']) {
+        admin_redirect("index.php?module=config-application_ucp&action=application_ucp_managecats");
+      }
+
+      if (!verify_post_check($mybb->input['my_post_key'])) {
+        flash_message($lang->invalid_post_verify_key2, 'error');
+        admin_redirect("index.php?module=config-application_ucp&action=application_ucp_managecats");
+      } else {
+        if ($mybb->request_method == "post") {
+          //TO DO - leeren in anderen tabellen wenn gelösch
+          $db->delete_query("application_ucp_categories", "id='{$catid}'");
+
+          $mybb->input['module'] = "application-ucp";
+          $mybb->input['action'] = $lang->application_ucp_delete;
+          log_admin_action(htmlspecialchars_uni($catid));
+          flash_message($lang->application_ucp_managecats_delete_ask, 'success');
+          admin_redirect("module=config-application_ucp&action=application_ucp_managecats");
+        } else {
+          $page->output_confirm_action(
+            "index.php?module=config-application_ucp&action=application_ucp_cat_delete&amp;id={$catid}",
+            $lang->application_ucp_managecats_delete_ask
+          );
+        }
+      }
+    }
   }
 }
 
@@ -2169,6 +2415,13 @@ function application_ucp_do_submenu()
     "title" => $lang->application_ucp_manageusers,
     "link" => "index.php?module=config-application_ucp&amp;action=application_ucp_manageusers",
     "description" => $lang->application_ucp_manageusers_dscr
+  ];
+
+  //Steckbriefe verwalten
+  $sub_tabs['application_ucp_managecats'] = [
+    "title" => $lang->application_ucp_managecats,
+    "link" => "index.php?module=config-application_ucp&amp;action=application_ucp_managecats",
+    "description" => $lang->application_ucp_managecats_dscr
   ];
 
   return $sub_tabs;
@@ -2220,6 +2473,7 @@ function application_ucp_usercp()
       $extend_cnt = 0;
       $application_ucp_correction_status = "";
     }
+
     //Die Frist wurde schon einmal verlängert
     if ($extend_cnt > 0) {
       // ext = erlaubte frist zum verlängern * wie oft wurde verlängert
@@ -2231,6 +2485,7 @@ function application_ucp_usercp()
       $regdate = date("d.m.Y", $regdate);
       $application_ucp_correction_status = "";
     }
+
     $lang->application_ucp_infoheader = $lang->sprintf($lang->application_ucp_infoheader, $regdate_read, $extend_cnt, $fristdate);
 
     $korrektur = $db->simple_select("application_ucp_management", "*", "uid = {$thisuser} AND submission_time < modcorrection_time AND usercorrection_time < modcorrection_time");
@@ -2243,9 +2498,10 @@ function application_ucp_usercp()
     eval("\$application_ucp_infos = \"" . $templates->get("application_ucp_infos") . "\";");
   }
 
+
   //UCP bauen
   // alle aktiven Felder holen
-  $get_fields = $db->simple_select("application_ucp_fields", "*", "active = 1", array('order_by' => 'sorting'));
+  $get_fields = $db->simple_select("application_ucp_fields", "*", "active = 1", array('order_by' => 'cat_id, sorting'));
 
   //start für javascript das wir brauchen
   $application_ucp_js = "<script> $(function() {
@@ -2284,6 +2540,55 @@ function application_ucp_usercp()
     });
     ";
 
+  //Javascript und markup für Kategorien.
+  $application_ucpcats_js = "";
+  $cats_html = "";
+
+  if ($mybb->settings['application_ucp_acp_cats']) {  //Kategorien bekommen
+
+    $cats_html = "<ul class=\"cat_tabs\">";
+    $cats_html_inner = "";
+    //testen ob es Felder ohne Kategorie gibt
+    $get_fields_nocat = $db->simple_select("application_ucp_fields", "*", "active = 1 AND (cat_id = '0' OR cat_id ='') ");
+    if ($db->num_rows($get_fields_nocat) > 0) {
+      $cats_html_inner .= "<li class=\"cat_tabs__tab0\" data-tab=\"con_cat0\">{$mybb->settings['application_ucp_acp_cat_defaultname']}</li>";
+    }
+    $get_cats = $db->simple_select("application_ucp_categories", "*");
+    $catarray = array();
+
+    while ($cat = $db->fetch_array($get_cats)) {
+
+      if ($mybb->settings['application_ucp_acp_cats_tabs']) {
+        $cat['name'] = $cat['name'];
+      } else {
+        $cat['name'] = "<a href=\"#con_cat{$cat['id']}\">{$cat['name']}</a>";
+      }
+
+      $cats_html_inner .= "<li class=\"cat_tabs__tab{$cat['id']}\" data-tab=\"con_cat{$cat['id']}\">{$cat['name']}</li>";
+    }
+
+    if ($mybb->settings['application_ucp_acp_cats_tabs']) {
+      $application_ucpcats_js .= "<script> $(document).ready(function(){
+      $('ul.cat_tabs li').on('click', function(){
+        // get the data attribute
+        var tab_id = $(this).attr('data-tab');
+        // remove the default classes
+        $('ul.cat_tabs li').removeClass('current');
+        $('.con_cat_content').removeClass('current');
+        // add new classes on mouse click
+        $(this).addClass('current');
+        $('#'+tab_id).addClass('current');
+      });
+    });</script>";
+    } else {
+      $application_ucpcats_js = "";
+    }
+    $cats_html .= $cats_html_inner . "</ul>";
+  }
+
+
+  $cat_start = $tabclass = $closedivcat = "";
+  $cnt = "0";
   //felder durchgehen
   while ($type = $db->fetch_array($get_fields)) {
     //ist das Feld editierbar? -> wenn mitglied berücksichtigen
@@ -2300,7 +2605,15 @@ function application_ucp_usercp()
       $readonly = "";
       $disabled = "";
     }
-
+    $catclass = "";
+    //Kategorienamen
+    if ($mybb->settings['application_ucp_acp_cats'] && $mybb->settings['application_ucp_acp_cats_tabs']) {
+      //default für keine angegbene Kategorie
+      if ($type['cat_id'] == "" || $type['cat_id'] == "0") {
+        $type['cat_id'] = 0;
+      }
+      $catclass = " cat" . $type['cat_id'];
+    }
     //gibt es schon inhalte für die felder? 
     $get_value = $db->fetch_array($db->simple_select("application_ucp_userfields", "*", "uid = '{$thisuser}' AND fieldid='{$type['id']}'"));
     if (empty($get_value['value'])) {
@@ -2340,7 +2653,7 @@ function application_ucp_usercp()
       }
       //Klassen zusammen bauen für mehrere abhängigekeiten
       $dep_val_arr = explode(",", $type['dependency_value']);
-      
+
       foreach ($dep_val_arr as $dep) {
         $dep_classes .= " dep_value_" . preg_replace('/[^A-Za-z0-9\_]/', '', $dep);
       }
@@ -2403,9 +2716,9 @@ function application_ucp_usercp()
                 $(this).hide();
                 $(this).children().hide();
                 });
-} 
-            } 
-        });
+              }
+          }    
+        });   
       ";
     } else { //keine abhängigkeit
       $hidden = "";
@@ -2418,7 +2731,30 @@ function application_ucp_usercp()
     } else {
       $hidden = "";
     }
-    $fields .= "<div class=\"applucp-con__item {$dep_classname_wrap}\" id=\"container_{$type['fieldname']}\" style=\"{$hidden}\">";
+    if ($mybb->settings['application_ucp_acp_cats']) {
+      if ($mybb->settings['application_ucp_acp_cats_tabs']) {
+        $tabclass = "con_cat_content";
+      } else {
+        $tabclass = "";
+      }
+      if ($cat_start != $type['cat_id']) {
+        if ($cnt == 0) {
+          $openinital = " current";
+          $closedivcat = "";
+        } else {
+          $openinital = "";
+          $closedivcat = "</div>";
+        }
+        $cnt++;
+        $cat_name = $db->fetch_field($db->simple_select("application_ucp_categories", "name", "id = '{$type['cat_id']}'"), "name");
+        if ($cat_name == "") $cat_name = $mybb->settings['application_ucp_acp_cat_defaultname'];
+        $catdivstart = "{$closedivcat}<div class=\"{$tabclass}{$openinital}\" id=\"con_cat{$type['cat_id']}\"><h2>{$cat_name}</h2>";
+        $cat_start = $type['cat_id'];
+      } else {
+        $catdivstart = "";
+      }
+    }
+    $fields .= "$catdivstart<div class=\"applucp-con__item {$dep_classname_wrap}{$catclass}\" id=\"container_{$type['fieldname']}\" style=\"{$hidden}\">";
     //Felder bauen
     //Das Feld ist initial versteckt, das brauchen wir um vorm speichern zu prüfen ob der inhalt gespeichert werden soll
     if ($hide == true) {
@@ -2799,8 +3135,6 @@ function application_ucp_usercp()
         // female
         // wenn input != female  dann ist die pflicht egal
 
-
-
         //hole id des felds
         // $fieldep = $db->fetch_array($db->simple_select("application_ucp_fields", "*", "fieldname = '{$field['dependency']}'"));
         // //ist
@@ -2991,7 +3325,7 @@ function application_ucp_usercp()
       //Wenn ihr den ganzen Steckbrief im Thread haben wollt, könnt ihr euch, die zwei Zeilen hier einfach einkommentieren
       // Im ACP dann einfach $aucp_fields einfügen.
       $aucp_fields = application_ucp_build_view($mybb->user['uid'], "profile", "html");
-      $threadmessage = str_replace("\$aucp_fields", $aucp_fields, $threadmessage);
+      // $threadmessage = str_replace("\$aucp_fields", $aucp_fields, $threadmessage);
 
       // Kopiert aus newthread.php
       // Set up posthandler. (Wir nutzen hier einfach komplett die funktion aus newthread.php)
@@ -4021,7 +4355,6 @@ function application_ucp_checkdep($dep, $deptestvalue, $uid)
   return $depflag;
 }
 
-
 /**
  * ****
  * Helper Function for building SQL String. 
@@ -4057,8 +4390,6 @@ function application_ucp_buildsql($type = "searchable")
   }
   return $selectstring;
 }
-
-
 
 /**
  * Anzeige der Felder im Profil und im Postbit
@@ -4174,6 +4505,8 @@ function application_ucp_build_view($uid, $location, $kind)
         // Label & Value in div: {$application['labelvalue_vorname']}
         if ($fieldvalue == "") {
           $emptyflag = "is_empty";
+        } else {
+          $emptyflag = "";
         }
 
         // Wir bauen unsere Variablen zusammen
@@ -4192,7 +4525,7 @@ function application_ucp_build_view($uid, $location, $kind)
         // Wir bauen unsere Variablen zusammen
         // Label & Value: {$application['labelvalue_vorname']}
         $arrayfieldlabelvalue = "labelvalue_{$field['fieldname']}";
-        $array[$arrayfieldlabelvalue] = "<span class=\"{$emptyflag}\">" . $field['label'] . ": " . $parser->parse_message($fieldvalue, $parser_options) . "</span>";
+        $array[$arrayfieldlabelvalue] = "<span class=\"{$emptyflag} {$field['fieldname']}\">" . $field['label'] . ": " . $parser->parse_message($fieldvalue, $parser_options) . "</span>";
 
 
         // Label: {$application['label_vorname']}
@@ -4277,8 +4610,6 @@ function application_ucp_savefields($fields, $uid)
     }
   }
 }
-
-
 //GET USER
 function application_ucp_allchars($thisuser)
 {
@@ -4300,7 +4631,6 @@ function application_ucp_allchars($thisuser)
   }
   return $charas;
 }
-
 
 /***
  * PN oder Alert an user, der betroffen ist.
@@ -4434,6 +4764,28 @@ function application_ucp_myalert()
   }
 }
 
+
+// $plugins->add_hook('xmlhttp', 'application_ucp_xmlhttp', -1);
+// function application_ucp_xmlhttp()
+// {
+//   global $mybb;
+
+//   if ($mybb->get_input('action') == 'post_check') {
+//     $toReturn = array();
+//     if (!verify_post_check($mybb->get_input('my_post_key'), true)) {
+//       $toReturn = array(
+//         'errors' => array("Falscher Autorisierungscode. Hast du dich zwischen durch umgeloggt?"),
+//       );
+//       echo json_encode($toReturn);
+//     } else {
+//       $toReturn = array(
+//         'success'  => true,
+//       );
+//       echo json_encode($toReturn);
+//     }
+//   }
+// }
+
 /**
  * Was passiert wenn ein User gelöscht wird
  */
@@ -4447,3 +4799,4 @@ function application_ucp_delete()
 
   // add_task_log($task, "Reservierungen bereinigt uid war {$user['uid']} {$username}");
 }
+
