@@ -418,9 +418,9 @@ function application_ucp_add_settings($type = 'install')
       'description' => 'Wenn ein Feld keine Kategorie zugeordnet hat, wie soll der Defaultname für diese sein?',
       'optionscode' => 'text',
       'value' => 'Andere', // Default
-      'disporder' => 21
+      'disporder' => 22
     ),
-    
+
   );
 
   $gid = $db->fetch_field($db->write_query("SELECT gid FROM `" . TABLE_PREFIX . "settinggroups` WHERE name like 'application_ucp%' LIMIT 1;"), "gid");
@@ -3277,50 +3277,50 @@ function application_ucp_usercp()
 
       //blurred lines kram mit abfangen für den fall, dass ich es vergesse vorm upload ins gitlab rauszunehmen :D
       //kann gerne als beispiel für eigenen ergänzungen genommen werden. Wir checken hier ob bestimmte Dinge eingetragen/ausgefüllt wurden
-      $firststeps_check = "";
-      //jobliste - abfangen ob es die Tabelle gibt oder nicht
-      if ($db->table_exists("jl_entry")) {
-        //gibt es einen Eintrag
-        $fetch_job = $db->simple_select("jl_entry", "*", "je_uid= {$mybb->user['uid']}");
-        if ($db->num_rows($fetch_job) > 0) {
-          //wenn ja mit Häkchen in den Thread schreiben
-          $firststeps_check .= "<li><i class=\"fa-solid fa-check\"></i> In Jobliste eingetragen</li>";
-        } else {
-          //wenn nein mit Kreuz
-          $firststeps_check .= "<li><i class=\"fa-solid fa-xmark\"></i> Nicht in Jobliste eingetragen</li>";
-        }
-      }
-      //wohnort
-      if ($db->table_exists("residences_user")) {
-        $fetch_job = $db->simple_select("residences_user", "*", "uid= {$mybb->user['uid']}");
-        if ($db->num_rows($fetch_job) > 0) {
-          $firststeps_check .= "<li><i class=\"fa-solid fa-check\"></i> In Residences eingetragen</li>";
-        } else {
-          $firststeps_check .= "<li><i class=\"fa-solid fa-xmark\"></i> Nicht in Residences eingetragen</li>";
-        }
-      }
-      //relas
-      //wohnort
-      if ($db->table_exists("relas_entries")) {
-        $fetch_job = $db->simple_select("relas_entries", "*", "r_from = {$mybb->user['uid']}");
-        if ($db->num_rows($fetch_job) > 0) {
-          $firststeps_check .= "<li><i class=\"fa-solid fa-check\"></i> Es sind Relations eingetragen</li>";
-        } else {
-          $firststeps_check .= "<li><i class=\"fa-solid fa-xmark\"></i> Keine Relations eingetragen</li>";
-        }
-      }
-      //Wir holen uns die Avaperson, weil wir die Info direkt im Thread sehen wollen (id für avatarperson bei uns = 20 )
-      $fetch_ava = $db->fetch_field($db->simple_select("application_ucp_userfields", "value", "uid= {$mybb->user['uid']} AND fieldid = '20'"), "value");
-      if ($fetch_ava != "") {
-        $firststeps_check .= "<li><strong>Avatarperson:</strong> {$fetch_ava}</li>";
-      } else {
-        $firststeps_check .= "<li><i class=\"fa-solid fa-xmark\"></i> Keine Avaperson eingetragen</li>";
-      }
-      //und wir holen uns noch den Spielernamen der bei uns im Profilfeld mit ID 4 gespeichert ist 
-      $firststeps_check .= "<li>gespielt von {$mybb->user['fid4']}</li>";
+      // $firststeps_check = "";
+      // //jobliste - abfangen ob es die Tabelle gibt oder nicht
+      // if ($db->table_exists("jl_entry")) {
+      //   //gibt es einen Eintrag
+      //   $fetch_job = $db->simple_select("jl_entry", "*", "je_uid= {$mybb->user['uid']}");
+      //   if ($db->num_rows($fetch_job) > 0) {
+      //     //wenn ja mit Häkchen in den Thread schreiben
+      //     $firststeps_check .= "<li><i class=\"fa-solid fa-check\"></i> In Jobliste eingetragen</li>";
+      //   } else {
+      //     //wenn nein mit Kreuz
+      //     $firststeps_check .= "<li><i class=\"fa-solid fa-xmark\"></i> Nicht in Jobliste eingetragen</li>";
+      //   }
+      // }
+      // //wohnort
+      // if ($db->table_exists("residences_user")) {
+      //   $fetch_job = $db->simple_select("residences_user", "*", "uid= {$mybb->user['uid']}");
+      //   if ($db->num_rows($fetch_job) > 0) {
+      //     $firststeps_check .= "<li><i class=\"fa-solid fa-check\"></i> In Residences eingetragen</li>";
+      //   } else {
+      //     $firststeps_check .= "<li><i class=\"fa-solid fa-xmark\"></i> Nicht in Residences eingetragen</li>";
+      //   }
+      // }
+      // //relas
+      // //wohnort
+      // if ($db->table_exists("relas_entries")) {
+      //   $fetch_job = $db->simple_select("relas_entries", "*", "r_from = {$mybb->user['uid']}");
+      //   if ($db->num_rows($fetch_job) > 0) {
+      //     $firststeps_check .= "<li><i class=\"fa-solid fa-check\"></i> Es sind Relations eingetragen</li>";
+      //   } else {
+      //     $firststeps_check .= "<li><i class=\"fa-solid fa-xmark\"></i> Keine Relations eingetragen</li>";
+      //   }
+      // }
+      // //Wir holen uns die Avaperson, weil wir die Info direkt im Thread sehen wollen (id für avatarperson bei uns = 20 )
+      // $fetch_ava = $db->fetch_field($db->simple_select("application_ucp_userfields", "value", "uid= {$mybb->user['uid']} AND fieldid = '20'"), "value");
+      // if ($fetch_ava != "") {
+      //   $firststeps_check .= "<li><strong>Avatarperson:</strong> {$fetch_ava}</li>";
+      // } else {
+      //   $firststeps_check .= "<li><i class=\"fa-solid fa-xmark\"></i> Keine Avaperson eingetragen</li>";
+      // }
+      // //und wir holen uns noch den Spielernamen der bei uns im Profilfeld mit ID 4 gespeichert ist 
+      // $firststeps_check .= "<li>gespielt von {$mybb->user['fid4']}</li>";
 
-      //das ganze wird in der Variable $firststeps_check gespeichert, schreiben wir diese nun ins ACP, wird in der Message der Inhalt eingefügt
-      $threadmessage = str_replace("\$firststeps_check", $firststeps_check, $threadmessage);
+      // //das ganze wird in der Variable $firststeps_check gespeichert, schreiben wir diese nun ins ACP, wird in der Message der Inhalt eingefügt
+      // $threadmessage = str_replace("\$firststeps_check", $firststeps_check, $threadmessage);
 
       //Wenn ihr den ganzen Steckbrief im Thread haben wollt, könnt ihr euch, die zwei Zeilen hier einfach einkommentieren
       // Im ACP dann einfach $aucp_fields einfügen.
@@ -4800,180 +4800,3 @@ function application_ucp_delete()
   // add_task_log($task, "Reservierungen bereinigt uid war {$user['uid']} {$username}");
 }
 
-
-/***
- * Zugriff auf die Infos der Steckis in Laras Lexikon Plugin zugänglich machen
- * Todo 
- * In Laras lexicon.php suche nach eval("\$page = \"" . $templates->get("lexicon_entry") . "\";");
- * darüber einfügen $plugins->run_hooks("lexicon_entry");
- */
-// lexicon_entry_test
-// $plugins->add_hook("lexicon_entry", "application_ucp_lexicon");
-
-//Listen verfügbar machen
-$plugins->add_hook("lexicon_entry", "application_ucp_lists");
-function application_ucp_lists($entrytext)
-{
-  global $db, $cache, $mybb, $user, $html_str_arr, $entrytext;
-
-  //input bekommen - php8 save mit funktion von mybb
-  $page = $mybb->get_input("page");
-
-  //nur auf diesen beiden Lexicon seiten momentan
-  if ($page == "alphaplatoon" || $page == "bravo_platoon") {
-
-    //Mögliche Options für diese Seiten, von denen wir infos ziehen wollen
-    $get_inputs = $db->fetch_field($db->simple_select("application_ucp_fields", "options", "id = 34"), "options");
-    //daraus ein array baue
-    $input_arr = explode(",", $get_inputs);
-
-
-    //Die Optionen durchgehen
-    foreach ($input_arr as $input) {
-      // alpha - aktiv,bravo - aktiv,charlie - aktiv,delta - aktiv,BUD/S,alpha - ehemalig, bravo - ehemalig,charlie - ehemalig, delta - ehemalig,kein Seal
-      //ersetzen weil keine sonderzeichen
-      $teamstr_arr = preg_replace('/[^A-Za-z0-9\_]/', '', $input);
-
-      //pfusch um auf die richtigen felder zugreifen zu können
-      $sortactiv = "";
-      $activeflag = 0;
-      if ($input == "alpha - aktiv") {
-        $teamstr = "alpha";
-        $activeflag = 1;
-      }
-      if ($input == "alpha - ehemalig") {
-        $teamstr = "alpha";
-      }
-      if ($input == "bravo - aktiv") {
-        $teamstr = "bravo";
-        $activeflag = 1;
-      }
-      if ($input == "bravo - ehemalig") {
-        $teamstr = "bravo";
-      }
-      if ($input == "charlie - aktiv") {
-        $teamstr = "charlie";
-        $activeflag = 1;
-      }
-      if ($input == "charlie - ehemalig") {
-        $teamstr = "charlie";
-      }
-      if ($input == "delta - aktiv") {
-        $teamstr = "delta";
-        $activeflag = 1;
-      }
-      if ($input == "delta - ehemalig") {
-        $teamstr = "delta";
-      }
-      if ($activeflag == 1) {
-        $sortactiv = " FIELD(
-          navy_squad, 
-          'Squad 1', 
-          'Squad 2', 
-          'Andere',
-          ''
-        ),";
-      }
-      $html_str = "";
-      $html_str  = "<div class='bl-platoon members_wrap'>
-      ";
-
-      $all_user_querie_str = "
-      SELECT CAST(SUBSTRING(navy_rufzeichen, 7, 2) AS UNSIGNED) as sort, u.uid, u.username, u.usergroup, u.avatar, uf.*, fields.* FROM " . TABLE_PREFIX . "users u 
-        LEFT JOIN " . TABLE_PREFIX . "userfields uf ON ufid = u.uid " .
-        application_ucp_buildsql("all") . " 
-        WHERE navy_team LIKE '%$input%' ORDER BY
-        " . $sortactiv . "
-        sort";
-      // echo "      SELECT CAST(SUBSTRING(navy_rufzeichen, 7, 2) AS UNSIGNED) as sort, u.uid, u.username, u.usergroup, u.avatar, uf.*, fields.* FROM " . TABLE_PREFIX . "users u 
-      //   LEFT JOIN " . TABLE_PREFIX . "userfields uf ON ufid = u.uid " .
-      //   application_ucp_buildsql("all") . " 
-      //   WHERE navy_team LIKE '%$input%' ORDER BY
-      //   " . $sortactiv . "
-      //   sort";
-      $all_user_querie = $db->write_query($all_user_querie_str);
-      $old = "";
-      while ($list_all = $db->fetch_array($all_user_querie)) {
-
-        if (strpos($input, "ehemalig")) {
-          $username = build_profile_link($list_all['username'], $list_all['uid']);
-          // echo "Hallooo  $username $teamstr";
-          $html_str .= "<li>
-          {$username} - <i>{$list_all["nickname"]}</i> <br> 
-          von " . $list_all["navy_{$teamstr}_formerly_since"] . " bis " . $list_all["navy_{$teamstr}_formerly_until"] . " - 
-          Position: " . $list_all["navy_position"] . "
-          </li>
-          ";
-        } else {
-          if ($list_all["navy_squad"] != $old) {
-            if ($old != "") {
-              $add_end = "</ul>";
-            } else {
-              $add_end = "";
-            }
-            $html_str .= " {$add_end}
-          <h2 class='bl-heading2'>{$list_all["navy_squad"]}</h2> 
-          <ul class='bl-list'>";
-          }
-
-          $username = build_profile_link($list_all['username'], $list_all['uid']);
-          $html_str .= "
-        <li>
-        {$username} - <i>{$list_all["nickname"]}</i> <span style='font-size:0.8em'>(" . $list_all["navy_rufzeichen"] . ")</span> <br> 
-        Seit: " . $list_all["navy_{$teamstr}_active"] . " - 
-        Position: " . $list_all["navy_position"] . "
-        </li>
-        ";
-
-          $old = $list_all["navy_squad"];
-        }
-      }
-      // echo $html_str;
-      $html_str  .= "
-      </div>
-      ";
-      if (strpos($input, "ehemalig")) {
-        $html_str_arr[$teamstr_arr] = array(
-          "replace-var" => $teamstr_arr . "-replace",
-          "replace-text" => "<ul class='bl-list'>" . $html_str . "</ul>"
-        );
-      } else {
-        $html_str_arr[$teamstr_arr] = array(
-          "replace-var" => $teamstr_arr . "-replace",
-          "replace-text" => $html_str
-        );
-      }
-    }
-
-    //Text im Lexicon ersetzen
-    foreach ($html_str_arr as $replace) {
-      // var_dump($replace);
-      $entrytext = str_replace($replace['replace-var'], $replace['replace-text'], $entrytext);
-    }
-    // var_dump($html_str_arr);
-  }
-}
-
-
-// Listen verwalten in ACP
-$plugins->add_hook("admin_load", "application_ucp_manage_lists");
-function application_ucp_manage_lists()
-{
-
-  global $mybb, $db, $lang, $page, $run_module, $action_file;
-
-  $lang->load('application_ucp');
-
-  if ($page->active_action != 'auto_lists') {
-    return false;
-  }
-
-  //Sortierungs art - alphabet - jeder buchstabe 
-  //nach array (a,b,c,d) - 
-
-  // 1 Feld sortieren
-  // Alle Profilfelder/Steckifelder 
-
-  // Feld sortieren aufgetrennt nach einem anderen (z.B Namen - aufgeteilt nach Geschlecht) 
-
-}
