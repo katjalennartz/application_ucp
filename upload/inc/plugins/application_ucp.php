@@ -2753,6 +2753,7 @@ function application_ucp_usercp()
       } else {
         $catdivstart = "";
       }
+      $last_div_catclose = "</div>";
     }
     $fields .= "$catdivstart<div class=\"applucp-con__item {$dep_classname_wrap}{$catclass}\" id=\"container_{$type['fieldname']}\" style=\"{$hidden}\">";
     //Felder bauen
@@ -2909,7 +2910,8 @@ function application_ucp_usercp()
     }
     $fields .= "</div>";
   }
-
+  //schließe letzten div container für kategorien tabs, wenn aktiviert.
+  $fields .= $last_div_catclose;
   //ende Javascript
   $application_ucp_js .= "});</script>";
 
