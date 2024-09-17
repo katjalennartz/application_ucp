@@ -413,6 +413,14 @@ function application_ucp_add_settings($type = 'install')
       'value' => '1', // Default
       'disporder' => 21
     ),
+    'application_ucp_acp_cat_defaultname' => array(
+      'title' => 'Defaultname Kategorie',
+      'description' => 'Wenn ein Feld keine Kategorie zugeordnet hat, wie soll der Defaultname für diese sein?',
+      'optionscode' => 'text',
+      'value' => 'Andere', // Default
+      'disporder' => 21
+    ),
+    
   );
 
   $gid = $db->fetch_field($db->write_query("SELECT gid FROM `" . TABLE_PREFIX . "settinggroups` WHERE name like 'application_ucp%' LIMIT 1;"), "gid");
@@ -602,6 +610,7 @@ function application_ucp_add_templates($type = 'install')
       {$usercpnav}
       <td valign="top">
         <div class="applucp-con">
+        {$cats_html}
         {$application_ucp_infos}
         {$fields}
         <div align="center" class="applucp-con__item applucp-buttons">
@@ -614,7 +623,7 @@ function application_ucp_add_templates($type = 'install')
       </tr>
       </table>
       </form>
-      {$application_ucp_js}
+      {$application_ucpcats_js}{$application_ucp_js}
       {$footer}
         
       </body>
@@ -2536,8 +2545,14 @@ function application_ucp_usercp()
   $cats_html = "";
 
   if ($mybb->settings['application_ucp_acp_cats']) {  //Kategorien bekommen
+
     $cats_html = "<ul class=\"cat_tabs\">";
     $cats_html_inner = "";
+    //testen ob es Felder ohne Kategorie gibt
+    $get_fields_nocat = $db->simple_select("application_ucp_fields", "*", "active = 1 AND (cat_id = '0' OR cat_id ='') ");
+    if ($db->num_rows($get_fields_nocat) > 0) {
+      $cats_html_inner .= "<li class=\"cat_tabs__tab0\" data-tab=\"con_cat0\">{$mybb->settings['application_ucp_acp_cat_defaultname']}</li>";
+    }
     $get_cats = $db->simple_select("application_ucp_categories", "*");
     $catarray = array();
 
@@ -2551,6 +2566,7 @@ function application_ucp_usercp()
 
       $cats_html_inner .= "<li class=\"cat_tabs__tab{$cat['id']}\" data-tab=\"con_cat{$cat['id']}\">{$cat['name']}</li>";
     }
+
     if ($mybb->settings['application_ucp_acp_cats_tabs']) {
       $application_ucpcats_js .= "<script> $(document).ready(function(){
       $('ul.cat_tabs li').on('click', function(){
@@ -2592,6 +2608,10 @@ function application_ucp_usercp()
     $catclass = "";
     //Kategorienamen
     if ($mybb->settings['application_ucp_acp_cats'] && $mybb->settings['application_ucp_acp_cats_tabs']) {
+      //default für keine angegbene Kategorie
+      if ($type['cat_id'] == "" || $type['cat_id'] == "0") {
+        $type['cat_id'] = 0;
+      }
       $catclass = " cat" . $type['cat_id'];
     }
     //gibt es schon inhalte für die felder? 
@@ -2727,6 +2747,7 @@ function application_ucp_usercp()
         }
         $cnt++;
         $cat_name = $db->fetch_field($db->simple_select("application_ucp_categories", "name", "id = '{$type['cat_id']}'"), "name");
+        if ($cat_name == "") $cat_name = $mybb->settings['application_ucp_acp_cat_defaultname'];
         $catdivstart = "{$closedivcat}<div class=\"{$tabclass}{$openinital}\" id=\"con_cat{$type['cat_id']}\"><h2>{$cat_name}</h2>";
         $cat_start = $type['cat_id'];
       } else {
