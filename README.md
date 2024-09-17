@@ -22,7 +22,7 @@ https://github.com/katjalennartz/application_ucp/wiki
 - version 1.1.3
 - Durchsuchbarkeit in ACP
 - Paginierung in ACP möglich
-- **Updatescript nötig, da es neue Settings.**
+- **Updatescript nötig, da es neue Settings gibt.**
   
 **Update: Mai 2024**  
 - version 1.1.2 
