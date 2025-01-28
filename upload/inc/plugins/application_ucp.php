@@ -51,8 +51,35 @@ function application_ucp_is_installed()
 function application_ucp_install()
 {
   global $db;
+
   application_ucp_uninstall();
 
+  application_ucp_database();
+
+  application_ucp_add_settings("install");
+
+  application_ucp_add_templates();
+
+  $css = application_ucp_css();
+
+  require_once MYBB_ADMIN_DIR . "inc/functions_themes.php";
+
+  $sid = $db->insert_query("themestylesheets", $css);
+  $db->update_query("themestylesheets", array("cachefile" => "css.php?stylesheet=" . $sid), "sid = '" . $sid . "'", 1);
+
+  $tids = $db->simple_select("themes", "tid");
+  while ($theme = $db->fetch_array($tids)) {
+    update_theme_stylesheet_list($theme['tid']);
+  }
+}
+
+/**
+ * Funktion um die Datenbanken und Felder zu erstellen
+ */
+function application_ucp_database($type = 'install')
+{
+  global $db;
+  if (!$db->table_exists("application_ucp_fields")) {
   $db->write_query("CREATE TABLE `" . TABLE_PREFIX . "application_ucp_fields` (
     `id` int(10) NOT NULL AUTO_INCREMENT,
     `fieldtyp` varchar(100) NOT NULL DEFAULT '',
@@ -82,7 +109,9 @@ function application_ucp_install()
     `cat_id` int(10) NOT NULL DEFAULT 0,
     PRIMARY KEY (`id`)
 ) ENGINE=MyISAM CHARACTER SET utf8 COLLATE utf8_general_ci;");
+  }
 
+  if (!$db->table_exists("application_ucp_userfields")) {
   $db->write_query("CREATE TABLE `" . TABLE_PREFIX . "application_ucp_userfields` (
   `id` int(10) NOT NULL AUTO_INCREMENT,
   `uid` int(10) NOT NULL DEFAULT 0,
@@ -91,7 +120,9 @@ function application_ucp_install()
   UNIQUE KEY `uid_fieldidid` (`uid`,`fieldid`),
   PRIMARY KEY (`id`)
   ) ENGINE=MyISAM CHARACTER SET utf8 COLLATE utf8_general_ci;");
+  }
 
+  if (!$db->table_exists("application_ucp_management")) {
   $db->write_query("CREATE TABLE `" . TABLE_PREFIX . "application_ucp_management` (
   `id` int(10) NOT NULL AUTO_INCREMENT,
   `uid` int(10) NOT NULL DEFAULT 0,
@@ -103,21 +134,40 @@ function application_ucp_install()
   `correctioncnt` int(10) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM CHARACTER SET utf8 COLLATE utf8_general_ci;");
+  }
 
+  if (!$db->table_exists("application_ucp_categories")) {
   $db->write_query("CREATE TABLE `" . TABLE_PREFIX . "application_ucp_categories` (
   `id` int(10) NOT NULL AUTO_INCREMENT,
   `name` varchar(100) NOT NULL DEFAULT '',
   `cat_order` int(10) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM CHARACTER SET utf8 COLLATE utf8_general_ci;");
+  }
 
-  //Verlängerung
+  if (!$db->field_exists("aucp_extend", "users")) {
   $db->add_column("users", "aucp_extend", "INT(10) NOT NULL DEFAULT 0");
+  }
+  if (!$db->field_exists("aucp_extenddate", "users")) {
   $db->add_column("users", "aucp_extenddate", "DATE NULL");
+  }
+  if (!$db->field_exists("wob_date", "users")) {
   $db->add_column("users", "wob_date", "INT(10) NOT NULL DEFAULT 0");
+  }
+  if ($type == 'update') {
+    if (!$db->field_exists("cat_id", "application_ucp_fields")) {
+      $db->add_column("application_ucp_fields", "cat_id", "INT(10) NOT NULL DEFAULT 0");
+    }
+  }
+}
+/**
+ * Funktion um die Settings hinzuzufügen - einfachere Verwendung für Upgrades 
+ */
+function application_ucp_add_settings($type = 'install')
+{
 
-  // ALTER TABLE `mybb_users` ADD `aucp_extenddate` DATE NOT NULL AFTER `aucp_extend`;
-
+  global $db;
+  if ($type == 'install') {
   // Admin Einstellungen
   $setting_group = array(
     'name' => 'application_ucp',
@@ -127,118 +177,9 @@ function application_ucp_install()
     'isdefault' => 0
   );
   $gid = $db->insert_query("settinggroups", $setting_group);
-
-  application_ucp_add_settings();
-
-  application_ucp_add_templates();
-
-
-  $css = array(
-    'name' => 'application_ucp.css',
-    'tid' => 1,
-    'attachedto' => '',
-    "stylesheet" =>    '
-       
-    /*showthread*/
-    .aucp_showthread-wob {
-        margin: 10px;
-        display: flex;
-        align-items: start;
-        justify-content: center;
-        gap: 20px;
-    }
-    
-    .aucp_showthread-wob__item:last-child {
-        align-self: center;
-    }
-    
-    /*Benutzer CP */
-    .applucp-con {
-        display: grid;
-        width: 80%;
-        margin: auto;
-        gap: 19px 15px;
-    }
-    
-    .app_ucp_label {
-        font-weight: 600;
-        text-align: left;
-    }
-    
-    .applucp-con__item {
-        display: grid;
-    }
-    
-    .applucp-con__item.applucp-buttons {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 10px;
+  } else {
+    $gid = $db->fetch_field($db->write_query("SELECT gid FROM `" . TABLE_PREFIX . "settinggroups` WHERE name like 'application_ucp%' LIMIT 1;"), "gid");
   }
-
-  /*tabstyling/*
-  .cat_tabs {
-    margin: 0px;
-    padding: 0px;
-    list-style: none;
-    background:#000;
-    border-bottom: 5px #0072BC solid;
-}
-.cat_tabs li{
-    display: inline-block;
-    margin:0;
-    padding: 10px 20px 5px 20px;
-    cursor: pointer;
-    color:#FFF;
-}
-.cat_tabs li:hover {
-    background:#0072BC;
-}
-
-.cat_tabs li.current{
-    background: #0072BC;
-    color: #FFF;
-}
-.con_cat_content {
-    display: none;
-    background: #f2f2f2;
-}
-.con_cat_content.current{
-    display: inherit;
-}
-    
-    /*Display Profil and Postbit */
-    .aucp_fieldContainer {
-        display: grid;
-        grid-template-columns: 1fr;
-    }
-    
-    .aucp_fieldContainer__item {
-        display: flex;
-        gap: 10px;
-    }
-    ',
-    'cachefile' => $db->escape_string(str_replace('/', '', 'application_ucp.css')),
-    'lastmodified' => time()
-  );
-
-  require_once MYBB_ADMIN_DIR . "inc/functions_themes.php";
-
-  $sid = $db->insert_query("themestylesheets", $css);
-  $db->update_query("themestylesheets", array("cachefile" => "css.php?stylesheet=" . $sid), "sid = '" . $sid . "'", 1);
-
-  $tids = $db->simple_select("themes", "tid");
-  while ($theme = $db->fetch_array($tids)) {
-    update_theme_stylesheet_list($theme['tid']);
-  }
-}
-
-/**
- * Funktion um die Settings hinzuzufügen - einfachere Verwendung für Upgrades 
- */
-function application_ucp_add_settings($type = 'install')
-{
-
-  global $db;
 
   $setting_array = array(
     'application_ucp_applicants' => array(
@@ -403,14 +344,14 @@ function application_ucp_add_settings($type = 'install')
       'title' => 'Aufspaltung',
       'description' => 'Sollen die Steckbrieffelder in Kategorien aufgespaltet werden?',
       'optionscode' => 'yesno',
-      'value' => '1', // Default
+      'value' => '0', // Default
       'disporder' => 20
     ),
     'application_ucp_acp_cats_tabs' => array(
       'title' => 'Aufspaltung - Tabs?',
       'description' => 'Sollen diese Kategorien in Tabs angezeigt werden?',
       'optionscode' => 'yesno',
-      'value' => '1', // Default
+      'value' => '0', // Default
       'disporder' => 21
     ),
     'application_ucp_acp_cat_defaultname' => array(
@@ -432,15 +373,40 @@ function application_ucp_add_settings($type = 'install')
       $db->insert_query('settings', $setting);
     }
   }
+
   if ($type == 'update') {
     foreach ($setting_array as $name => $setting) {
       $setting['name'] = $name;
-      $check = $db->write_query("SELECT name FROM `" . TABLE_PREFIX . "settings` WHERE name = '{$name}'");
-      $check = $db->num_rows($check);
       $setting['gid'] = $gid;
+
+      //alte einstellung aus der db holen
+      $check = $db->write_query("SELECT * FROM `" . TABLE_PREFIX . "settings` WHERE name = '{$name}'");
+      $check2 = $db->write_query("SELECT * FROM `" . TABLE_PREFIX . "settings` WHERE name = '{$name}'");
+      $check = $db->num_rows($check);
       if ($check == 0) {
         $db->insert_query('settings', $setting);
         echo "Setting: {$name} wurde hinzugefügt.";
+      } else {
+
+        //die einstellung gibt es schon, wir testen ob etwas verändert wurde
+        while ($setting_old = $db->fetch_array($check2)) {
+          if (
+            $setting_old['title'] != $setting['title'] ||
+            $setting_old['description'] != $setting['description'] ||
+            $setting_old['optionscode'] != $setting['optionscode'] ||
+            $setting_old['disporder'] != $setting['disporder']
+          ) {
+            //wir wollen den value nicht überspeichern, also nur die anderen werte aktualisieren
+            $update_array = array(
+              'title' => $setting['title'],
+              'description' => $setting['description'],
+              'optionscode' => $setting['optionscode'],
+              'disporder' => $setting['disporder']
+            );
+            $db->update_query('settings', $update_array, "name='{$name}'");
+            echo "Setting: {$name} wurde aktualisiert.<br>";
+          }
+        }
       }
     }
     echo "<p>Einstellungen wurden aktualisiert</p>";
@@ -466,7 +432,7 @@ function application_ucp_add_templates($type = 'install')
     $db->insert_query("templategroups", $templategrouparray);
   }
 
-  $template[0] = array(
+  $template[] = array(
     "title" => 'application_ucp_index',
     "template" => '<div class="red_alert">
       {$application_ucp_index_modbit}
@@ -478,7 +444,7 @@ function application_ucp_add_templates($type = 'install')
     "dateline" => TIME_NOW
   );
 
-  $template[1] = array(
+  $template[] = array(
     "title" => 'application_ucp_index_bit',
     "template" => '<div class="aucp_indexuser">{$message}
       </div>
@@ -488,7 +454,7 @@ function application_ucp_add_templates($type = 'install')
     "dateline" => TIME_NOW
   );
 
-  $template[2] = array(
+  $template[] = array(
     "title" => 'application_ucp_mods',
     "template" => '<html>
       <head>
@@ -551,7 +517,7 @@ function application_ucp_add_templates($type = 'install')
     "dateline" => TIME_NOW
   );
 
-  $template[3] = array(
+  $template[] = array(
     "title" => 'application_ucp_mods_bit',
     "template" => '<tr>
       <td>{$aucp_mod_profillink}</td>
@@ -564,7 +530,7 @@ function application_ucp_add_templates($type = 'install')
     "dateline" => TIME_NOW
   );
 
-  $template[4] = array(
+  $template[] = array(
     "title" => 'application_ucp_wobbutton',
     "template" => '<form action="misc.php?action=wob&tid={$thread[\\\'tid\\\']}" method="post" style="display: inline !important;">
     <div class="aucp_showthread-wob">
@@ -594,7 +560,7 @@ function application_ucp_add_templates($type = 'install')
     "dateline" => TIME_NOW
   );
 
-  $template[5] = array(
+  $template[] = array(
     "title" => 'application_ucp_ucp_main',
     "template" => '<html>
       <head>
@@ -633,7 +599,7 @@ function application_ucp_add_templates($type = 'install')
     "dateline" => TIME_NOW
   );
 
-  $template[6] = array(
+  $template[] = array(
     "title" => 'application_ucp_filtermemberlist',
     "template" => '
     <div class="bl-filtermemberlist">
@@ -644,7 +610,7 @@ function application_ucp_add_templates($type = 'install')
     "dateline" => TIME_NOW
   );
 
-  $template[7] = array(
+  $template[] = array(
     "title" => 'application_ucp_filtermemberlist_bit',
     "template" => '<div class="filterinput">
     <label for="{$searchfield[\\\'fieldname\\\']}">Nach {$searchfield[\\\'label\\\']}:</label> 
@@ -655,7 +621,7 @@ function application_ucp_add_templates($type = 'install')
     "dateline" => TIME_NOW
   );
 
-  $template[8] = array(
+  $template[] = array(
     "title" => 'application_ucp_filtermemberlist_selectbit',
     "template" => '<div class="filterinput"><label for="{$searchfield[\\\'fieldname\\\']}">Nach {$searchfield[\\\'label\\\']}:</label>
     <select name="{$searchfield[\\\'fieldname\\\']}[]" id="{$searchfield[\\\'fieldname\\\']}" >
@@ -668,7 +634,7 @@ function application_ucp_add_templates($type = 'install')
     "dateline" => TIME_NOW
   );
 
-  $template[9] = array(
+  $template[] = array(
     "title" => 'application_ucp_infos',
     "template" => '<div class="aucp_infoheader">
     {$lang->application_ucp_infoheader}
@@ -679,7 +645,7 @@ function application_ucp_add_templates($type = 'install')
     "dateline" => TIME_NOW
   );
 
-  $template[10] = array(
+  $template[] = array(
     "title" => 'application_ucp_profile_trigger',
     "template" => '<div class="aucp_trigger">
     {$lang->application_ucp_profile_trigger} {$trigger}
@@ -702,6 +668,101 @@ function application_ucp_add_templates($type = 'install')
   }
 }
 
+/**
+ * CSS fürs Plugin
+ */
+function application_ucp_css()
+{
+  global $db;
+  $css = array(
+    'name' => 'application_ucp.css',
+    'tid' => 1,
+    'attachedto' => '',
+    "stylesheet" =>    '
+     
+      /*showthread*/
+      .aucp_showthread-wob {
+          margin: 10px;
+          display: flex;
+          align-items: start;
+          justify-content: center;
+          gap: 20px;
+      }
+      
+      .aucp_showthread-wob__item:last-child {
+          align-self: center;
+      }
+      
+      /*Benutzer CP */
+      .applucp-con {
+          display: grid;
+          width: 80%;
+          margin: auto;
+          gap: 19px 15px;
+      }
+      
+      .app_ucp_label {
+          font-weight: 600;
+          text-align: left;
+      }
+      
+      .applucp-con__item {
+          display: grid;
+      }
+      
+      .applucp-con__item.applucp-buttons {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 10px;
+    }
+
+    /*tabstyling/*
+    .cat_tabs {
+      margin: 0px;
+      padding: 0px;
+      list-style: none;
+      background:#000;
+      border-bottom: 5px #0072BC solid;
+    }
+    .cat_tabs li{
+      display: inline-block;
+      margin:0;
+      padding: 10px 20px 5px 20px;
+      cursor: pointer;
+      color:#FFF;
+    }
+    .cat_tabs li:hover {
+      background:#0072BC;
+    }
+
+    .cat_tabs li.current{
+      background: #0072BC;
+      color: #FFF;
+    }
+    .con_cat_content {
+      display: none;
+      background: #f2f2f2;
+    }
+    .con_cat_content.current{
+      display: inherit;
+    }
+      
+      /*Display Profil and Postbit */
+      .aucp_fieldContainer {
+          display: grid;
+          grid-template-columns: 1fr;
+      }
+      
+      .aucp_fieldContainer__item {
+          display: flex;
+          gap: 10px;
+      }',
+    'cachefile' => $db->escape_string(str_replace('/', '', 'application_ucp.css')),
+    'lastmodified' => time()
+  );
+
+  return $css;
+}
 
 function application_ucp_uninstall()
 {
@@ -796,9 +857,6 @@ function application_ucp_activate()
   //Meldung auf dem index
   find_replace_templatesets("index", "#" . preg_quote('{$header}') . "#i", '{$header}{$application_ucp_index}');
 
-  //Javascript fürs Aufspalten 
-  find_replace_templatesets("application_ucp_ucp_main", "#" . preg_quote('{$footer}') . "#i", '{$footer}{$application_ucpcats_js}{$application_ucp_js}');
-
   if (function_exists('myalerts_is_activated') && myalerts_is_activated()) {
 
     $alertTypeManager = MybbStuff_MyAlerts_AlertTypeManager::getInstance();
@@ -813,7 +871,7 @@ function application_ucp_activate()
     $alertTypeManager->add($alertTypeAucpAffected);
   }
 
-  change_admin_permission("config", "application_ucp", 1);
+  change_admin_permission("rpgstuff", "application_ucp", 1);
 }
 
 function application_ucp_deactivate()
@@ -841,40 +899,338 @@ function application_ucp_deactivate()
     }
     $alertTypeManager->deleteByCode('application_ucp_affected');
   }
-  change_admin_permission("config", "application_ucp", -1);
+  change_admin_permission("change_admin_permission", "application_ucp", -1);
 }
 
-//Hinzufügen  upgrade Hinweis
-$plugins->add_hook("admin_settings_print_peekers", "application_ucp_settings_peek");
-function application_ucp_settings_peek(&$peekers)
+// //Hinzufügen  upgrade Hinweis
+// $plugins->add_hook("admin_settings_print_peekers", "application_ucp_settings_peek");
+// function application_ucp_settings_peek(&$peekers)
+// {
+//   global $db, $mybb;
+//   if (
+//     empty($mybb->settings['application_ucp_approved'])
+//     || !$db->field_exists("guest", "application_ucp_fields")
+//     || !$db->field_exists("guest_content", "application_ucp_fields")
+//     || !$db->field_exists("wob_date", "users")
+//     || !$db->table_exists("application_ucp_categories")
+//   ) {
+//     $peekers[] = "
+//     $('a:contains(\"Steckbrief im UCP\")').after('<br><span style=\"color:red; font-weight:bold;\">Bitte das Updatescript ausführen!</span>');
+//     ";
+//   }
+// }
+
+/**
+ * Funktion um CSS nachträglich oder nach einem MyBB Update wieder hinzuzufügen
+ */
+$plugins->add_hook('admin_rpgstuff_update_stylesheet', "application_ucp_admin_update_stylesheet");
+function application_ucp_admin_update_stylesheet(&$table)
+{
+  global $db, $mybb, $lang;
+
+  $lang->load('rpgstuff_stylesheet_updates');
+
+  require_once MYBB_ADMIN_DIR . "inc/functions_themes.php";
+
+  // HINZUFÜGEN
+  if ($mybb->input['action'] == 'add_master' and $mybb->get_input('plugin') == "application_ucp") {
+
+    $css = application_ucp_css();
+
+    $sid = $db->insert_query("themestylesheets", $css);
+    $db->update_query("themestylesheets", array("cachefile" => "application_ucp.css"), "sid = '" . $sid . "'", 1);
+
+    $tids = $db->simple_select("themes", "tid");
+    while ($theme = $db->fetch_array($tids)) {
+      update_theme_stylesheet_list($theme['tid']);
+    }
+
+    flash_message($lang->stylesheets_flash, "success");
+    admin_redirect("index.php?module=rpgstuff-stylesheet_updates");
+  }
+
+  // Zelle mit dem Namen des Themes
+  $table->construct_cell("<b>" . htmlspecialchars_uni("Steckbrief-Manager") . "</b>", array('width' => '70%'));
+
+  // Ob im Master Style vorhanden
+  $master_check_test = $db->query("SELECT * FROM " . TABLE_PREFIX . "themestylesheets WHERE name = 'application_ucp.css' AND tid = '1'");
+  if ($db->num_rows($master_check_test) > 0) {
+    $masterstyle = true;
+  } else {
+    $masterstyle = false;
+  }
+
+  if (!empty($masterstyle)) {
+    $table->construct_cell($lang->stylesheets_masterstyle, array('class' => 'align_center'));
+  } else {
+    $table->construct_cell("<a href=\"index.php?module=rpgstuff-stylesheet_updates&action=add_master&plugin=application_ucp\">" . $lang->stylesheets_add . "</a>", array('class' => 'align_center'));
+  }
+  $table->construct_row();
+}
+
+
+/** RPG MODUL  */
+function application_ucp_stylesheet_update()
+{
+  //Array initialisieren
+  $update_array_all = array();
+  //array für css welches hinzugefügt werden soll - neuer eintrag in array für jedes neue update
+  $update_array_all[] = array(
+    'stylesheet' => "/* category-update - kommentar nicht entfernen */
+              .cat_tabs {
+                margin: 0px;
+                padding: 0px;
+                list-style: none;
+                background:#000;
+                border-bottom: 5px #0072BC solid;
+              }
+              .cat_tabs li{
+                display: inline-block;
+                margin:0;
+                padding: 10px 20px 5px 20px;
+                cursor: pointer;
+                color:#FFF;
+              }
+              .cat_tabs li:hover {
+                background:#0072BC;
+              }
+
+              .cat_tabs li.current{
+                background: #0072BC;
+                color: #FFF;
+              }
+              .con_cat_content {
+                display: none;
+                background: #f2f2f2;
+              }
+              .con_cat_content.current{
+                display: inherit;
+              }",
+    'update_string' => '/* category-update - kommentar nicht entfernen'
+  );
+
+  return $update_array_all;
+}
+/**
+ * Hier werden Templates gespeichert, die im Laufe der Entwicklung aktualisiert wurden
+ * @return array - template daten die geupdatet werden müssen
+ */
+function application_ucp_updated_templates()
+{
+  global $db;
+
+  //data array initialisieren 
+  $update_template = array();
+
+
+  $update_template[] = array(
+    "templatename" => 'application_ucp_ucp_main',
+    "change_string" => '{$fields}',
+    "action" => 'add',
+    "action_string" => '{$cats_html}{$application_ucp_infos}{$fields}'
+  );
+
+  $update_template[] = array(
+    "templatename" => 'application_ucp_ucp_main',
+    "change_string" => '{$application_ucp_js}',
+    "action" => 'add',
+    "action_string" => '{$application_ucpcats_js}{$application_ucp_js}'
+  );
+  // $update_template[] = array(
+  //   "templatename" => 'templatename',
+  //   "change_string" => 'was soll ausgetauscht werden',
+  //   "action" => 'replace',
+  //   "action_string" => 'wodurch'
+  // );
+  return $update_template;
+}
+
+/**
+ * Funktion um alte Templates des Plugins bei Bedarf zu aktualisieren
+ */
+function application_ucp_replace_templates()
+{
+  global $db;
+  //Wir wollen erst einmal die templates, die eventuellverändert werden müssen
+  $update_template_all = application_ucp_updated_templates();
+  if (!empty($update_template_all)) {
+    //diese durchgehen
+    foreach ($update_template_all as $update_template) {
+      //anhand des templatenames holen
+      $old_template_query = $db->simple_select("templates", "tid, template", "title = '" . $update_template['templatename'] . "'");
+      //in old template speichern
+      while ($old_template = $db->fetch_array($old_template_query)) {
+        //was soll gefunden werden? das mit pattern ersetzen (wir schmeißen leertasten, tabs, etc raus)
+
+        if ($update_template['action'] == 'replace') {
+          $pattern = application_ucp_createRegexPattern($update_template['change_string']);
+        } elseif ($update_template['action'] == 'add') {
+          //bei add wird etwas zum template hinzugefügt, wir müssen also testen ob das schon geschehen ist
+          $pattern = application_ucp_createRegexPattern($update_template['action_string']);
+        } elseif ($update_template['action'] == 'overwrite') {
+          $pattern = application_ucp_createRegexPattern($update_template['change_string']);
+        }
+
+        //was soll gemacht werden -> momentan nur replace 
+        if ($update_template['action'] == 'replace') {
+          //wir ersetzen wenn gefunden wird
+          if (preg_match($pattern, $old_template['template'])) {
+            $template = preg_replace($pattern, $update_template['action_string'], $old_template['template']);
+            $update_query = array(
+              "template" => $db->escape_string($template),
+              "dateline" => TIME_NOW
+            );
+            $db->update_query("templates", $update_query, "tid='" . $old_template['tid'] . "'");
+            echo ("Template -replace- {$update_template['templatename']} in {$old_template['tid']} wurde aktualisiert <br>");
+          }
+        }
+        if ($update_template['action'] == 'add') { //hinzufügen nicht ersetzen
+          //ist es schon einmal hinzugefügt wurden? nur ausführen, wenn es noch nicht im template gefunden wird
+          if (!preg_match($pattern, $old_template['template'])) {
+            $pattern_rep = application_ucp_createRegexPattern($update_template['change_string']);
+            $template = preg_replace($pattern_rep, $update_template['action_string'], $old_template['template']);
+            $update_query = array(
+              "template" => $db->escape_string($template),
+              "dateline" => TIME_NOW
+            );
+            $db->update_query("templates", $update_query, "tid='" . $old_template['tid'] . "'");
+            echo ("Template -add- {$update_template['templatename']} in  {$old_template['tid']} wurde aktualisiert <br>");
+          }
+        }
+        if ($update_template['action'] == 'overwrite') { //komplett ersetzen
+          //checken ob das bei change string angegebene vorhanden ist - wenn ja wurde das template schon überschrieben, wenn nicht überschreiben wir das ganze template
+          if (!preg_match($pattern, $old_template['template'])) {
+            $template = $update_template['action_string'];
+            $update_query = array(
+              "template" => $db->escape_string($template),
+              "dateline" => TIME_NOW
+            );
+            $db->update_query("templates", $update_query, "tid='" . $old_template['tid'] . "'");
+            echo ("Template -overwrite- {$update_template['templatename']} in  {$old_template['tid']} wurde aktualisiert <br>");
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Funktion um ein pattern für preg_replace zu erstellen
+ * und so templates zu vergleichen.
+ * @return string - pattern für preg_replace zum vergleich
+ */
+function application_ucp_createRegexPattern($html)
+{
+  // Entkomme alle Sonderzeichen und ersetze Leerzeichen mit flexiblen Platzhaltern
+  $pattern = preg_quote($html, '/');
+
+  // Ersetze Leerzeichen in `class`-Attributen mit `\s+` (flexible Leerzeichen)
+  $pattern = preg_replace('/\s+/', '\\s+', $pattern);
+
+  // Passe das Muster an, um Anfang und Ende zu markieren
+  return '/' . $pattern . '/si';
+}
+
+/**
+ * Update Check
+ * @return boolean false wenn Plugin nicht aktuell ist
+ * überprüft ob das Plugin auf der aktuellen Version ist
+ */
+function application_ucp_is_updated()
 {
   global $db, $mybb;
-  if (
-    empty($mybb->settings['application_ucp_approved'])
-    || !$db->field_exists("guest", "application_ucp_fields")
-    || !$db->field_exists("guest_content", "application_ucp_fields")
-    || !$db->field_exists("wob_date", "users")
-    || !$db->table_exists("application_ucp_categories")
-  ) {
-    $peekers[] = "
-    $('a:contains(\"Steckbrief im UCP\")').after('<br><span style=\"color:red; font-weight:bold;\">Bitte das Updatescript ausführen!</span>');
-    ";
+
+  if (!$db->table_exists("application_ucp_categories")) {
+    echo ("Die tabelle application_ucp_categories muss erstellt werden <br>");
+    return false;
   }
+  if (!$db->field_exists("cat_id", "application_ucp_fields")) {
+    echo ("in der Tabelle application_ucp_fields muss das feld cat_id erstellt werden<br>");
+    return false;
+  }
+
+  //Testen ob im CSS etwas fehlt
+  $update_data_all = application_ucp_stylesheet_update();
+  //alle Themes bekommen
+  $theme_query = $db->simple_select('themes', 'tid, name');
+  while ($theme = $db->fetch_array($theme_query)) {
+    //wenn im style nicht vorhanden, dann gesamtes css hinzufügen
+    $templatequery = $db->write_query("SELECT * FROM `" . TABLE_PREFIX . "themestylesheets` where tid = '{$theme['tid']}' and name ='application_ucp.css'");
+    //css ist in keinem style vorhanden
+    if ($db->num_rows($templatequery) == 0) {
+      echo ("application css Nicht im {$theme['tid']} - {$theme['name']} vorhanden <br>");
+      return false;
+    } else {
+      //.css ist in einem style nicht vorhanden
+      //css ist vorhanden, testen ob alle updatestrings vorhanden sind
+      $update_data_all = application_ucp_stylesheet_update();
+      //array durchgehen mit eventuell hinzuzufügenden strings
+      foreach ($update_data_all as $update_data) {
+        //String bei dem getestet wird ob er im alten css vorhanden ist
+        $update_string = $update_data['update_string'];
+        //updatestring darf nicht leer sein
+        if (!empty($update_string)) {
+          //checken ob updatestring in css vorhanden ist - dann muss nichts getan werden
+          $test_ifin = $db->write_query("SELECT stylesheet FROM " . TABLE_PREFIX . "themestylesheets WHERE tid = '{$theme['tid']}' AND name = 'application_ucp.css' AND stylesheet LIKE '%" . $update_string . "%' ");
+          //string war nicht vorhanden
+          if ($db->num_rows($test_ifin) == 0) {
+            echo ("Mindestens Theme {$theme['tid']} (für steckbrief plugin) muss aktualisiert werden <br>");
+            return false;
+          }
+        }
+      }
+    }
+  }
+
+
+  //Testen ob eins der Templates aktualisiert werden muss
+  //Wir wollen erst einmal die templates, die eventuellverändert werden müssen
+  $update_template_all = application_ucp_updated_templates();
+  //alle themes durchgehen
+  foreach ($update_template_all as $update_template) {
+    //entsprechendes Tamplate holen
+    $old_template_query = $db->simple_select("templates", "tid, template, sid", "title = '" . $update_template['templatename'] . "'");
+    while ($old_template = $db->fetch_array($old_template_query)) {
+      //pattern bilden
+      if ($update_template['action'] == 'replace') {
+        $pattern = application_ucp_createRegexPattern($update_template['change_string']);
+        $check = preg_match($pattern, $old_template['template']);
+      } elseif ($update_template['action'] == 'add') {
+        //bei add wird etwas zum template hinzugefügt, wir müssen also testen ob das schon geschehen ist
+        $pattern = application_ucp_createRegexPattern($update_template['action_string']);
+        $check = !preg_match($pattern, $old_template['template']);
+      } elseif ($update_template['action'] == 'overwrite') {
+        //checken ob das bei change string angegebene vorhanden ist - wenn ja wurde das template schon überschrieben
+        $pattern = application_ucp_createRegexPattern($update_template['change_string']);
+        $check = !preg_match($pattern, $old_template['template']);
+      }
+      //testen ob der zu ersetzende string vorhanden ist
+      //wenn ja muss das template aktualisiert werden.
+      if ($check) {
+        $templateset = $db->fetch_field($db->simple_select("templatesets", "title", "sid = '{$old_template['sid']}'"), "title");
+        echo ("Template {$update_template['templatename']} im Set {$templateset}'(SID: {$old_template['sid']}') muss aktualisiert werden.");
+        return false;
+  }
+}
+  }
+
+  return true;
 }
 
 /**
  * action handler fürs acp konfigurieren
  */
-$plugins->add_hook("admin_config_action_handler", "application_ucp_admin_config_action_handler");
+$plugins->add_hook("admin_rpgstuff_action_handler", "application_ucp_admin_config_action_handler");
 function application_ucp_admin_config_action_handler(&$actions)
 {
   $actions['application_ucp'] = array('active' => 'application_ucp', 'file' => 'application_ucp');
+  $actions['application_updates'] = array('active' => 'application_updates', 'file' => 'application_updates');
 }
 
 /**
  * Berechtigungen im ACP
  */
-$plugins->add_hook("admin_config_permissions", "application_ucp_admin_config_permissions");
+$plugins->add_hook("admin_rpgstuff_permissions", "application_ucp_admin_config_permissions");
 function application_ucp_admin_config_permissions(&$admin_permissions)
 {
   global $lang;
@@ -887,8 +1243,8 @@ function application_ucp_admin_config_permissions(&$admin_permissions)
 /**
  * Admin Menü einfügen
  */
-$plugins->add_hook("admin_config_menu", "application_ucp_admin_config_menu");
-function application_ucp_admin_config_menu($sub_menu)
+$plugins->add_hook("admin_rpgstuff_menu", "application_ucp_admin_config_menu");
+function application_ucp_admin_config_menu(&$sub_menu)
 {
   global $mybb, $lang;
   $lang->load('application_ucp');
@@ -896,7 +1252,7 @@ function application_ucp_admin_config_menu($sub_menu)
   $sub_menu[] = [
     "id" => "application_ucp",
     "title" => $lang->application_ucp_menu,
-    "link" => "index.php?module=config-application_ucp"
+    "link" => "index.php?module=rpgstuff-application_ucp"
   ];
   return $sub_menu;
 }
@@ -917,7 +1273,7 @@ function application_ucp_admin_load()
   }
 
   // Übersicht 
-  if ($run_module == 'config' && $action_file == 'application_ucp') {
+  if ($run_module == 'rpgstuff' && $action_file == 'application_ucp') {
 
     //Startpage acp  // Übersicht angelegter Felder
     $action = $mybb->get_input('action');
@@ -947,7 +1303,7 @@ function application_ucp_admin_load()
       // }
 
       //Form erstellen - Feld suchen
-      $search = new Form("index.php?module=config-application_ucp&action=browsefield", 'post', 'search_form');
+      $search = new Form("index.php?module=rpgstuff-application_ucp&action=browsefield", 'post', 'search_form');
       echo "<div style=\"padding-bottom: 3px; margin-top: -9px; text-align: right;\">";
 
       echo $search->generate_text_box('keywords', '', array('id' => 'search_keywords', 'class' => "field150 field_small")) . "\n";
@@ -999,7 +1355,7 @@ function application_ucp_admin_load()
 
       //Hier erstellen wir jetzt eine Übersicht über unsere ganzen Felder
       //erst brauchen wir einen Container und ein Formular - für delete, die Sortierung etc.
-      $form = new Form("index.php?module=config-application_ucp&amp;action=update_order", "post");
+      $form = new Form("index.php?module=rpgstuff-application_ucp&amp;action=update_order", "post");
       $form_container = new FormContainer($lang->application_ucp_overview);
       $get_fields = $db->simple_select("application_ucp_fields", "*", "", array(array("order_by" => "cat_id, sorting")));
       $form_container->output_row_header("Details");
@@ -1035,7 +1391,7 @@ function application_ucp_admin_load()
       if ($mybb->settings['application_ucp_acp_pagination_fields'] != 0) {
         $get_field_pages = $db->write_query("SELECT *  FROM " . TABLE_PREFIX . "application_ucp_fields ORDER BY cat_id, sorting
 			LIMIT {$start}, {$per_page}");
-        $pagination = draw_admin_pagination($current_page, $per_page, $fields_acp, "index.php?module=config-application_ucp&amp;page={page}");
+        $pagination = draw_admin_pagination($current_page, $per_page, $fields_acp, "index.php?module=rpgstuff-application_ucp&amp;page={page}");
         echo $pagination;
       } else {
         $get_field_pages = $db->write_query("SELECT *  FROM " . TABLE_PREFIX . "application_ucp_fields ORDER BY cat_id, sorting");
@@ -1170,25 +1526,25 @@ function application_ucp_admin_load()
         $popup = new PopupMenu("application_ucp_{$field['id']}", "verwalten");
         $popup->add_item(
           "edit",
-          "index.php?module=config-application_ucp&amp;action=application_ucp_edit&amp;fieldid={$field['id']}"
+          "index.php?module=rpgstuff-application_ucp&amp;action=application_ucp_edit&amp;fieldid={$field['id']}"
         );
         //Je nachdem ob das Feld gerade aktiv ist, option anzeigen
         if ($field['active'] == 1) {
           $popup->add_item(
             "deactivate",
-            "index.php?module=config-application_ucp&amp;action=application_ucp_deactivate&amp;fieldid={$field['id']}"
+            "index.php?module=rpgstuff-application_ucp&amp;action=application_ucp_deactivate&amp;fieldid={$field['id']}"
               . "&amp;my_post_key={$mybb->post_code}"
           );
         } else {
           $popup->add_item(
             "activate",
-            "index.php?module=config-application_ucp&amp;action=application_ucp_activate&amp;fieldid={$field['id']}"
+            "index.php?module=rpgstuff-application_ucp&amp;action=application_ucp_activate&amp;fieldid={$field['id']}"
               . "&amp;my_post_key={$mybb->post_code}"
           );
         }
         $popup->add_item(
           "delete",
-          "index.php?module=config-application_ucp&amp;action=application_ucp_delete&amp;fieldid={$field['id']}"
+          "index.php?module=rpgstuff-application_ucp&amp;action=application_ucp_delete&amp;fieldid={$field['id']}"
             . "&amp;my_post_key={$mybb->post_code}"
         );
 
@@ -1202,7 +1558,7 @@ function application_ucp_admin_load()
 
       $form->end();
       $page->output_footer();
-      die();
+      exit;
     }
 
     //Suche von einem Feld
@@ -1217,10 +1573,10 @@ function application_ucp_admin_load()
           $error = "Kein Feld mit dieser Bezeichnung gefunden.";
           if (isset($error)) {
             flash_message($error, 'error');
-            admin_redirect("index.php?module=config-application_ucp&action=application_ucp_edit");
+            admin_redirect("index.php?module=rpgstuff-application_ucp&action=application_ucp_edit");
           }
         } else {
-          admin_redirect("index.php?module=config-application_ucp&action=application_ucp_edit&fieldid=" . $fieldid);
+          admin_redirect("index.php?module=rpgstuff-application_ucp&action=application_ucp_edit&fieldid=" . $fieldid);
         }
       }
     }
@@ -1244,7 +1600,7 @@ function application_ucp_admin_load()
         );
         $db->update_query("application_ucp_fields", $update_cat, "id='" . (int)$id . "'");
       }
-      admin_redirect("index.php?module=config-application_ucp");
+      admin_redirect("index.php?module=rpgstuff-application_ucp");
     }
 
     //Hier werden jetzt die Felder im ACP erstellt
@@ -1350,7 +1706,7 @@ function application_ucp_admin_load()
           log_admin_action(htmlspecialchars_uni($mybb->input['fieldname']));
 
           flash_message($lang->application_ucp_success, 'success');
-          admin_redirect("index.php?module=config-application_ucp");
+          admin_redirect("index.php?module=rpgstuff-application_ucp");
         }
       }
 
@@ -1366,7 +1722,7 @@ function application_ucp_admin_load()
       }
 
       //Formular bauen 
-      $form = new Form("index.php?module=config-application_ucp&amp;action=application_ucp_add", "post", "", 1);
+      $form = new Form("index.php?module=rpgstuff-application_ucp&amp;action=application_ucp_add", "post", "", 1);
       $form_container = new FormContainer($lang->application_ucp_formname);
 
       // Welche Auswahlmöglichkeiten an Feldtypen
@@ -1561,7 +1917,7 @@ function application_ucp_admin_load()
 
       //Benutzer suchen 
       //Form erstellen
-      $search = new Form("index.php?module=config-application_ucp&action=browse", 'post', 'search_form');
+      $search = new Form("index.php?module=rpgstuff-application_ucp&action=browse", 'post', 'search_form');
       echo "<div style=\"padding-bottom: 3px; margin-top: -9px; text-align: right;\">";
 
       echo $search->generate_text_box('keywords', '', array('id' => 'search_keywords', 'class' => "field150 field_small")) . "\n";
@@ -1612,7 +1968,7 @@ function application_ucp_admin_load()
       echo $search->end();
 
       //alle registrierten User bekommen
-      $form = new Form("index.php?module=config-application_ucp&action=application_ucp_manageusers", "post");
+      $form = new Form("index.php?module=rpgstuff-application_ucp&action=application_ucp_manageusers", "post");
       $form_container = new FormContainer($lang->application_ucp_manageusers_dscr);
       $form_container->output_row_header($lang->application_ucp_manageusers_all);
 
@@ -1640,7 +1996,7 @@ function application_ucp_admin_load()
       if ($mybb->settings['application_ucp_acp_pagination'] != 0) {
         $get_users_pages = $db->write_query("SELECT *  FROM " . TABLE_PREFIX . "users ORDER BY username
 			LIMIT {$start}, {$per_page}");
-        $pagination = draw_admin_pagination($current_page, $per_page, $users, "index.php?module=config-application_ucp&action=application_ucp_manageusers&amp;page={page}");
+        $pagination = draw_admin_pagination($current_page, $per_page, $users, "index.php?module=rpgstuff-application_ucp&action=application_ucp_manageusers&amp;page={page}");
         echo $pagination;
       } else {
         $get_users_pages = $db->write_query("SELECT *  FROM " . TABLE_PREFIX . "users ORDER BY username");
@@ -1656,7 +2012,7 @@ function application_ucp_admin_load()
         $popup = new PopupMenu("user_{$user['uid']}", $lang->application_ucp_manageusers_manage);
         $popup->add_item(
           $lang->application_ucp_manageusers_application,
-          "index.php?module=config-application_ucp&action=application_ucp_manageusers_user&amp;uid={$user['uid']}"
+          "index.php?module=rpgstuff-application_ucp&action=application_ucp_manageusers_user&amp;uid={$user['uid']}"
         );
         $popup->add_item(
           $lang->application_ucp_manageusers_profile,
@@ -1712,7 +2068,7 @@ function application_ucp_admin_load()
       $get_fields = $db->simple_select("application_ucp_fields", "*", "", array('order_by' => 'sorting'));
 
       //Formular bauen 
-      $form = new Form("index.php?module=config-application_ucp&amp;action=application_ucp_manageusers_user", "post", "", 1);
+      $form = new Form("index.php?module=rpgstuff-application_ucp&amp;action=application_ucp_manageusers_user", "post", "", 1);
       $form_container = new FormContainer(htmlspecialchars_uni($user['username']) . ": " . $lang->application_ucp_edituser);
 
       //welchen user bearbeiten wir?
@@ -1861,7 +2217,7 @@ function application_ucp_admin_load()
             $page->output_inline_error($error);
           }
         } else {
-          admin_redirect("index.php?module=config-application_ucp&action=application_ucp_manageusers_user&uid=" . $user['uid']);
+          admin_redirect("index.php?module=rpgstuff-application_ucp&action=application_ucp_manageusers_user&uid=" . $user['uid']);
         }
       }
     }
@@ -1954,7 +2310,7 @@ function application_ucp_admin_load()
 
           $db->update_query("application_ucp_fields", $update, "id = {$fieldid}");
           flash_message($lang->application_ucp_success, 'success');
-          admin_redirect("index.php?module=config-application_ucp");
+          admin_redirect("index.php?module=rpgstuff-application_ucp");
           die();
         }
       }
@@ -1974,7 +2330,7 @@ function application_ucp_admin_load()
       $get_field_data =  $db->simple_select("application_ucp_fields", "*", "id={$fieldid}");
       $field_data = $db->fetch_array($get_field_data);
 
-      $form = new Form("index.php?module=config-application_ucp&amp;action=application_ucp_edit", "post", "", 1);
+      $form = new Form("index.php?module=rpgstuff-application_ucp&amp;action=application_ucp_edit", "post", "", 1);
       echo $form->generate_hidden_field('fieldid', $fieldid);
       $form_container = new FormContainer($lang->application_ucp_formname_edit);
       $form_container->output_row(
@@ -2152,16 +2508,16 @@ function application_ucp_admin_load()
       $fieldid = $mybb->get_input('fieldid', MyBB::INPUT_INT);
       if (empty($fieldid)) {
         flash_message($lang->application_ucp_err_delete, 'error');
-        admin_redirect("index.php?module=config-application_ucp");
+        admin_redirect("index.php?module=rpgstuff-application_ucp");
       }
 
       if (isset($mybb->input['no']) && $mybb->input['no']) {
-        admin_redirect("index.php?module=config-application_ucp");
+        admin_redirect("index.php?module=rpgstuff-application_ucp");
       }
 
       if (!verify_post_check($mybb->input['my_post_key'])) {
         flash_message($lang->invalid_post_verify_key2, 'error');
-        admin_redirect("index.php?module=config-application_ucp");
+        admin_redirect("index.php?module=rpgstuff-application_ucp");
       } else {
         if ($mybb->request_method == "post") {
           $fieldname = $db->fetch_field($db->simple_select("application_ucp_fields", "fieldname", "id='{$fieldid}'"), "fieldname");
@@ -2173,10 +2529,10 @@ function application_ucp_admin_load()
           $mybb->input['action'] = $lang->application_ucp_delete;
           log_admin_action(htmlspecialchars_uni($fieldname));
           flash_message($lang->application_ucp_delete, 'success');
-          admin_redirect("index.php?module=config-application_ucp");
+          admin_redirect("index.php?module=rpgstuff-application_ucp");
         } else {
           $page->output_confirm_action(
-            "index.php?module=config-application_ucp&amp;action=application_ucp_delete&amp;fieldid={$fieldid}",
+            "index.php?module=rpgstuff-application_ucp&amp;action=application_ucp_delete&amp;fieldid={$fieldid}",
             $lang->application_ucp_delete_ask
           );
         }
@@ -2189,7 +2545,7 @@ function application_ucp_admin_load()
 
       if (!verify_post_check($mybb->input['my_post_key'])) {
         flash_message($lang->invalid_post_verify_key2, 'error');
-        admin_redirect("index.php?module=config-application_ucp");
+        admin_redirect("index.php?module=rpgstuff-application_ucp");
       } else {
         if ($mybb->request_method == "post") {
           $fieldname = $db->fetch_field($db->simple_select("application_ucp_fields", "fieldname", "id='{$fieldid}'"), "fieldname");
@@ -2203,10 +2559,10 @@ function application_ucp_admin_load()
           $mybb->input['action'] = $lang->application_ucp_deactivate;
           log_admin_action(htmlspecialchars_uni($fieldname));
           flash_message($lang->application_ucp_deactivate, 'success');
-          admin_redirect("index.php?module=config-application_ucp");
+          admin_redirect("index.php?module=rpgstuff-application_ucp");
         } else {
           $page->output_confirm_action(
-            "index.php?module=config-application_ucp&amp;action=application_ucp_deactivate&amp;fieldid={$fieldid}",
+            "index.php?module=rpgstuff-application_ucp&amp;action=application_ucp_deactivate&amp;fieldid={$fieldid}",
             $lang->application_ucp_deactivate_ask
           );
         }
@@ -2219,7 +2575,7 @@ function application_ucp_admin_load()
 
       if (!verify_post_check($mybb->input['my_post_key'])) {
         flash_message($lang->invalid_post_verify_key2, 'error');
-        admin_redirect("index.php?module=config-application_ucp");
+        admin_redirect("index.php?module=rpgstuff-application_ucp");
       } else {
         if ($mybb->request_method == "post") {
           $fieldname = $db->fetch_field($db->simple_select("application_ucp_fields", "fieldname", "id='{$fieldid}'"), "fieldname");
@@ -2233,10 +2589,10 @@ function application_ucp_admin_load()
           $mybb->input['action'] = $lang->application_ucp_activate;
           log_admin_action(htmlspecialchars_uni($fieldname));
           flash_message($lang->application_ucp_activate, 'success');
-          admin_redirect("index.php?module=config-application_ucp");
+          admin_redirect("index.php?module=rpgstuff-application_ucp");
         } else {
           $page->output_confirm_action(
-            "index.php?module=config-application_ucp&amp;action=application_ucp_activate&amp;fieldid={$fieldid}",
+            "index.php?module=rpgstuff-application_ucp&amp;action=application_ucp_activate&amp;fieldid={$fieldid}",
             $lang->application_ucp_activate_ask
           );
         }
@@ -2269,7 +2625,7 @@ function application_ucp_admin_load()
           ];
           $db->insert_query("application_ucp_categories", $add_cat);
         }
-        admin_redirect("index.php?module=config-application_ucp&action=application_ucp_managecats");
+        admin_redirect("index.php?module=rpgstuff-application_ucp&action=application_ucp_managecats");
       }
 
       if ($action == "change" && $mybb->request_method == "post") {
@@ -2289,7 +2645,7 @@ function application_ucp_admin_load()
           );
           $db->update_query("application_ucp_categories", $update_query, "id='" . (int)$id . "'");
         }
-        admin_redirect("index.php?module=config-application_ucp&action=application_ucp_managecats");
+        admin_redirect("index.php?module=rpgstuff-application_ucp&action=application_ucp_managecats");
       }
 
       //Das Formular erstellen
@@ -2306,7 +2662,7 @@ function application_ucp_admin_load()
         echo "<h3 style='text-align: center; color:red;'><strong>Hinweis:</strong> Du hast aktuell Kategorien in den Einstellungen deaktiviert.</h2>";
       }
       //formular um eine neue Kategorie anzulegen
-      $form = new Form("index.php?module=config-application_ucp&amp;action=application_ucp_managecats&amp;do=add", "post", "add_cat", 1);
+      $form = new Form("index.php?module=rpgstuff-application_ucp&amp;action=application_ucp_managecats&amp;do=add", "post", "add_cat", 1);
       // echo $form->generate_hidden_field('fieldid', $fieldid)."bla";
       $form_container = new FormContainer($lang->application_ucp_namecat);
       $form_container->output_row(
@@ -2329,7 +2685,7 @@ function application_ucp_admin_load()
       //Ausgabe vorhandener Kategorien - Sortierung/Name ändern
       $get_cats = $db->simple_select("application_ucp_categories", "*", "", array("order_by" => "cat_order"));
       $cats = $db->num_rows($get_cats, "name");
-      $form = new Form("index.php?module=config-application_ucp&amp;action=application_ucp_managecats&amp;do=change", "post");
+      $form = new Form("index.php?module=rpgstuff-application_ucp&amp;action=application_ucp_managecats&amp;do=change", "post");
       $form_container = new FormContainer($lang->application_ucp_managecats);
 
       while ($cat = $db->fetch_array($get_cats)) {
@@ -2340,7 +2696,7 @@ function application_ucp_admin_load()
         $popup = new PopupMenu("cat_{$cat['id']}", $lang->application_ucp_manageusers_manage);
         $popup->add_item(
           $lang->application_ucp_cat_delete,
-          "index.php?module=config-application_ucp&action=application_ucp_cat_delete&amp;id={$cat['id']}"
+          "index.php?module=rpgstuff-application_ucp&action=application_ucp_cat_delete&amp;id={$cat['id']}"
             . "&amp;my_post_key={$mybb->post_code}"
         );
         $form_container->output_cell($popup->fetch(), array('width' => '150'));
@@ -2359,16 +2715,16 @@ function application_ucp_admin_load()
       $catid = $mybb->get_input('id', MyBB::INPUT_INT);
       if (empty($catid)) {
         flash_message($lang->application_ucp_err_delete, 'error');
-        admin_redirect("index.php?module=config-application_ucp&action=application_ucp_managecats");
+        admin_redirect("index.php?module=rpgstuff-application_ucp&action=application_ucp_managecats");
       }
 
       if (isset($mybb->input['no']) && $mybb->input['no']) {
-        admin_redirect("index.php?module=config-application_ucp&action=application_ucp_managecats");
+        admin_redirect("index.php?module=rpgstuff-application_ucp&action=application_ucp_managecats");
       }
 
       if (!verify_post_check($mybb->input['my_post_key'])) {
         flash_message($lang->invalid_post_verify_key2, 'error');
-        admin_redirect("index.php?module=config-application_ucp&action=application_ucp_managecats");
+        admin_redirect("index.php?module=rpgstuff-application_ucp&action=application_ucp_managecats");
       } else {
         if ($mybb->request_method == "post") {
           //TO DO - leeren in anderen tabellen wenn gelösch
@@ -2378,10 +2734,10 @@ function application_ucp_admin_load()
           $mybb->input['action'] = $lang->application_ucp_delete;
           log_admin_action(htmlspecialchars_uni($catid));
           flash_message($lang->application_ucp_managecats_delete_ask, 'success');
-          admin_redirect("module=config-application_ucp&action=application_ucp_managecats");
+          admin_redirect("module=rpgstuff-application_ucp&action=application_ucp_managecats");
         } else {
           $page->output_confirm_action(
-            "index.php?module=config-application_ucp&action=application_ucp_cat_delete&amp;id={$catid}",
+            "index.php?module=rpgstuff-application_ucp&action=application_ucp_cat_delete&amp;id={$catid}",
             $lang->application_ucp_managecats_delete_ask
           );
         }
@@ -2399,28 +2755,28 @@ function application_ucp_do_submenu()
   //Übersicht
   $sub_tabs['application_ucp'] = [
     "title" => $lang->application_ucp_overview,
-    "link" => "index.php?module=config-application_ucp",
+    "link" => "index.php?module=rpgstuff-application_ucp",
     "description" => $lang->application_ucp_overview_appl
   ];
 
   //Steckbrieffelder anlegen
   $sub_tabs['application_ucp_add'] = [
     "title" => $lang->application_ucp_createfieldtype,
-    "link" => "index.php?module=config-application_ucp&amp;action=application_ucp_add",
+    "link" => "index.php?module=rpgstuff-application_ucp&amp;action=application_ucp_add",
     "description" => $lang->application_ucp_createfieldtype_dscr
   ];
 
   //Steckbriefe verwalten
   $sub_tabs['application_ucp_manageusers'] = [
     "title" => $lang->application_ucp_manageusers,
-    "link" => "index.php?module=config-application_ucp&amp;action=application_ucp_manageusers",
+    "link" => "index.php?module=rpgstuff-application_ucp&amp;action=application_ucp_manageusers",
     "description" => $lang->application_ucp_manageusers_dscr
   ];
 
   //Steckbriefe verwalten
   $sub_tabs['application_ucp_managecats'] = [
     "title" => $lang->application_ucp_managecats,
-    "link" => "index.php?module=config-application_ucp&amp;action=application_ucp_managecats",
+    "link" => "index.php?module=rpgstuff-application_ucp&amp;action=application_ucp_managecats",
     "description" => $lang->application_ucp_managecats_dscr
   ];
 
@@ -2498,7 +2854,6 @@ function application_ucp_usercp()
     eval("\$application_ucp_infos = \"" . $templates->get("application_ucp_infos") . "\";");
   }
 
-
   //UCP bauen
   // alle aktiven Felder holen
   $get_fields = $db->simple_select("application_ucp_fields", "*", "active = 1", array('order_by' => 'cat_id, sorting'));
@@ -2545,7 +2900,6 @@ function application_ucp_usercp()
   $cats_html = "";
 
   if ($mybb->settings['application_ucp_acp_cats']) {  //Kategorien bekommen
-
     $cats_html = "<ul class=\"cat_tabs\">";
     $cats_html_inner = "";
     //testen ob es Felder ohne Kategorie gibt
@@ -2568,8 +2922,9 @@ function application_ucp_usercp()
     }
 
     if ($mybb->settings['application_ucp_acp_cats_tabs']) {
-      $application_ucpcats_js .= "<script> $(document).ready(function(){
+      $application_ucpcats_js .= "<script type=\"text/javascript\"> $(document).ready(function(){
       $('ul.cat_tabs li').on('click', function(){
+      // console.log('clicked');
         // get the data attribute
         var tab_id = $(this).attr('data-tab');
         // remove the default classes
@@ -2589,6 +2944,7 @@ function application_ucp_usercp()
 
   $cat_start = $tabclass = $closedivcat = "";
   $cnt = "0";
+  $fields = "";
   //felder durchgehen
   while ($type = $db->fetch_array($get_fields)) {
     //ist das Feld editierbar? -> wenn mitglied berücksichtigen
@@ -2635,7 +2991,7 @@ function application_ucp_usercp()
     $dep_classname_wrap = "";
     $dep_classes = "";
     if ($type['mandatory']) {
-      $requiredstar = "<span class\"app_ucp_star\">" . $lang->application_ucp_mandatory . "</span>"; //markierung mit sternchen ux und so :D    
+      $requiredstar = "<span class=\"app_ucp_star\">" . $lang->application_ucp_mandatory . "</span>"; //markierung mit sternchen ux und so :D    
 
       $required = "";
       // $required = "required"; //feld muss ausgefüllt werden
@@ -2752,8 +3108,10 @@ function application_ucp_usercp()
         $cat_start = $type['cat_id'];
       } else {
         $catdivstart = "";
+        $closedivcat = "";
       }
-      $last_div_catclose = "</div>";
+      // $last_div_catclose = "</div>";
+      $last_div_catclose = "";
     }
     $fields .= "$catdivstart<div class=\"applucp-con__item {$dep_classname_wrap}{$catclass}\" id=\"container_{$type['fieldname']}\" style=\"{$hidden}\">";
     //Felder bauen
@@ -2850,12 +3208,12 @@ function application_ucp_usercp()
         }
         //und alles zusammenbasteln
         $inner .= "
-        <input type=\"{$typ}\" class=\"{$type['fieldname']}_check {$dep_classname} \" id=\"{$type['fieldname']}\" name=\"{$type['id']}[]\" value=\"{$option}\" {$checked} {$required} {$disabled} > 
-        <label for=\"{$type['fieldname']}\">{$option}</label><br/>";
+        <input type=\"{$typ}\" class=\"{$type['fieldname']}_check {$dep_classname} \" id=\"{$type['fieldname']}{$option}\" name=\"{$type['id']}[]\" value=\"{$option}\" {$checked} {$required} {$disabled} > 
+        <label for=\"{$type['fieldname']}{$option}\">{$option}</label><br/>";
       }
       //auswahl löschen hinzufügen, damit man das feld auch wieder leeren kann
       $inner .= "
-      <input type=\"{$typ}\" class=\"{$type['fieldname']}_check\" id=\"{$type['fieldname']}\" name=\"{$type['id']}[]\" value=\"deleteinput\" > 
+      <input type=\"{$typ}\" class=\"{$type['fieldname']}_check\" id=\"{$type['fieldname']}empty\" name=\"{$type['id']}[]\" value=\"deleteinput\" > 
       <label for=\"{$type['fieldname']}\">Auswahl löschen</label><br/>";
 
       // dann hier das außenrum
@@ -2910,7 +3268,6 @@ function application_ucp_usercp()
     }
     $fields .= "</div>";
   }
-  //schließe letzten div container für kategorien tabs, wenn aktiviert.
   $fields .= $last_div_catclose;
   //ende Javascript
   $application_ucp_js .= "});</script>";
@@ -2924,10 +3281,12 @@ function application_ucp_usercp()
     $trigger = "";
     $trigger = $db->fetch_field($db->simple_select("application_ucp_userfields", "value", "uid = '{$mybb->user['uid']}' AND fieldid = '-4'"), "value");
     $fields .= "
+    <div class=\"app_ucp_triggercon\">
     <label class=\"app_ucp_label trigger\"  id=\"label_trigger\">
    {$lang->application_ucp_trigger}</label>
     <div class=\"application_ucp_checkboxes\"  id=\"box_trigger\">
       <input type=\"text\" class=\"input_trigger\" placeholder=\"{$lang->application_ucp_trigger}\" id=\"trigger\" name=\"-4\" value=\"{$trigger}\" \>
+    </div>
     </div>
     ";
   }
@@ -3427,6 +3786,7 @@ function application_ucp_usercp()
   }
 
   $application_ucp_ucp_main = "";
+  // eval("$index_family = "".$templates->get("index_family")."";");
   eval("\$application_ucp_ucp_main =\"" . $templates->get("application_ucp_ucp_main") . "\";");
   output_page($application_ucp_ucp_main);
 }
@@ -3438,7 +3798,7 @@ function application_ucp_usercp()
 $plugins->add_hook("member_profile_end", "application_ucp_showinprofile");
 function application_ucp_showinprofile()
 {
-  global $db, $mybb, $memprofile, $templates, $aucp_fields, $exportbtn, $lang, $fields, $application_ucp_profile_trigger;
+  global $db, $mybb, $memprofile, $templates, $aucp_fields, $exportbtn_tpl, $exportbtn, $lang, $fields, $application_ucp_profile_trigger;
   $lang->load('application_ucp');
   $userprofil = $memprofile['uid'];
   // Sollen die Felder automatisch zusammengebaut werden
@@ -3464,6 +3824,11 @@ function application_ucp_showinprofile()
     <input type=\"hidden\" name=\"uid\" value=\"{$mybb->input['uid']}\" id=\"uid\" />
     <input type=\"submit\" name=\"exp_app\" class=\"bl-btn\" value=\"" . $lang->application_ucp_export . "\" id=\"exp_app\" />
     </form>";
+  }
+
+  //Export als template
+  if ($mybb->settings['application_ucp_export'] && $mybb->user['uid'] != 0 && ($mybb->user['uid'] == $userprofil || $mybb->usergroup['canmodcp'] == 1)) {
+    eval('$exportbtn_tpl = "' . $templates->get("application_ucp_exportbtn") . '";');
   }
 }
 
@@ -3634,22 +3999,29 @@ function application_ucp_filter()
         $filterurl .= $searchfield['fieldname'] . "=" . urlencode($mybb->input[$searchfield['fieldname']]) . "&";
       }
     }
+   /* $enddate_ingame = $mybb->settings['scenetracker_ingametime_tagend'];
+    $ingame =  explode(",", str_replace(" ", "", $mybb->settings['scenetracker_ingametime']));
+    foreach ($ingame as $monthyear) {   
+      $ingamelastday = $monthyear . "-" .  sprintf("%02d", $enddate_ingame);
+    }
 
     if (!empty($mybb->input['age_range'])) {
       if ($mybb->input['age_range'] != 50) {
-        $search_query .= "AND TIMESTAMPDIFF(YEAR, geburtstag, CURDATE()) BETWEEN {$mybb->input['age_range']} ";
+        $search_query .= "AND TIMESTAMPDIFF(YEAR, geburtstag, '{$ingamelastday}') BETWEEN {$mybb->input['age_range']} ";
       } else {
-        $search_query .= "AND TIMESTAMPDIFF(YEAR, geburtstag, CURDATE()) > {$mybb->input['age_range']} ";
+        $search_query .= "AND TIMESTAMPDIFF(YEAR, geburtstag, '{$ingamelastday}') > {$mybb->input['age_range']} ";
       }
-      $filterurl .= "age_range=" . $mybb->input['age_range'];
-    }
+      $filterurl .= "age_range >= " . $mybb->input['age_range'];
+      $search_url .= "perpage={$mybb->input['perpage']}&age_range=" . $mybb->input['age_range'];
 
-    if (!empty($mybb->input['fid4'])) {
-      $search_query .= "AND fid4 LIKE '%{$mybb->input['fid4']}%' ";
-    }
+    }*/
+    //z.B. nach Spielernamen filter (für fid4 4 ersetzen mit eurer ID) - entsprechend input in memberlist einfügen
+    // if (!empty($mybb->input['fid4'])) {
+    //   $search_query .= "AND fid4 LIKE '%{$mybb->input['fid4']}%' ";
+    // }
 
-    $search_url =  $filterurl;
-    $filterurl = substr($filterurl, 0, -1);
+    // $search_url =  $filterurl;
+    // $filterurl = substr($filterurl, 0, -1);
     // $selectstring = substr($selectstring, 0, -1);
     // $selectstring .= " from `".TABLE_PREFIX."_application_ucp_userfields` as um group by uid) as fields ON auid = u.uid";
 
@@ -4800,5 +5172,80 @@ function application_ucp_delete()
   $db->delete_query('application_ucp_userfields', "uid = " . (int)$user['uid'] . "");
 
   // add_task_log($task, "Reservierungen bereinigt uid war {$user['uid']} {$username}");
+}
+
+$plugins->add_hook('admin_rpgstuff_update_plugin', "application_admin_update_plugin");
+// application_admin_update_plugin
+function application_admin_update_plugin(&$table)
+{
+  global $db, $mybb, $lang;
+
+  $lang->load('rpgstuff_plugin_updates');
+  if ($mybb->input['action'] == 'add_update' and $mybb->get_input('plugin') == "application_ucp") {
+    application_ucp_add_settings("update");
+    application_ucp_add_templates("update");
+    application_ucp_replace_templates();
+    application_ucp_database("update");
+    $update_data_all = application_ucp_stylesheet_update();
+    //alle Themes bekommen
+    $theme_query = $db->simple_select('themes', 'tid, name');
+    require_once MYBB_ADMIN_DIR . "inc/functions_themes.php";
+    while ($theme = $db->fetch_array($theme_query)) {
+      //wenn im style nicht vorhanden, dann gesamtes css hinzufügen
+      $templatequery = $db->write_query("SELECT * FROM `" . TABLE_PREFIX . "themestylesheets` where tid = '{$theme['tid']}' and name ='application_ucp.css'");
+
+      if ($db->num_rows($templatequery) == 0) {
+        $css = application_ucp_css($theme['tid']);
+
+        $sid = $db->insert_query("themestylesheets", $css);
+        $db->update_query("themestylesheets", array("cachefile" => "application_ucp.css"), "sid = '" . $sid . "'", 1);
+        update_theme_stylesheet_list($theme['tid']);
+      }
+
+      //testen ob updatestring vorhanden - sonst an css in theme hinzufügen
+      $update_data_all = application_ucp_stylesheet_update();
+      //array durchgehen mit eventuell hinzuzufügenden strings
+      foreach ($update_data_all as $update_data) {
+        //hinzuzufügegendes css
+        $update_stylesheet = $update_data['stylesheet'];
+        //String bei dem getestet wird ob er im alten css vorhanden ist
+        $update_string = $update_data['update_string'];
+        //updatestring darf nicht leer sein
+        if (!empty($update_string)) {
+          //checken ob updatestring in css vorhanden ist - dann muss nichts getan werden
+          $test_ifin = $db->write_query("SELECT stylesheet FROM " . TABLE_PREFIX . "themestylesheets WHERE tid = '{$theme['tid']}' AND name = 'application_ucp.css' AND stylesheet LIKE '%" . $update_string . "%' ");
+          //string war nicht vorhanden
+          if ($db->num_rows($test_ifin) == 0) {
+            //altes css holen
+            $oldstylesheet = $db->fetch_field($db->write_query("SELECT stylesheet FROM " . TABLE_PREFIX . "themestylesheets WHERE tid = '{$theme['tid']}' AND name = 'application_ucp.css'"), "stylesheet");
+            //Hier basteln wir unser neues array zum update und hängen das neue css hinten an das alte dran
+            $updated_stylesheet = array(
+              "cachefile" => $db->escape_string('application_ucp.css'),
+              "stylesheet" => $db->escape_string($oldstylesheet . "\n\n" . $update_stylesheet),
+              "lastmodified" => TIME_NOW
+            );
+            $db->update_query("themestylesheets", $updated_stylesheet, "name='application_ucp.css' AND tid = '{$theme['tid']}'");
+            echo "In Theme mit der ID {$theme['tid']} wurde CSS hinzugefügt -  $update_string <br>";
+          }
+        }
+        update_theme_stylesheet_list($theme['tid']);
+      }
+    }
+  }
+  // Zelle mit dem Namen des Themes
+  $table->construct_cell("<b>" . htmlspecialchars_uni("Steckbriefplugin") . "</b>", array('width' => '70%'));
+
+  // Überprüfen, ob Update nötig ist 
+  $update_check = application_ucp_is_updated();
+  rebuild_settings();
+
+  if ($update_check) {
+    $table->construct_cell($lang->plugins_actual, array('class' => 'align_center'));
+  } else {
+    $table->construct_cell("<a href=\"index.php?module=rpgstuff-plugin_updates&action=add_update&plugin=application_ucp\">" . $lang->plugins_update . "</a>", array('class' => 'align_center'));
+  }
+
+
+  $table->construct_row();
 }
 
