@@ -80,7 +80,7 @@ function application_ucp_database($type = 'install')
 {
   global $db;
   if (!$db->table_exists("application_ucp_fields")) {
-  $db->write_query("CREATE TABLE `" . TABLE_PREFIX . "application_ucp_fields` (
+    $db->write_query("CREATE TABLE `" . TABLE_PREFIX . "application_ucp_fields` (
     `id` int(10) NOT NULL AUTO_INCREMENT,
     `fieldtyp` varchar(100) NOT NULL DEFAULT '',
     `fieldname` varchar(100) NOT NULL DEFAULT '',
@@ -112,18 +112,18 @@ function application_ucp_database($type = 'install')
   }
 
   if (!$db->table_exists("application_ucp_userfields")) {
-  $db->write_query("CREATE TABLE `" . TABLE_PREFIX . "application_ucp_userfields` (
+    $db->write_query("CREATE TABLE `" . TABLE_PREFIX . "application_ucp_userfields` (
   `id` int(10) NOT NULL AUTO_INCREMENT,
   `uid` int(10) NOT NULL DEFAULT 0,
   `value` LONGTEXT CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
   `fieldid` int(10) NOT NULL,
   UNIQUE KEY `uid_fieldidid` (`uid`,`fieldid`),
   PRIMARY KEY (`id`)
-  ) ENGINE=MyISAM CHARACTER SET utf8 COLLATE utf8_general_ci;");
+) ENGINE=MyISAM CHARACTER SET utf8 COLLATE utf8_general_ci;");
   }
 
   if (!$db->table_exists("application_ucp_management")) {
-  $db->write_query("CREATE TABLE `" . TABLE_PREFIX . "application_ucp_management` (
+    $db->write_query("CREATE TABLE `" . TABLE_PREFIX . "application_ucp_management` (
   `id` int(10) NOT NULL AUTO_INCREMENT,
   `uid` int(10) NOT NULL DEFAULT 0,
   `tid` int(10) NOT NULL DEFAULT 0,
@@ -137,22 +137,22 @@ function application_ucp_database($type = 'install')
   }
 
   if (!$db->table_exists("application_ucp_categories")) {
-  $db->write_query("CREATE TABLE `" . TABLE_PREFIX . "application_ucp_categories` (
-  `id` int(10) NOT NULL AUTO_INCREMENT,
-  `name` varchar(100) NOT NULL DEFAULT '',
-  `cat_order` int(10) NOT NULL DEFAULT '0',
-  PRIMARY KEY (`id`)
-) ENGINE=MyISAM CHARACTER SET utf8 COLLATE utf8_general_ci;");
+    $db->write_query("CREATE TABLE `" . TABLE_PREFIX . "application_ucp_categories` (
+      `id` int(10) NOT NULL AUTO_INCREMENT,
+      `name` varchar(100) NOT NULL DEFAULT '',
+      `cat_order` int(10) NOT NULL DEFAULT '0',
+      PRIMARY KEY (`id`)
+    ) ENGINE=MyISAM CHARACTER SET utf8 COLLATE utf8_general_ci;");
   }
 
   if (!$db->field_exists("aucp_extend", "users")) {
-  $db->add_column("users", "aucp_extend", "INT(10) NOT NULL DEFAULT 0");
+    $db->add_column("users", "aucp_extend", "INT(10) NOT NULL DEFAULT 0");
   }
   if (!$db->field_exists("aucp_extenddate", "users")) {
-  $db->add_column("users", "aucp_extenddate", "DATE NULL");
+    $db->add_column("users", "aucp_extenddate", "DATE NULL");
   }
   if (!$db->field_exists("wob_date", "users")) {
-  $db->add_column("users", "wob_date", "INT(10) NOT NULL DEFAULT 0");
+    $db->add_column("users", "wob_date", "INT(10) NOT NULL DEFAULT 0");
   }
   if ($type == 'update') {
     if (!$db->field_exists("cat_id", "application_ucp_fields")) {
@@ -168,15 +168,15 @@ function application_ucp_add_settings($type = 'install')
 
   global $db;
   if ($type == 'install') {
-  // Admin Einstellungen
-  $setting_group = array(
-    'name' => 'application_ucp',
-    'title' => 'Steckbrief im UCP',
-    'description' => 'Allgemeine Einstellungen für die Steckbriefe im UCP.',
-    'disporder' => 7, // The order your setting group will display
-    'isdefault' => 0
-  );
-  $gid = $db->insert_query("settinggroups", $setting_group);
+    // Admin Einstellungen
+    $setting_group = array(
+      'name' => 'application_ucp',
+      'title' => 'Steckbrief im UCP',
+      'description' => 'Allgemeine Einstellungen für die Steckbriefe im UCP.',
+      'disporder' => 7, // The order your setting group will display
+      'isdefault' => 0
+    );
+    $gid = $db->insert_query("settinggroups", $setting_group);
   } else {
     $gid = $db->fetch_field($db->write_query("SELECT gid FROM `" . TABLE_PREFIX . "settinggroups` WHERE name like 'application_ucp%' LIMIT 1;"), "gid");
   }
@@ -716,7 +716,7 @@ function application_ucp_css()
         gap: 10px;
     }
 
-    /*tabstyling/*
+    /*tabstyling*/
     .cat_tabs {
       margin: 0px;
       padding: 0px;
@@ -1033,7 +1033,7 @@ function application_ucp_updated_templates()
   $update_template[] = array(
     "templatename" => 'application_ucp_ucp_main',
     "change_string" => '{$application_ucp_js}',
-    "action" => 'add',
+    "action" => 'replace',
     "action_string" => '{$application_ucpcats_js}{$application_ucp_js}'
   );
   // $update_template[] = array(
@@ -1210,8 +1210,8 @@ function application_ucp_is_updated()
         $templateset = $db->fetch_field($db->simple_select("templatesets", "title", "sid = '{$old_template['sid']}'"), "title");
         echo ("Template {$update_template['templatename']} im Set {$templateset}'(SID: {$old_template['sid']}') muss aktualisiert werden.");
         return false;
-  }
-}
+      }
+    }
   }
 
   return true;
@@ -1729,6 +1729,7 @@ function application_ucp_admin_load()
       $select = array(
         "text" => "Textfeld",
         "textarea" => "Textarea",
+        "range" => "range",
         "select" => "Select",
         "select_multiple" => "Select Mehrfachauswahl",
         "checkbox" => "Checkbox",
@@ -1784,7 +1785,7 @@ function application_ucp_admin_load()
       $select_dep = array("none" => "keine Abhängigkeit");
       while ($deps = $db->fetch_array($select_dep_query)) {
         $name = $deps['fieldname'];
-        $select_dep[$name] = $deps['label'];
+        $select_dep[$name] = $deps['label'] . " - " . $name;
       }
       //von welchem feld
       $form_container->output_row(
@@ -2354,6 +2355,7 @@ function application_ucp_admin_load()
       $select = array(
         "text" => "Textfeld",
         "textarea" => "Textarea",
+        "range" => "Range",
         "select" => "Select",
         "select_multiple" => "Select Mehrfachauswahl",
         "checkbox" => "Checkbox",
@@ -2390,7 +2392,7 @@ function application_ucp_admin_load()
       $select_dep = array("none" => "keine Abhängigkeit");
       while ($deps = $db->fetch_array($select_dep_query)) {
         $name = $deps['fieldname'];
-        $select_dep[$name] = $deps['label'];
+        $select_dep[$name] = $deps['label'] . " - " . $name;
       }
 
       $form_container->output_row(
@@ -2862,37 +2864,28 @@ function application_ucp_usercp()
   $application_ucp_js = "<script> $(function() {
     //initial alle abhängigen verstecken
     $('.depends').hide();
-
-    //alle checkboxen einmal durchgehen und schauen welche aktiviert sind.
-
-    var checkboxen = $('input[type=checkbox]:checked');
-
-    checkboxen.each(function() {
-      var string = $(this).val();
-      var str = string.replace(/[^A-Za-z0-9]+/g, '');
+    $('.depends').children().hide();
     
-      $('.dep_value_'+str).each(function() {
-        //checkbox ist aktiviert. - div box wrapper, label, hideinfo, etc. anzeigen
-        $(this).show();
-        $(this).children().show();
-      });
-    });
-
     $('select').each(function() {
       var selectName = $(this).attr('name');
       var selectedOptions = $(this).find('option:selected');
-      
-      // Durchlaufe jede ausgewählte Option des aktuellen Select-Elements
+      var string = $(this).val();
+      console.log(selectName + 'ausgewählt ist' +string);
+      // // Durchlaufe jede ausgewählte Option des aktuellen Select-Elements
       selectedOptions.each(function() {
         var string = $(this).val();
         var str = string.replace(/[^A-Za-z0-9]+/g, '');
-        $('.dep_value_'+str).each(function() {
+        console.log(string + '  schleife ausgewählt ist' +str);
+        $('.dep_value_' + str).each(function() {
+        console.log('-- in each stringklasse ist ' +'.dep_value_' + str);
           //checkbox ist aktiviert. - div box wrapper, label, hideinfo, etc. anzeigen
-          $(this).show();
-          $(this).children().show();
+          $('.dep_value_' + str).show();
+           $('.dep_value_' + str).children().show();
         });
       });
     });
+
+    //Todo Auch für radiobuttons und multiselect
     ";
 
   //Javascript und markup für Kategorien.
@@ -3024,43 +3017,39 @@ function application_ucp_usercp()
       //checkbox wird aktiviert oder deaktiviert
 
       $('.{$type['dependency']}_check').off('change').on('change', function(){
-
           //Hier testen wir, ob ein Feld versteckt / gezeigt werden muss, wenn eine Checkbox/Select aktiviert wird
          
           //Es handelt sich um ein SELECT Feld
           if(this.nodeName == 'SELECT') {
+            if ($(this).prop('multiple')) {
+            }
             //alle options bekommen
-            var selectedOptions = $(this).find('option');
-            //diese durchgehen
-            selectedOptions.each(function() {
-              //wert bekommen
-              var string = $(this).val();
-              // ersetzen
-              var str = string.replace(/[^A-Za-z0-9]+/g, '');
+            var selectedOptions = $(this).selectedValue;
+         
+            var string = $(this).val() || '';
+            var str = string.replace(/[^A-Za-z0-9]+/g, '');
+            //erst einmal wieder ausblenden.
+            $('.wrap_dep_{$type['dependency']}').hide();
+            $('.wrap_dep_{$type['dependency']}').hide().find('select').prop('selectedIndex', 0).trigger('change');
+            $('.wrap_dep_{$type["dependency"]}').children().hide();
 
-              //wird es ausgewählt
-              if($(this).prop('selected')) {              
-                $('.wrap_dep_{$type['dependency']}.dep_value_'+str).each(function() {
-                  //checkbox ist aktiviert. - div box wrapper, label, hideinfo, etc. anzeigen
-                  $(this).show();
-                  $(this).children().show();
-                });
-              } else { // oder wieder abgewählt
-                $('.wrap_dep_{$type['dependency']}.dep_value_'+str).each(function() {
-                  $(this).hide();
-                  $(this).children().hide();
-                });
-              }
+            $('.wrap_dep_{$type['dependency']}.dep_value_'+str).each(function() {
+              //checkbox ist aktiviert. - div box wrapper, label, hideinfo, etc. anzeigen
+              $(this).show();
+              $(this).children().show();
             });
+              
           }  else if(this.nodeName == 'INPUT') {
             //kein select sondern Radio oder Checkbox
-
-              //wert bekommen
-              var string = $(this).val();
-              // ersetzen
-              var str = string.replace(/[^A-Za-z0-9]+/g, '');
+            if (this.type == 'checkbox') {
+              console.log('Es ist eine Checkbox!');
               //wird es ausgewählt
               if($(this).is(':checked')){
+                //wert bekommen
+                var string = $(this).val();
+                var str = string.replace(/[^A-Za-z0-9]+/g, '');
+                console.log('inputtest on change' + string);
+                // ersetzen
                 //dann abhängige einblenden
                 $('.wrap_dep_{$type['dependency']}.dep_value_'+str).each(function() {
                 //checkbox ist aktiviert. - div box wrapper, label, hideinfo, etc. anzeigen
@@ -3073,6 +3062,22 @@ function application_ucp_usercp()
                 $(this).children().hide();
                 });
               }
+              } else if (this.type == 'radio') {
+                var string = $(this).val();
+                var str = string.replace(/[^A-Za-z0-9]+/g, '');
+                console.log('Es ist ein Radio-Button!'+str);
+                $('.wrap_dep_{$type['dependency']}').hide();
+                $('.wrap_dep_{$type["dependency"]}').children().hide();
+
+                $('.wrap_dep_{$type['dependency']}.dep_value_'+str).each(function() {
+                  //checkbox ist aktiviert. - div box wrapper, label, hideinfo, etc. anzeigen
+                  $(this).show();
+                  $(this).children().show();
+                });
+              }
+
+            
+              
           }    
         });   
       ";
@@ -3133,6 +3138,14 @@ function application_ucp_usercp()
       <input type=\"{$typ}\" class=\"{$type['fieldname']} $dep_classname \" value=\"{$get_value['value']}\" name=\"{$type['id']}\" id=\"{$type['fieldname']}\" style=\"{$hidden}\" {$required} {$readonly}/>
       ";
     }
+
+    //Feld ist ein range Fenld, Datum oder Datum mit Zeit
+    else if ($typ == "range") {
+      $fields .= "<label class=\"app_ucp_label range\" for=\"{$type['fieldname']}\" style=\"{$hidden}\" id=\"label_{$type['fieldname']}\">{$type['label']}{$requiredstar}:</label> 
+          " . $fielddescr . "
+          <input type=\"{$typ}\" class=\"range {$type['fieldname']} $dep_classname \" value=\"{$get_value['value']}\" min=\"0\" max=\"100\" name=\"{$type['id']}\" id=\"{$type['fieldname']}\" style=\"{$hidden}\" {$required} {$readonly}/>
+          ";
+    }
     //Feld ist Textarea
     else if ($typ == "textarea") {
       $fields .= "<label for=\"{$type['fieldname']}\" class=\"app_ucp_label\" style=\"{$hidden}\" id=\"label_{$type['fieldname']}\">{$type['label']}{$requiredstar}:</label>
@@ -3143,7 +3156,9 @@ function application_ucp_usercp()
     else if ($typ == "select" || $typ == "select_multiple") {
       //auswählbare Optionen holen und in array speichern
       $options = explode(",", $type['options']);
-      $selects = "";
+      // <option value="" selected disabled>Bitte wählen...</option>
+      $selected = "selected";
+      $selects = "<option value=\"\" {$selected} disabled>Bitte wählen...</option>";
 
       //Mehrfachauswahl? 
       if ($typ == "select_multiple") {
@@ -3284,9 +3299,9 @@ function application_ucp_usercp()
     <div class=\"app_ucp_triggercon\">
     <label class=\"app_ucp_label trigger\"  id=\"label_trigger\">
    {$lang->application_ucp_trigger}</label>
-    <div class=\"application_ucp_checkboxes\"  id=\"box_trigger\">
-      <input type=\"text\" class=\"input_trigger\" placeholder=\"{$lang->application_ucp_trigger}\" id=\"trigger\" name=\"-4\" value=\"{$trigger}\" \>
-    </div>
+      <div class=\"application_ucp_checkboxes\"  id=\"box_trigger\">
+        <input type=\"text\" class=\"input_trigger\" placeholder=\"{$lang->application_ucp_trigger}\" id=\"trigger\" name=\"-4\" value=\"{$trigger}\" \>
+      </div>
     </div>
     ";
   }
@@ -3638,8 +3653,8 @@ function application_ucp_usercp()
 
       //blurred lines kram mit abfangen für den fall, dass ich es vergesse vorm upload ins gitlab rauszunehmen :D
       //kann gerne als beispiel für eigenen ergänzungen genommen werden. Wir checken hier ob bestimmte Dinge eingetragen/ausgefüllt wurden
-      // $firststeps_check = "";
-      // //jobliste - abfangen ob es die Tabelle gibt oder nicht
+      $firststeps_check = "";
+      //jobliste - abfangen ob es die Tabelle gibt oder nicht
       // if ($db->table_exists("jl_entry")) {
       //   //gibt es einen Eintrag
       //   $fetch_job = $db->simple_select("jl_entry", "*", "je_uid= {$mybb->user['uid']}");
@@ -3680,7 +3695,7 @@ function application_ucp_usercp()
       // //und wir holen uns noch den Spielernamen der bei uns im Profilfeld mit ID 4 gespeichert ist 
       // $firststeps_check .= "<li>gespielt von {$mybb->user['fid4']}</li>";
 
-      // //das ganze wird in der Variable $firststeps_check gespeichert, schreiben wir diese nun ins ACP, wird in der Message der Inhalt eingefügt
+      //das ganze wird in der Variable $firststeps_check gespeichert, schreiben wir diese nun ins ACP, wird in der Message der Inhalt eingefügt
       // $threadmessage = str_replace("\$firststeps_check", $firststeps_check, $threadmessage);
 
       //Wenn ihr den ganzen Steckbrief im Thread haben wollt, könnt ihr euch, die zwei Zeilen hier einfach einkommentieren
@@ -3999,7 +4014,7 @@ function application_ucp_filter()
         $filterurl .= $searchfield['fieldname'] . "=" . urlencode($mybb->input[$searchfield['fieldname']]) . "&";
       }
     }
-   /* $enddate_ingame = $mybb->settings['scenetracker_ingametime_tagend'];
+    /* $enddate_ingame = $mybb->settings['scenetracker_ingametime_tagend'];
     $ingame =  explode(",", str_replace(" ", "", $mybb->settings['scenetracker_ingametime']));
     foreach ($ingame as $monthyear) {   
       $ingamelastday = $monthyear . "-" .  sprintf("%02d", $enddate_ingame);
@@ -4166,7 +4181,7 @@ function application_ucp_showthread()
         $aucp_responsible_mod = $lang->sprintf($lang->application_ucp_responsible, $responsible_link);
       } else {
         $aucp_responsible_mod = $lang->application_ucp_noresponsible;
-        if ($usergroup == "$mybb->settings['application_ucp_approved']") {
+        if ($usergroup == $mybb->settings['application_ucp_approved']) {
           $aucp_responsible_mod = "Charakter angenommen.";
         }
       }
@@ -5174,6 +5189,185 @@ function application_ucp_delete()
   // add_task_log($task, "Reservierungen bereinigt uid war {$user['uid']} {$username}");
 }
 
+
+/***
+ * Zugriff auf die Infos der Steckis in Laras Lexikon Plugin zugänglich machen
+ * Todo 
+ * In Laras lexicon.php suche nach eval("\$page = \"" . $templates->get("lexicon_entry") . "\";");
+ * darüber einfügen $plugins->run_hooks("lexicon_entry");
+ */
+// lexicon_entry_test
+// $plugins->add_hook("lexicon_entry", "application_ucp_lexicon");
+
+//Listen verfügbar machen
+$plugins->add_hook("lexicon_entry", "application_ucp_lists");
+function application_ucp_lists($entrytext)
+{
+  global $db, $cache, $mybb, $user, $html_str_arr, $entrytext;
+
+  //input bekommen - php8 save mit funktion von mybb
+  $page = $mybb->get_input("page");
+
+  //nur auf diesen beiden Lexicon seiten momentan
+  if ($page == "alphaplatoon" || $page == "bravo_platoon" || $page == "charlie_platoon" || $page == "delta_platoon") {
+
+    //Mögliche Options für diese Seiten, von denen wir infos ziehen wollen
+    $get_inputs = $db->fetch_field($db->simple_select("application_ucp_fields", "options", "id = 34"), "options");
+    //daraus ein array baue
+    $input_arr = explode(",", $get_inputs);
+
+
+    //Die Optionen durchgehen
+    foreach ($input_arr as $input) {
+      // alpha - aktiv,bravo - aktiv,charlie - aktiv,delta - aktiv,BUD/S,alpha - ehemalig, bravo - ehemalig,charlie - ehemalig, delta - ehemalig,kein Seal
+      //ersetzen weil keine sonderzeichen
+      $teamstr_arr = preg_replace('/[^A-Za-z0-9\_]/', '', $input);
+
+      //pfusch um auf die richtigen felder zugreifen zu können
+      $sortactiv = "";
+      $activeflag = 0;
+      if ($input == "alpha - aktiv") {
+        $teamstr = "alpha";
+        $activeflag = 1;
+      }
+      if ($input == "alpha - ehemalig") {
+        $teamstr = "alpha";
+      }
+      if ($input == "bravo - aktiv") {
+        $teamstr = "bravo";
+        $activeflag = 1;
+      }
+      if ($input == "bravo - ehemalig") {
+        $teamstr = "bravo";
+      }
+      if ($input == "charlie - aktiv") {
+        $teamstr = "charlie";
+        $activeflag = 1;
+      }
+      if ($input == "charlie - ehemalig") {
+        $teamstr = "charlie";
+      }
+      if ($input == "delta - aktiv") {
+        $teamstr = "delta";
+        $activeflag = 1;
+      }
+      if ($input == "delta - ehemalig") {
+        $teamstr = "delta";
+      }
+      if ($activeflag == 1) {
+        $sortactiv = " FIELD(
+          navy_squad, 
+          'Squad 1', 
+          'Squad 2', 
+          'Andere',
+          ''
+        ),";
+      }
+      $html_str = "";
+      $html_str  = "<div class='bl-platoon members_wrap'>
+      ";
+
+      $all_user_querie_str = "
+      SELECT CAST(SUBSTRING(navy_rufzeichen, 7, 2) AS UNSIGNED) as sort, u.uid, u.username, u.usergroup, u.avatar, uf.*, fields.* FROM " . TABLE_PREFIX . "users u 
+        LEFT JOIN " . TABLE_PREFIX . "userfields uf ON ufid = u.uid " .
+        application_ucp_buildsql("all") . " 
+        WHERE navy_team LIKE '%$input%' ORDER BY
+        " . $sortactiv . "
+        sort";
+      // echo "      SELECT CAST(SUBSTRING(navy_rufzeichen, 7, 2) AS UNSIGNED) as sort, u.uid, u.username, u.usergroup, u.avatar, uf.*, fields.* FROM " . TABLE_PREFIX . "users u 
+      //   LEFT JOIN " . TABLE_PREFIX . "userfields uf ON ufid = u.uid " .
+      //   application_ucp_buildsql("all") . " 
+      //   WHERE navy_team LIKE '%$input%' ORDER BY
+      //   " . $sortactiv . "
+      //   sort";
+      $all_user_querie = $db->write_query($all_user_querie_str);
+      $old = "";
+      while ($list_all = $db->fetch_array($all_user_querie)) {
+
+        if (strpos($input, "ehemalig")) {
+          $username = build_profile_link($list_all['username'], $list_all['uid']);
+          // echo "Hallooo  $username $teamstr";
+          $html_str .= "<li>
+          {$username} - <i>{$list_all["nickname"]}</i> <br> 
+          von " . $list_all["navy_{$teamstr}_formerly_since"] . " bis " . $list_all["navy_{$teamstr}_formerly_until"] . " - 
+          Position: " . $list_all["navy_position"] . "
+          </li>
+          ";
+        } else {
+          if ($list_all["navy_squad"] != $old) {
+            if ($old != "") {
+              $add_end = "</ul>";
+            } else {
+              $add_end = "";
+            }
+            $html_str .= " {$add_end}
+          <h2 class='bl-heading2'>{$list_all["navy_squad"]}</h2> 
+          <ul class='bl-list'>";
+          }
+
+          $username = build_profile_link($list_all['username'], $list_all['uid']);
+          $html_str .= "
+        <li>
+        {$username} - <i>{$list_all["nickname"]}</i> <span style='font-size:0.8em'>(" . $list_all["navy_rufzeichen"] . ")</span> <br> 
+        Seit: " . $list_all["navy_{$teamstr}_active"] . " - 
+        Position: " . $list_all["navy_position"] . "
+        </li>
+        ";
+
+          $old = $list_all["navy_squad"];
+        }
+      }
+      // echo $html_str;
+      $html_str  .= "
+      </div>
+      ";
+      if (strpos($input, "ehemalig")) {
+        $html_str_arr[$teamstr_arr] = array(
+          "replace-var" => $teamstr_arr . "-replace",
+          "replace-text" => "<ul class='bl-list'>" . $html_str . "</ul>"
+        );
+      } else {
+        $html_str_arr[$teamstr_arr] = array(
+          "replace-var" => $teamstr_arr . "-replace",
+          "replace-text" => $html_str
+        );
+      }
+    }
+
+    //Text im Lexicon ersetzen
+    foreach ($html_str_arr as $replace) {
+      // var_dump($replace);
+      $entrytext = str_replace($replace['replace-var'], $replace['replace-text'], $entrytext);
+    }
+    // var_dump($html_str_arr);
+  }
+}
+
+
+// Listen verwalten in ACP
+$plugins->add_hook("admin_load", "application_ucp_manage_lists");
+function application_ucp_manage_lists()
+{
+
+  global $mybb, $db, $lang, $page, $run_module, $action_file;
+
+  $lang->load('application_ucp');
+
+  if ($page->active_action != 'auto_lists') {
+    return false;
+  }
+
+  //Sortierungs art - alphabet - jeder buchstabe 
+  //nach array (a,b,c,d) - 
+
+  // 1 Feld sortieren
+  // Alle Profilfelder/Steckifelder 
+
+  // Feld sortieren aufgetrennt nach einem anderen (z.B Namen - aufgeteilt nach Geschlecht) 
+
+}
+
+
 $plugins->add_hook('admin_rpgstuff_update_plugin', "application_admin_update_plugin");
 // application_admin_update_plugin
 function application_admin_update_plugin(&$table)
@@ -5248,4 +5442,3 @@ function application_admin_update_plugin(&$table)
 
   $table->construct_row();
 }
-
