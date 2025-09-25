@@ -31,13 +31,16 @@ $l['application_ucp_affected_ucp'] = 'Betroffene Mitglieder';
 $l['application_ucp_extbtn'] = 'Frist Verlängern';
 $l['application_ucp_save'] = 'Speichern';
 $l['application_ucp_readybtn'] = 'Speichern & zur Kontrolle';
+$l['application_ucp_readybtn_prewob'] = 'Zum Pre Wob einreichen';
+
+ 
 $l['application_ucp_saveerror'] = 'Du kannst deinen Steckbrief nicht einreichen, ehe nicht alle Pflichtfelder ausgefuellt sind. Wenn du neue betroffene Mitglieder eingetragen hattest, musst du diese vor dem Speichern neu eintragen.';
 $l['application_ucp_export'] = 'Steckbrief exportieren';
 $l['application_ucp_infoheader'] = 'Du bist seit dem {1} registriert. Du hast {2} verlängert und Zeit bis zum {3}.';
 $l['application_ucp_correction'] = 'Dein Steckbrief wurde eingereicht.';
 
 //Memberprofile
-$l['application_ucp_profile_trigger'] = "Triggerwarnung:";
+$l['application_ucp_profile_trigger'] = "Inhaltswarnung:";
 
 //INDEX
 $l['application_ucp_index_extinfo'] = "Du hast {1} Mal verlängert.";
@@ -53,7 +56,7 @@ $l['application_ucp_index_mod_steckialert_userhascorrected'] =  "Du hast den Ste
 //WOB - Thread
 $l['application_ucp_thread_wantedurltitle'] = "Charakter ist ein Gesuch";
 $l['application_ucp_thread_nowanted'] = "Kein Gesuch";
-$l['application_ucp_thread_trigger'] = "Triggerwarnung:";
+$l['application_ucp_thread_trigger'] = "Inhaltswarnung:";
 $l['application_ucp_wobgroups'] = 'Primäre Benutzergruppe *';
 $l['application_ucp_wobgroups2'] = 'Sekundäre Benutzergruppe';
 $l['application_ucp_nonewobgroups2'] = 'Keine sekundäre Gruppe';
