@@ -5,9 +5,14 @@ Das Plugin ermöglicht es, unabhängig von Profilfeldern, Felder für den Steckb
 	
 https://github.com/katjalennartz/application_ucp/wiki
 
-**Updates**		 
-- forenadresse/update_application.php 		 
-- im Browser aufrufen
+- **Update: September 2025**  
+- version 1.2
+- Hinzufügen Range Felder
+- Hinzufügen Zwischen WoB
+- Hinzufügen Range Felder (gegensätzliche Eigenschaften  und Eingeschaften als Range Wert)
+- Integration Laras Rpg Stuff Modul (leichteres Updaten direkt im ACP)
+- Verschieben von der Steckbriefverwaltung in RPG Reiter im ACP
+- TODO Verwaltung bei threads Steckbrief manager
 
 **Update: September 2024**  
 - version 1.1.4
