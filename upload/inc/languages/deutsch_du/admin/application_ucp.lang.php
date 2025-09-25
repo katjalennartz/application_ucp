@@ -45,7 +45,7 @@ $l['application_ucp_namecat'] = 'Eine Kategorie erstellen';
 $l['application_ucp_managecats_dscr'] = 'Kategorien für Aufteilen von Steckbrieffeldern verwalten';
 $l['application_ucp_add_cat_name'] = 'Kategoriename';
 $l['application_ucp_add_cat_name_descr'] = 'Gebe hier einen Namen für die Kategorie ein.';
-$l['application_ucp_managecats_delete_ask'] ='Soll die Kategorie wirklich gelöscht werden?';
+$l['application_ucp_managecats_delete_ask'] = 'Soll die Kategorie wirklich gelöscht werden?';
 $l['application_ucp_add_cat_order'] = 'Reihenfolge';
 $l['application_ucp_add_cat_order_descr'] = 'An welcher Stelle soll die Kategorie sein';
 
@@ -78,6 +78,11 @@ $l['application_ucp_add_fieldtyp_descr'] = 'Welchen Typ soll das Feld haben?';
 $l['application_ucp_add_fieldoptions'] = 'Auswahloptionen des Felds';
 $l['application_ucp_add_fieldoptions_descr'] = 'Die bei Select, Select-Multiple, Checkbox und Radiobuttons möglichen Antwortoptionen. Sonst leer lassen.<br/>Mit \',\' getrennt. Zum Beispiel: Ravenclaw, Hufflepuff, Gryffindor, Slytherin';
 
+$l['application_ucp_add_range_left'] = 'Range Wert links';
+$l['application_ucp_add_range_left_descr'] = 'Wenn du als Typ "Range" ausgewählt hast, dann hier den linken Wert angeben.';
+$l['application_ucp_add_range_right'] = 'Range Wert rechts';
+$l['application_ucp_add_range_right_descr'] = 'Wenn du als Typ "Range" ausgewählt hast, dann hier den rechten Wert angeben.';
+
 $l['application_ucp_add_fieldeditable'] = 'Editierbar?';
 $l['application_ucp_add_fieldeditable_descr'] = 'Ist das Feld auch nach der Annahme des Steckbriefs editierbar?';
 
@@ -90,6 +95,9 @@ $l['application_ucp_add_fielddependency_descr'] = 'Ist das Feld nur sichtbar, we
 $l['application_ucp_add_fielddependencyval'] = 'Abhängigkeitswert?';
 $l['application_ucp_add_fielddependencyval_descr'] = 'Von welcher auswählbaren Option soll das Feld abhängigkeit? Z.B "Hogwarts".<br/> Bei mehreren mit Komma getrennt, aber <b>ohne</b> Leertaste angeben: Also "Ravenclaw,Hufflepuff".<br/> Leer lassen wenn keine Abhängigkeit.<br/>
  <b>Achtung:</b> genauso geschrieben, wie in den Auswahloptionen des Felds, welches bei Abhängigkeit gewählt ist!';
+ 
+$l['application_ucp_add_prewob'] = 'Pre/Zwischen-Wob';
+$l['application_ucp_add_prewob_descr'] = 'Soll es ein Pre/Zwischen-Wob geben';
 
 $l['application_ucp_add_fieldpostbit'] = 'Anzeige Postbit?';
 $l['application_ucp_add_fieldpostbit_descr'] = 'Soll das Feld im Postbit anzeigbar sein?';
@@ -136,6 +144,9 @@ $l['application_ucp_add_fieldvideo_descr'] = 'Dürfen Videos in dem Feld eingebu
 
 $l['application_ucp_add_fieldsort'] = 'Darstellungsreihenfolge?';
 $l['application_ucp_add_fieldsort_descr'] = 'An welcher Position soll das Feld dargestellt werden?';
+
+$l['application_ucp_add_cat'] = 'Kategorie?';
+$l['application_ucp_add_cat_descr'] = 'Wenn du Kategorien benutzt, wähle hier aus, zu welcher das Feld gehört?';
 
 $l['application_ucp_save'] = 'Speichern';
 
