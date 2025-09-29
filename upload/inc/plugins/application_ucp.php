@@ -4610,22 +4610,6 @@ $(document).ready(function () {
     $errors = array();
     $errors = application_ucp_check_save($getwobs, $fields_numerickey);
 
-    //testen ob wingbuddyfelder ausgefüllt sind
-    $reiter = $flieger = "";
-    $reiter = $db->fetch_field($db->simple_select("application_ucp_userfields", "*", "uid = '{$mybb->user['uid']}' AND fieldid = 5"), "value");
-    $flieger = $db->fetch_field($db->simple_select("application_ucp_userfields", "*", "uid = '{$mybb->user['uid']}' AND fieldid = 26"), "value");
-    if ($reiter == "Reiter" || $flieger == "Flieger") {
-      $wingbuddy_arr = array();
-      $wingbuddy_arr = $db->fetch_array($db->simple_select("wingbuddy", "*", "w_uid = '{$mybb->user['uid']}'"));
-
-      if ($wingbuddy_arr['w_nickname'] == "") {
-        $errors['wingbuddy_nickname'] = "Spitzname: Dein Flügelfreund hat noch keinen Spitznamen.";
-      }
-      if ($reiter != "" && $wingbuddy_arr['w_dragonrelic'] == "") {
-        $errors['wingbuddy_drachenmal'] = "Drachenmal: Du hast noch nicht angegeben, an welcher Stelle sich das Drachenmal deines Charakters befindet.";
-      }
-    }
-
     if (!empty($errors)) {
       $errormessage = "";
       foreach ($errors as $error) {
@@ -5136,7 +5120,7 @@ function application_ucp_filter()
         $search_url .= "{$searchfield['fieldname']}=" . $mybb->input[$searchfield['fieldname']] . "&";
       }
     }
-
+    //TODO Einfügen in Settings! 
     $enddate_ingame = $mybb->settings['scenetracker_ingametime_tagend'];
     $ingame =  explode(",", str_replace(" ", "", $mybb->settings['scenetracker_ingametime']));
     foreach ($ingame as $monthyear) {
