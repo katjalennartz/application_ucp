@@ -247,6 +247,59 @@ function application_ucp_add_settings($type = 'install')
     $gid = $db->fetch_field($db->write_query("SELECT gid FROM `" . TABLE_PREFIX . "settinggroups` WHERE name like 'application_ucp%' LIMIT 1;"), "gid");
   }
 
+  $setting_array = application_ucp_setting_array();
+
+  if ($type == 'install') {
+    foreach ($setting_array as $name => $setting) {
+      $setting['name'] = $name;
+      $setting['gid'] = $gid;
+      $db->insert_query('settings', $setting);
+    }
+  }
+
+  // if ($type == 'update') {
+
+  //   foreach ($setting_array as $name => $setting) {
+  //     $setting['name'] = $name;
+  //     $setting['gid'] = $gid;
+
+  //     //alte einstellung aus der db holen
+  //     $check = $db->write_query("SELECT * FROM `" . TABLE_PREFIX . "settings` WHERE name = '{$name}'");
+  //     $check2 = $db->write_query("SELECT * FROM `" . TABLE_PREFIX . "settings` WHERE name = '{$name}'");
+  //     $check = $db->num_rows($check);
+  //     if ($check == 0) {
+  //       $db->insert_query('settings', $setting);
+  //       echo "AUCP Setting: {$name} wurde hinzugefügt.";
+  //     } else {
+
+  //       //die einstellung gibt es schon, wir testen ob etwas verändert wurde
+  //       while ($setting_old = $db->fetch_array($check2)) {
+  //         if (
+  //           $setting_old['title'] != $setting['title'] ||
+  //           $setting_old['description'] != $setting['description'] ||
+  //           $setting_old['optionscode'] != $setting['optionscode'] ||
+  //           $setting_old['disporder'] != $setting['disporder']
+  //         ) {
+  //           //wir wollen den value nicht überspeichern, also nur die anderen werte aktualisieren
+  //           $update_array = array(
+  //             'title' => $setting['title'],
+  //             'description' => $setting['description'],
+  //             'optionscode' => $setting['optionscode'],
+  //             'disporder' => $setting['disporder']
+  //           );
+  //           $db->update_query('settings', $update_array, "name='{$name}'");
+  //           echo "AUCP Setting: {$name} wurde aktualisiert.<br>";
+  //         }
+  //       }
+  //     }
+  //   }
+  //   echo "<p>AUCP Einstellungen wurden aktualisiert</p>";
+  // }
+  rebuild_settings();
+}
+
+function application_ucp_setting_array()
+{
   $setting_array = array(
     'application_ucp_applicants' => array(
       'title' => 'Bewerbergruppe',
@@ -449,57 +502,8 @@ function application_ucp_add_settings($type = 'install')
       'disporder' => 27
     ),
   );
-
-  $gid = $db->fetch_field($db->write_query("SELECT gid FROM `" . TABLE_PREFIX . "settinggroups` WHERE name like 'application_ucp%' LIMIT 1;"), "gid");
-
-  if ($type == 'install') {
-    foreach ($setting_array as $name => $setting) {
-      $setting['name'] = $name;
-      $setting['gid'] = $gid;
-      $db->insert_query('settings', $setting);
-    }
-  }
-
-  if ($type == 'update') {
-    foreach ($setting_array as $name => $setting) {
-      $setting['name'] = $name;
-      $setting['gid'] = $gid;
-
-      //alte einstellung aus der db holen
-      $check = $db->write_query("SELECT * FROM `" . TABLE_PREFIX . "settings` WHERE name = '{$name}'");
-      $check2 = $db->write_query("SELECT * FROM `" . TABLE_PREFIX . "settings` WHERE name = '{$name}'");
-      $check = $db->num_rows($check);
-      if ($check == 0) {
-        $db->insert_query('settings', $setting);
-        echo "Setting: {$name} wurde hinzugefügt.";
-      } else {
-
-        //die einstellung gibt es schon, wir testen ob etwas verändert wurde
-        while ($setting_old = $db->fetch_array($check2)) {
-          if (
-            $setting_old['title'] != $setting['title'] ||
-            $setting_old['description'] != $setting['description'] ||
-            $setting_old['optionscode'] != $setting['optionscode'] ||
-            $setting_old['disporder'] != $setting['disporder']
-          ) {
-            //wir wollen den value nicht überspeichern, also nur die anderen werte aktualisieren
-            $update_array = array(
-              'title' => $setting['title'],
-              'description' => $setting['description'],
-              'optionscode' => $setting['optionscode'],
-              'disporder' => $setting['disporder']
-            );
-            $db->update_query('settings', $update_array, "name='{$name}'");
-            echo "Setting: {$name} wurde aktualisiert.<br>";
-          }
-        }
-      }
-    }
-    echo "<p>Einstellungen wurden aktualisiert</p>";
-  }
-  rebuild_settings();
+  return $setting_array;
 }
-
 /**
  * Funktion um die Templates hinzuzufügen - einfachere Verwendung für Upgrades 
  */
@@ -517,13 +521,41 @@ function application_ucp_add_templates($type = 'install')
     );
     $db->insert_query("templategroups", $templategrouparray);
   }
+  $template = application_ucp_templates();
+  foreach ($template as $row) {
+    $check = $db->num_rows($db->simple_select("templates", "title", "title LIKE '{$row['title']}'"));
+    if ($check == 0) {
+      $db->insert_query("templates", $row);
+      echo "AUCP Neues Template {$row['title']} wurde hinzugefügt.<br>";
+      if ($row['title' == 'application_ucp_profile_trigger']) {
+        echo 'AUCP <b>Achtung</b>: Variable {$application_ucp_profile_trigger} in member_profile an die Stelle einfügen, wo die Inhalts Warnung angezeigt werden soll.</br>';
+      }
+    }
+  }
+}
 
+/**
+ * Funktion, die ein Array mit allen Templates zurückgibt
+ */
+function application_ucp_templates()
+{
   $template[] = array(
     "title" => 'application_ucp_index',
     "template" => '<div class="red_alert">
       {$application_ucp_index_modbit}
       {$application_ucp_index_bit}
     </div>
+      ',
+    "sid" => "-2",
+    "version" => "1.0",
+    "dateline" => TIME_NOW
+  );
+  $template[] = array(
+    "title" => 'application_showthread_modbutton',
+    "template" => '<form method="post">
+              <input type="hidden" name="uid_applicant" value="{$uid_applicant}" />
+              <input type="submit" value="{$valuetext}" name="correction{$wob}" class="button" />
+          </form>     
       ',
     "sid" => "-2",
     "version" => "1.0",
@@ -847,17 +879,7 @@ function application_ucp_add_templates($type = 'install')
     "dateline" => TIME_NOW
   );
 
-
-  foreach ($template as $row) {
-    $check = $db->num_rows($db->simple_select("templates", "title", "title LIKE '{$row['title']}'"));
-    if ($check == 0) {
-      $db->insert_query("templates", $row);
-      echo "Neues Template {$row['title']} wurde hinzugefügt.<br>";
-      if ($row['title' == 'application_ucp_profile_trigger']) {
-        echo '<b>Achtung</b>: Variable {$application_ucp_profile_trigger} in member_profile an die Stelle einfügen, wo die Inhalts Warnung angezeigt werden soll.</br>';
-      }
-    }
-  }
+  return $template;
 }
 
 /**
@@ -1041,10 +1063,11 @@ function application_ucp_activate()
   {$give_wob}
   ');
 
+
   find_replace_templatesets("member_profile", "#" . preg_quote('<td width="75%">') . "#i", '<td width="75%"> {$application_ucp_profile_trigger}');
 
 
-  find_replace_templatesets("showthread", "#" . preg_quote('{$thread[\'subject\']}') . "#i", '{$thread[\'subject\']} {$aucp_responsible_mod}');
+  find_replace_templatesets("showthread", "#" . preg_quote('{$thread[\'subject\']}') . "#i", '{$thread[\'subject\']} {$aucp_responsible_mod} {$application_showthread_modbutton}');
   //postbit classic 
   find_replace_templatesets("postbit_classic", "#" . preg_quote('{$post[\'user_details\']}') . "#i", '{$post[\'user_details\']}{$post[\'aucp_fields\']}');
   //postbit
@@ -1188,7 +1211,7 @@ function application_ucp_stylesheet_update()
               .con_cat_content.current{
                 display: inherit;
               }",
-    'update_string' => '/* category-update - kommentar nicht entfernen'
+    'update_string' => 'category-update'
   );
   $update_array_all[] = array(
     'stylesheet' => "/* rangestyling-update - kommentar nicht entfernen */
@@ -1201,7 +1224,7 @@ function application_ucp_stylesheet_update()
                 height: 20px;
                 background-color: #f3f3f3;
             }",
-    'update_string' => '/* rangestyling-update - kommentar nicht entfernen'
+    'update_string' => 'rangestyling-update'
   );
 
   return $update_array_all;
@@ -1310,77 +1333,77 @@ function application_ucp_updated_templates()
 
 /**
  * Funktion um alte Templates des Plugins bei Bedarf zu aktualisieren
- */
-function application_ucp_replace_templates()
-{
-  global $db;
-  //Wir wollen erst einmal die templates, die eventuellverändert werden müssen
-  $update_template_all = application_ucp_updated_templates();
-  if (!empty($update_template_all)) {
-    //diese durchgehen
-    foreach ($update_template_all as $update_template) {
-      //anhand des templatenames holen
-      $old_template_query = $db->simple_select("templates", "tid,sid, template", "title = '" . $update_template['templatename'] . "'");
-      //in old template speichern
-      while ($old_template = $db->fetch_array($old_template_query)) {
-        //was soll gefunden werden? das mit pattern ersetzen (wir schmeißen leertasten, tabs, etc raus)
+//  */
+// function application_ucp_replace_templates()
+// {
+//   global $db;
+//   //Wir wollen erst einmal die templates, die eventuellverändert werden müssen
+//   $update_template_all = application_ucp_updated_templates();
+//   if (!empty($update_template_all)) {
+//     //diese durchgehen
+//     foreach ($update_template_all as $update_template) {
+//       //anhand des templatenames holen
+//       $old_template_query = $db->simple_select("templates", "tid,sid, template", "title = '" . $update_template['templatename'] . "'");
+//       //in old template speichern
+//       while ($old_template = $db->fetch_array($old_template_query)) {
+//         //was soll gefunden werden? das mit pattern ersetzen (wir schmeißen leertasten, tabs, etc raus)
 
-        if ($update_template['action'] == 'replace') {
-          $pattern = application_ucp_createRegexPattern($update_template['action_string']);
-        } elseif ($update_template['action'] == 'add') {
-          //bei add wird etwas zum template hinzugefügt, wir müssen also testen ob das schon geschehen ist
-          $pattern = application_ucp_createRegexPattern($update_template['action_string']);
-        } elseif ($update_template['action'] == 'overwrite') {
-          $pattern = application_ucp_createRegexPattern($update_template['change_string']);
-        }
+//         if ($update_template['action'] == 'replace') {
+//           $pattern = application_ucp_createRegexPattern($update_template['action_string']);
+//         } elseif ($update_template['action'] == 'add') {
+//           //bei add wird etwas zum template hinzugefügt, wir müssen also testen ob das schon geschehen ist
+//           $pattern = application_ucp_createRegexPattern($update_template['action_string']);
+//         } elseif ($update_template['action'] == 'overwrite') {
+//           $pattern = application_ucp_createRegexPattern($update_template['change_string']);
+//         }
 
-        //was soll gemacht werden -> momentan nur replace 
-        if ($update_template['action'] == 'replace') {
-          //wir ersetzen wenn pattern nicht gefunden wird
-          if (!preg_match($pattern, $old_template['template'])) {
-            //change string = zu suchender string 'xyz' ersetzen mit action_string abc
-            $pattern_rep = application_ucp_createRegexPattern($update_template['change_string']);
-            $template = preg_replace($pattern_rep, $update_template['action_string'], $old_template['template']);
-            $update_query = array(
-              "template" => $db->escape_string($template),
-              "dateline" => TIME_NOW
-            );
-            $db->update_query("templates", $update_query, "tid='" . $old_template['tid'] . "'");
-            echo ("Templates {$update_template['templatename']} in {$old_template['sid']} wurde aktualisiert und entsprechende inhalt ersetzt (replace) <br>");
-          }
-        }
-        if ($update_template['action'] == 'add') { //hinzufügen nicht ersetzen
-          //ist es schon einmal hinzugefügt wurden? nur ausführen, wenn es noch nicht im template gefunden wird
-          if (!preg_match($pattern, $old_template['template'])) {
-            //suche changestring und füge hinter ihn den action string ein (pattern)
+//         //was soll gemacht werden -> momentan nur replace 
+//         if ($update_template['action'] == 'replace') {
+//           //wir ersetzen wenn pattern nicht gefunden wird
+//           if (!preg_match($pattern, $old_template['template'])) {
+//             //change string = zu suchender string 'xyz' ersetzen mit action_string abc
+//             $pattern_rep = application_ucp_createRegexPattern($update_template['change_string']);
+//             $template = preg_replace($pattern_rep, $update_template['action_string'], $old_template['template']);
+//             $update_query = array(
+//               "template" => $db->escape_string($template),
+//               "dateline" => TIME_NOW
+//             );
+//             $db->update_query("templates", $update_query, "tid='" . $old_template['tid'] . "'");
+//             echo ("Templates {$update_template['templatename']} in {$old_template['sid']} wurde aktualisiert und entsprechende inhalt ersetzt (replace) <br>");
+//           }
+//         }
+//         if ($update_template['action'] == 'add') { //hinzufügen nicht ersetzen
+//           //ist es schon einmal hinzugefügt wurden? nur ausführen, wenn es noch nicht im template gefunden wird
+//           if (!preg_match($pattern, $old_template['template'])) {
+//             //suche changestring und füge hinter ihn den action string ein (pattern)
 
-            $pattern_rep = application_ucp_createRegexPattern($update_template['change_string']);
-            $template = preg_replace($pattern_rep, $update_template['change_string'] . $update_template['action_string'], $old_template['template']);
-            $update_query = array(
-              "template" => $db->escape_string($template),
-              "dateline" => TIME_NOW
-            );
-            $db->update_query("templates", $update_query, "tid='" . $old_template['tid'] . "'");
-            echo ("Template {$update_template['templatename']} in {$old_template['sid']} wurde aktualisiert und der entsprechende inhalt hinzugefügt (add)<br>");
-          }
-        }
-        if ($update_template['action'] == 'overwrite') { //komplett ersetzen
-          //ist der test string im template, dann ist es schon aktuell
-          if (!preg_match($pattern, $old_template['template'])) {
-            //wenn nicht ersetzten wirs komplett
-            $template = $update_template['action_string'];
-            $update_query = array(
-              "template" => $db->escape_string($template),
-              "dateline" => TIME_NOW
-            );
-            $db->update_query("templates", $update_query, "tid='" . $old_template['tid'] . "'");
-            echo ("Template -overwrite- {$update_template['templatename']} in  {$old_template['tid']} wurde aktualisiert <br>");
-          }
-        }
-      }
-    }
-  }
-}
+//             $pattern_rep = application_ucp_createRegexPattern($update_template['change_string']);
+//             $template = preg_replace($pattern_rep, $update_template['change_string'] . $update_template['action_string'], $old_template['template']);
+//             $update_query = array(
+//               "template" => $db->escape_string($template),
+//               "dateline" => TIME_NOW
+//             );
+//             $db->update_query("templates", $update_query, "tid='" . $old_template['tid'] . "'");
+//             echo ("Template {$update_template['templatename']} in {$old_template['sid']} wurde aktualisiert und der entsprechende inhalt hinzugefügt (add)<br>");
+//           }
+//         }
+//         if ($update_template['action'] == 'overwrite') { //komplett ersetzen
+//           //ist der test string im template, dann ist es schon aktuell
+//           if (!preg_match($pattern, $old_template['template'])) {
+//             //wenn nicht ersetzten wirs komplett
+//             $template = $update_template['action_string'];
+//             $update_query = array(
+//               "template" => $db->escape_string($template),
+//               "dateline" => TIME_NOW
+//             );
+//             $db->update_query("templates", $update_query, "tid='" . $old_template['tid'] . "'");
+//             echo ("Template -overwrite- {$update_template['templatename']} in  {$old_template['tid']} wurde aktualisiert <br>");
+//           }
+//         }
+//       }
+//     }
+//   }
+// }
 
 /**
  * Funktion um ein pattern für preg_replace zu erstellen
@@ -1408,54 +1431,55 @@ function application_ucp_is_updated()
 {
   global $db, $mybb;
   $needupdate = 0;
+  echo '<div style="padding: 5px; margin-bottom:10px;max-height: 200px; overflow: auto; background: #efefef;"><h2>Steckbriefplugin updates:</h2>';
 
   if (!$db->table_exists("application_ucp_categories")) {
-    echo ("Die tabelle application_ucp_categories muss erstellt werden <br>");
+    echo ("AUCP: Die tabelle application_ucp_categories muss erstellt werden <br>");
     $needupdate = 1;
   }
   if (!$db->field_exists("cat_id", "application_ucp_fields")) {
-    echo ("in der Tabelle application_ucp_fields muss das feld cat_id erstellt werden<br>");
+    echo ("AUCP: in der Tabelle application_ucp_fields muss das feld cat_id erstellt werden<br>");
     $needupdate = 1;
   }
   if (!$db->field_exists("pre_wob", "application_ucp_fields")) {
-    echo ("in der Tabelle application_ucp_fields muss das feld pre_wob erstellt werden<br>");
+    echo ("AUCP: in der Tabelle application_ucp_fields muss das feld pre_wob erstellt werden<br>");
     $needupdate = 1;
   }
   if (!$db->field_exists("dynamisch", "application_ucp_fields")) {
-    echo ("in der Tabelle application_ucp_fields muss das feld dynamisch erstellt werden<br>");
+    echo ("AUCP:  in der Tabelle application_ucp_fields muss das feld dynamisch erstellt werden<br>");
     $needupdate = 1;
   }
   if (!$db->field_exists("dyn_max", "application_ucp_fields")) {
-    echo ("in der Tabelle application_ucp_fields muss das feld dyn_max erstellt werden<br>");
+    echo ("AUCP: in der Tabelle application_ucp_fields muss das feld dyn_max erstellt werden<br>");
     $needupdate = 1;
   }
   if (!$db->field_exists("dyn_max_item", "application_ucp_fields")) {
-    echo ("in der Tabelle application_ucp_fields muss das feld dyn_max_item erstellt werden<br>");
+    echo ("AUCP: in der Tabelle application_ucp_fields muss das feld dyn_max_item erstellt werden<br>");
     $needupdate = 1;
   }
 
   if (!$db->field_exists("pre_wob", "application_ucp_management")) {
-    echo ("in der Tabelle application_ucp_management muss das feld dyn_max_item erstellt werden<br>");
+    echo ("AUCP: in der Tabelle application_ucp_management muss das feld dyn_max_item erstellt werden<br>");
     $needupdate = 1;
   }
   if (!$db->field_exists("wob", "application_ucp_management")) {
-    echo ("in der Tabelle application_ucp_management muss das feld wob erstellt werden<br>");
+    echo ("AUCP: in der Tabelle application_ucp_management muss das feld wob erstellt werden<br>");
     $needupdate = 1;
   }
   if (!$db->field_exists("pre_needwork", "application_ucp_management")) {
-    echo ("in der Tabelle application_ucp_management muss das feld pre_needwork erstellt werden<br>");
+    echo ("AUCP: in der Tabelle application_ucp_management muss das feld pre_needwork erstellt werden<br>");
     $needupdate = 1;
   }
   if (!$db->field_exists("wob_needwork", "application_ucp_management")) {
-    echo ("in der Tabelle application_ucp_management muss das feld wob_needwork erstellt werden<br>");
+    echo ("AUCP: in der Tabelle application_ucp_management muss das feld wob_needwork erstellt werden<br>");
     $needupdate = 1;
   }
   if (!$db->field_exists("range_left", "application_ucp_fields")) {
-    echo ("in der Tabelle application_ucp_fields muss das feld range_left erstellt werden<br>");
+    echo ("AUCP: in der Tabelle application_ucp_fields muss das feld range_left erstellt werden<br>");
     $needupdate = 1;
   }
   if (!$db->field_exists("range_right", "application_ucp_fields")) {
-    echo ("in der Tabelle application_ucp_fields muss das feld range_right erstellt werden<br>");
+    echo ("AUCP: in der Tabelle application_ucp_fields muss das feld range_right erstellt werden<br>");
     $needupdate = 1;
   }
   //Testen ob im CSS etwas fehlt
@@ -1467,11 +1491,10 @@ function application_ucp_is_updated()
     $templatequery = $db->write_query("SELECT * FROM `" . TABLE_PREFIX . "themestylesheets` where tid = '{$theme['tid']}' and name ='application_ucp.css'");
     //css ist in keinem style vorhanden
     if ($db->num_rows($templatequery) == 0) {
-      echo ("application css Nicht im {$theme['tid']} - {$theme['name']} vorhanden <br>");
-      $needupdate = 1;
+      echo ("application css Nicht im {$theme['tid']} - {$theme['name']} vorhanden. evt manuell hinzufügen <br>");
+      // $needupdate = 1;
     } else {
-      //.css ist in einem style nicht vorhanden
-      //css ist vorhanden, testen ob alle updatestrings vorhanden sind
+            //css ist vorhanden, testen ob alle updatestrings vorhanden sind
       $update_data_all = application_ucp_stylesheet_update();
       //array durchgehen mit eventuell hinzuzufügenden strings
       foreach ($update_data_all as $update_data) {
@@ -1483,7 +1506,7 @@ function application_ucp_is_updated()
           $test_ifin = $db->write_query("SELECT stylesheet FROM " . TABLE_PREFIX . "themestylesheets WHERE tid = '{$theme['tid']}' AND name = 'application_ucp.css' AND stylesheet LIKE '%" . $update_string . "%' ");
           //string war nicht vorhanden
           if ($db->num_rows($test_ifin) == 0) {
-            echo ("Mindestens Theme {$theme['tid']} (für steckbrief plugin) muss aktualisiert werden <br>");
+            echo ("AUCP: Theme {$theme['tid']} (für steckbrief plugin) muss aktualisiert werden ($update_string)<br>");
             $needupdate = 1;
           }
         }
@@ -1495,32 +1518,35 @@ function application_ucp_is_updated()
   //Wir wollen erst einmal die templates, die eventuellverändert werden müssen
   $update_template_all = application_ucp_updated_templates();
   //alle themes durchgehen
+  require_once MYBB_ROOT . "inc/plugins/risuena_updates/risuena_updatefile.php";
+
   foreach ($update_template_all as $update_template) {
     //entsprechendes Tamplate holen
     $old_template_query = $db->simple_select("templates", "tid, template, sid", "title = '" . $update_template['templatename'] . "'");
     while ($old_template = $db->fetch_array($old_template_query)) {
       //pattern bilden
       if ($update_template['action'] == 'replace') {
-        $pattern = application_ucp_createRegexPattern($update_template['action_string']);
+        $pattern = risuenaupdatefile_createRegexPattern($update_template['action_string']);
         $check = !preg_match($pattern, $old_template['template']);
       } elseif ($update_template['action'] == 'add') {
         //bei add wird etwas zum template hinzugefügt, wir müssen also testen ob das schon geschehen ist
-        $pattern = application_ucp_createRegexPattern($update_template['action_string']);
+        $pattern = risuenaupdatefile_createRegexPattern($update_template['action_string']);
         $check = !preg_match($pattern, $old_template['template']);
       } elseif ($update_template['action'] == 'overwrite') {
         //checken ob das bei change string angegebene vorhanden ist - wenn ja wurde das template schon überschrieben
-        $pattern = application_ucp_createRegexPattern($update_template['change_string']);
+        $pattern = risuenaupdatefile_createRegexPattern($update_template['change_string']);
         $check = !preg_match($pattern, $old_template['template']);
       }
       //testen ob der zu ersetzende string vorhanden ist
       //wenn ja muss das template aktualisiert werden.
       if ($check) {
         $templateset = $db->fetch_field($db->simple_select("templatesets", "title", "sid = '{$old_template['sid']}'"), "title");
-        echo ("Template {$update_template['templatename']} im Set {$templateset}'(SID: {$old_template['sid']}') muss aktualisiert werden. ({$update_template['change_string']} zu {$update_template['action_string']})<br>");
+        echo ("AUCP: Template {$update_template['templatename']} im Set '{$templateset}(SID: {$old_template['sid']}') muss aktualisiert werden. <div style=\"max-height: 100px; overflow:auto;\">" . htmlentities($update_template['change_string']) . "</div> <b>zu</b> <div style=\"max-height: 100px; overflow:auto;\">" . htmlentities($update_template['action_string']) . ")</div><br>");
         $needupdate = 1;
       }
     }
   }
+  echo "</div>";
   if ($needupdate == 1) {
     return false;
   }
@@ -3388,7 +3414,6 @@ function application_ucp_usercp()
     $fetch_management = $db->simple_select("application_ucp_management", "*", "uid = '{$mybb->user['uid']}'");
     if ($db->num_rows($fetch_management) > 0) {
       $management_data = $db->fetch_array($fetch_management);
-      // echo "hallo" + $management_data['pre_wob'] . "-" . $management_data['wob_needwork'] . "-" . $management_data['wob'];
 
       if ($management_data['pre_wob'] == 0 && $management_data['pre_needwork'] == 0 &&  $management_data['wob'] == 0) {
         $pre_allow_edit = 0;
@@ -3411,7 +3436,7 @@ function application_ucp_usercp()
         $userstatus = "has_prewob";
         $pre_wob = "";
         //user hat das prewob, also braucht er jetzt den savebtn
-        $savebtn = "<input type=\"submit\" class=\"button\" name=\"application_ucp_ready\" value=\"{$lang->application_ucp_readybtn}haifisch\" >";
+        $savebtn = "<input type=\"submit\" class=\"button\" name=\"application_ucp_ready\" value=\"{$lang->application_ucp_readybtn}\" >";
       }
 
       if ($management_data['pre_wob'] == 1 && $management_data['wob_needwork'] == 0 &&  $management_data['wob'] == 1) {
@@ -3425,7 +3450,7 @@ function application_ucp_usercp()
         $pre_allow_edit = 0;
         $userstatus = "has_prewob";
         $pre_wob = "";
-        $savebtn = "<input type=\"submit\" class=\"button\" name=\"application_ucp_ready\" value=\"{$lang->application_ucp_readybtn} \" >";
+        $savebtn = "<input type=\"submit\" class=\"button\" name=\"application_ucp_ready\" value=\"{$lang->application_ucp_readybtn} test\" >";
       }
     } else {
       //Kein Eintrag also 
@@ -3437,7 +3462,7 @@ function application_ucp_usercp()
         $userstatus = "member";
         $pre_allow_edit = 0;
         $pre_wob = "";
-        $savebtn = "hai?";
+        $savebtn = "";
       }
     }
   } else {
@@ -3451,7 +3476,13 @@ function application_ucp_usercp()
       if ($userstatus != "applicant_waiting_wob") {
         $savebtn = "<input type=\"submit\" class=\"button\" name=\"application_ucp_ready\" value=\"{$lang->application_ucp_readybtn}\" >";
       } else {
+        //wartet auf WOB
+        $management_data = $db->fetch_array($fetch_management_wob_last);
+        if ($management_data['wob_needwork'] == 1) {
+          $savebtn = "<input type=\"submit\" class=\"button\" name=\"application_ucp_ready\" value=\"Korrektur einreichen\" >";
+      } else {
         $savebtn = "";
+        }
       }
       $pre_wob  = "";
     }
@@ -3963,6 +3994,13 @@ $(document).ready(function () {
     }
     //Dynamisches feld (Lebenslauf)
     elseif ($dynamisch) {
+
+      if ($type['editable'] == 0 && $member) {
+        $can_be_edited = false;
+      } else {
+        $can_be_edited = true;
+      }
+
       $max_length_dyn = $max_length_info = $max_items_info = "";
       if ($type['dyn_max'] > 0) {
         $max_length_dyn = " maxlength=\"{$type['dyn_max']}\" ";
@@ -3983,10 +4021,13 @@ $(document).ready(function () {
       {$fielddescr} 
       <div id=\"{$type['fieldname']}_wrap\">{$get_value['value']}</div>
       <div id=\"{$type['fieldname']}_controls\">";
+      if ($can_be_edited) {
       $fields .= "<a onclick=\"$('#popup_{$type['fieldname']}').modal({ fadeDuration: 250, keepelement: true, zIndex: (typeof modal_zindex !== 'undefined' ? modal_zindex : 9999) }); return false;\" style=\"cursor: pointer;\">
       <i class=\"fa-solid fa-calendar-plus\"></i> add</a>";
+      }
       $fields .= "</div>
       <input type=\"hidden\" class=\"{$type['fieldname']} $dep_classname \" value=\"" . htmlspecialchars($get_value['value']) . "\" name=\"{$type['id']}\" id=\"{$type['fieldname']}\" style=\"{$hidden}\" {$required} {$readonly}{$disabled}{$aria_help}/>";
+      if ($can_be_edited) {
       $fields .= "
           <script type=\"text/javascript\">
             $('#{$type['fieldname']}_wrap .content').each(function() {
@@ -4187,6 +4228,7 @@ $(document).ready(function () {
           <button type=\"button\" id=\"{$type['fieldname']}_dynamisch_add\">hinzufügen</button>
      
         </div>";
+      }
     } else if ($typ == "range" || $typ == "range_slider") {
       //Feld ist ein range Feld
       $min = "-100";
@@ -4475,6 +4517,7 @@ $(document).ready(function () {
           </script> 
         ";
   }
+
   //extend button
   if ($mybb->settings['application_ucp_extend'] > 0) {
     //wurde schon häufiger als erlaubt verlängert?
@@ -4659,24 +4702,35 @@ $(document).ready(function () {
       $now = new DateTime();
       $time = $now->format('Y-m-d H:i:s');
       if (!$error_fields) {
+        //es handelt sich um eine Korrektur, also ist wob_needwork = 1 
+        //Wenn kein prewob, ist es egal was da drin steht.
+        if ($mybb->settings['application_ucp_prewob'] != 1) {
+          //es wird kein zwischen wob verlangt, also setzen wir prewob immer auf 1
+          $hasprewob = 1;
+        } else {
+          $hasprewob = $managmentdata['pre_wob'];
+        }
 
-        if ($management_data['pre_wob'] == 1 && $management_data['wob_needwork'] == 1) {
+        if ($hasprewob == 1 && $management_data['wob_needwork'] == 1) {
           //wob_needwork wieder auf 0 setzen
           $update = array(
             "wob" => 1,
             "wob_needwork" => 0,
-            "submission_time" => $time
+            "pre_wob" => $hasprewob,
+            "usercorrection_time" => $time
           );
+          // "submission_time" => $time,
           $db->update_query("application_ucp_management", $update, "uid = '{$mybb->user['uid']}'");
         }
-        if ($management_data['pre_wob'] == 1 && $management_data['wob_needwork'] == 0) {
-          $update = array(
-            "wob" => 1,
-            "wob_needwork" => 0,
-            "submission_time" => $time
-          );
-          $db->update_query("application_ucp_management", $update, "uid = '{$mybb->user['uid']}'");
-        }
+        // if ($management_data['pre_wob'] == 1 && $management_data['wob_needwork'] == 0) {
+        //   $update = array(
+        //     "wob" => 1,
+        //     "wob_needwork" => 0,
+        //     "pre_wob" => $hasprewob,
+        //     "usercorrection_time" => $time
+        //   );
+        //   $db->update_query("application_ucp_management", $update, "uid = '{$mybb->user['uid']}'");
+        // }
       } else {
       }
       redirect("usercp.php?action=application_ucp");
@@ -4882,6 +4936,7 @@ $(document).ready(function () {
         $insert = array(
           "uid" => $mybb->user['uid'],
           "wob" => 1,
+          "pre_wob" => 1,
           "submission_time" => $time,
           "tid" => $tid
         );
@@ -4909,6 +4964,96 @@ $(document).ready(function () {
   eval("\$application_ucp_ucp_main =\"" . $templates->get("application_ucp_ucp_main") . "\";");
   output_page($application_ucp_ucp_main);
 }
+
+
+/***
+ * Anzeige Button für Korrektur in Bewerbungsarea
+ */
+
+$plugins->add_hook("showthread_start", "application_ucp_newthread");
+function application_ucp_newthread()
+{
+  global $db, $mybb, $memprofile, $templates, $thread, $fid, $aucp_btn, $tid, $application_showthread_modbutton;
+  $application_showthread_modbutton = "";
+
+  if ($mybb->settings['application_ucp_steckithread'] == 1 && $fid == $mybb->settings['application_ucp_steckiarea'] && $mybb->usergroup['canmodcp'] == 1) {
+    $uid_applicant = $thread['uid'];
+    $applicant = get_user($uid_applicant);
+
+    $managenement_data = $db->fetch_array($db->simple_select("application_ucp_management", "*", "uid = '{$uid_applicant}'"));
+    if (empty($managenement_data)) {
+      // keine Daten vorhanden
+      $hasprewob = 0;
+    } else {
+      //wenn daten vorhanden sind, schauen ob es ein pre wob gibt -> wenn ja pre wob = 1
+      $hasprewob = $managenement_data['pre_wob'];
+    }
+
+    //Korrektur Button nur anzeigen, wenn es einen eintrag in der Tabelle gibt - muss es eigentlich geben, sonst wäre kein Thread erstellt worden.
+    //Welche Einstellungen haben wir
+    //pre wob - oder nur ein wob
+
+    //wenn pre wob - dann brauchen wir erst den button für das pre wob
+    // $wob = "_wob";
+    $wob_action = "reject_wob";
+    $prewob = $mybb->settings['application_ucp_prewob'];
+    if ($prewob) {
+      if ($hasprewob == 0) {
+        $correction_action = "reject_prewob";
+        $correction_txt = "Korrektur anfordern - Zwischen Wob";
+        $wob_action = "give_prewob";
+        $wob_txt = "give_prewob";
+      } else {
+        $correction_action = "reject_wob";
+        $correction_txt = "Korrektur anfordern - Wob";
+        $wob_action = "";
+        $wob_txt = "";
+      }
+    } else {
+      $correction_action = "reject_wob";
+      $correction_txt = "Korrektur anfordern - Wob";
+      $wob_action = "reject_wob";
+      $wob_txt = "";
+    }
+
+
+    eval("\$application_showthread_modbutton =\"" . $templates->get("application_showthread_modbutton") . "\";");
+
+    // WOB abgelehnt und korrektur verlangt
+    // if (isset($mybb->input['correction_wob'])) {
+    //   $uid = $mybb->get_input('uid_applicant');
+    //   $tid = $mybb->get_input('tid_applicant');
+
+    //   $now = new DateTime();
+    //   $time = $now->format('Y-m-d H:i:s');
+    //   $now = new DateTime();
+    //   $time = $now->format('Y-m-d H:i:s');
+    //   $update = array(
+    //     "wob" => 1,
+    //     "wob_needwork" => 1,
+    //     "uid_mod" => $mybb->user['uid'],
+    //     "modcorrection_time" => $time
+    //   );
+    //   $db->update_query("application_ucp_management", $update, "uid = '{$uid}'");
+    //   redirect('showthread.php?tid=' . $tid);
+    // }
+
+    //ZWischen WOB abgelehnt und Korrektur verlant.
+    // if (isset($mybb->input['correction_prewob'])) {
+    //   $now = new DateTime();
+    //   $time = $now->format('Y-m-d H:i:s');
+    //   $update = array(
+    //     "pre_wob" => 0,
+    //     "pre_needwork" => 1,
+    //     "uid_mod" => $mybb->user['uid'],
+    //     "modcorrection_time" => $time
+    //   );
+    //   $db->update_query("application_ucp_management", $update, "uid = {$uid}");
+    //   redirect('showthread.php?tid={$tid}');
+    // }
+  }
+}
+
 
 /**
  * automatische Anzeige von den Feldern im Profil
@@ -5466,7 +5611,6 @@ function application_ucp_misc()
   $mybb->input['action'] = $mybb->get_input('action');
   //wob in showthread vergeben 
   if ($mybb->input['action']  == 'wob') {
-
     //daten die wir brauchen
     $textwelcome =  $mybb->settings['application_ucp_wobtext'];
     $textwelcome_flag =  $mybb->settings['application_ucp_wobtext_yesno'];
@@ -5489,11 +5633,10 @@ function application_ucp_misc()
       "additionalgroups" => $additionalgroups_string,
     );
 
-    //wob date speichern - falls das feld existiert. (später hinzugefügt :D evt. manuell in der DB users tabelle anlegen, wenn gewünscht)
+    //wob date speichern - falls das feld existiert. 
     if ($db->field_exists("wob_date", "users")) {
       $new_record["wob_date"] = time();
     }
-
     //speichern
     $db->update_query("users", $new_record, "uid = '$threadauthor'");
 
@@ -5584,7 +5727,7 @@ function application_ucp_misc()
     $now = new DateTime();
     $time = $now->format('Y-m-d H:i:s');
 
-    $uid = intval($mybb->input['uid']);
+    $uid = intval($mybb->input['uid_applicant']);
     $update = array(
       "wob" => 1,
       "wob_needwork" => 1,
@@ -6004,6 +6147,7 @@ function application_ucp_modoverview()
       eval("\$application_ucp_wob .= \"" . $templates->get("application_ucp_mods_bit") . "\";");
     }
 
+    if ($mybb->settings['application_ucp_prewob']) {
     //User die ihren Steckbrief korrigieren müssen
     $wob_users_wob_correction = $db->simple_select(
       "application_ucp_management",
@@ -6011,8 +6155,17 @@ function application_ucp_modoverview()
       DATE_FORMAT(modcorrection_time, '%e.%m.%Y') AS modcorrection_time",
       "pre_wob = 1 and wob = 1 and wob_needwork = 1"
     );
+    } else {
+      $wob_users_wob_correction = $db->simple_select(
+        "application_ucp_management",
+        "*, DATE_FORMAT(submission_time, '%e.%m.%Y') AS submission_date, 
+      DATE_FORMAT(modcorrection_time, '%e.%m.%Y') AS modcorrection_time",
+        "wob = 1 and wob_needwork = 1"
+      );
+    }
 
     while ($data = $db->fetch_array($wob_users_wob_correction)) {
+
       $aucp_mod_modlink = $aucp_mod_profillink = $aucp_mod_date = $aucp_mod_steckilink = $correction = $wobform = "";
       $userdata = array();
 
@@ -6084,21 +6237,33 @@ function application_ucp_modoverview()
     while ($data = $db->fetch_array($get_new_wob)) {
       $aucp_mod_modlink = $aucp_mod_profillink = $aucp_mod_date = $aucp_mod_steckilink = $correction = $wobform = "";
       $userdata = array();
-
       $userdata = get_user($data['uid']);
-      if ($mybb->settings['application_ucp_steckithread'] == 1) {
-        $aucp_mod_steckilink = "";
-      } else {
-        $aucp_mod_steckilink = "";
-      }
+      // if ($mybb->settings['application_ucp_steckithread'] == 1) {
+      //   $aucp_mod_steckilink = "";
+      // } else {
+      //   $aucp_mod_steckilink = "";
+      // }
+      $aucp_mod_steckilink = date("d.m.Y", $userdata['regdate']);
 
 
-      $aucp_mod_date = date("d.m.Y", $userdata['regdate']);
+      $aucp_mod_date = "frist";
       $aucp_mod_modlink  = date("d.m.Y", $userdata['lastvisit']);
 
       $aucp_mod_enddate = ""; // Vorinitialisierung
 
+      //Bewerbungsfristende anzeigen
+      //regdate + application_ucp_applicationtime (reguläre frist ohne verlängerung)
+      $days_forapplication_withnoextend = $mybb->settings['application_ucp_applicationtime'];
+      $regDate = (new DateTime())->setTimestamp($userdata['regdate']);
+      $firstDeadline =  clone $regDate;
+      $firstDeadline->modify('+' . $days_forapplication_withnoextend . ' days');
+
+
+
+
       if (!empty($data['aucp_extenddate'])) {
+
+        // $daysToAdd = $remainingDays + 14;
         // Verlängerungsdatum aus der DB (Format: yyyy-mm-dd) in ein DateTime-Objekt umwandeln
 
         $extendDateObj = DateTime::createFromFormat('Y-m-d', $data['aucp_extenddate']);
@@ -6110,7 +6275,6 @@ function application_ucp_modoverview()
 
           $regDeadline->modify('+14 days');
           // Berechne, wie viele Tage der regulären Frist bis zum Verlängerungsdatum noch übrig sind
-
           if ($extendDateObj > $regDeadline) {
 
             $remainingDays = 0;
@@ -6188,6 +6352,8 @@ function application_ucp_indexalert()
   //settings holen 
   $collapsed['aucp_index_e'] = "";
   $applicants = $mybb->settings['application_ucp_applicants'];
+  $prewob_needed = $mybb->settings['application_ucp_prewob'];
+
   $mods = $mybb->settings['application_ucp_stecki_mods'];
   $friststecki = $mybb->settings['application_ucp_applicationtime'];
   $fristkorrektur = $mybb->settings['application_ucp_correctiontime'];
@@ -6217,10 +6383,11 @@ function application_ucp_indexalert()
 
   //wer ist online
   $uid = $mybb->user['uid'];
+
+
   //Daten aus Management tabelle
   $get_managment = $db->simple_select("application_ucp_management", "*", "uid = {$uid}");
   //Benutzer ist ein Bewerber
-
   if (is_member($applicants, $mybb->user['uid'])) {
     //Der Benutzer hat noch keinen Steckbrief abgegben. Zeit bis zum X. 
     if ($db->num_rows($get_managment) == 0) {
@@ -6953,6 +7120,7 @@ function application_ucp_affected_alert($charakter, $touid, $tid, $editflag)
       'touid' => $touid,
       'from_user' => $charakter,
     );
+    
     send_pm($pm, -1, true);
   } else if ($alerttype == 1) { // MyAlert
     if (class_exists('MybbStuff_MyAlerts_AlertTypeManager')) {
@@ -7138,159 +7306,6 @@ function application_ucp_delete()
 }
 
 
-/***
- * Zugriff auf die Infos der Steckis in Laras Lexikon Plugin zugänglich machen
- * Todo 
- * In Laras lexicon.php suche nach eval("\$page = \"" . $templates->get("lexicon_entry") . "\";");
- * darüber einfügen $plugins->run_hooks("lexicon_entry");
- */
-// lexicon_entry_test
-// $plugins->add_hook("lexicon_entry", "application_ucp_lexicon");
-
-//Listen verfügbar machen
-$plugins->add_hook("lexicon_entry", "application_ucp_lists");
-function application_ucp_lists($entrytext)
-{
-  global $db, $cache, $mybb, $user, $html_str_arr, $entrytext;
-
-  //input bekommen - php8 save mit funktion von mybb
-  $page = $mybb->get_input("page");
-
-  //nur auf diesen beiden Lexicon seiten momentan
-  if ($page == "alphaplatoon" || $page == "bravo_platoon" || $page == "charlie_platoon" || $page == "delta_platoon") {
-
-    //Mögliche Options für diese Seiten, von denen wir infos ziehen wollen
-    $get_inputs = $db->fetch_field($db->simple_select("application_ucp_fields", "options", "id = 34"), "options");
-    //daraus ein array baue
-    $input_arr = explode(",", $get_inputs);
-
-
-    //Die Optionen durchgehen
-    foreach ($input_arr as $input) {
-      // alpha - aktiv,bravo - aktiv,charlie - aktiv,delta - aktiv,BUD/S,alpha - ehemalig, bravo - ehemalig,charlie - ehemalig, delta - ehemalig,kein Seal
-      //ersetzen weil keine sonderzeichen
-      $teamstr_arr = preg_replace('/[^A-Za-z0-9\_]/', '', $input);
-
-      //pfusch um auf die richtigen felder zugreifen zu können
-      $sortactiv = "";
-      $activeflag = 0;
-      if ($input == "alpha - aktiv") {
-        $teamstr = "alpha";
-        $activeflag = 1;
-      }
-      if ($input == "alpha - ehemalig") {
-        $teamstr = "alpha";
-      }
-      if ($input == "bravo - aktiv") {
-        $teamstr = "bravo";
-        $activeflag = 1;
-      }
-      if ($input == "bravo - ehemalig") {
-        $teamstr = "bravo";
-      }
-      if ($input == "charlie - aktiv") {
-        $teamstr = "charlie";
-        $activeflag = 1;
-      }
-      if ($input == "charlie - ehemalig") {
-        $teamstr = "charlie";
-      }
-      if ($input == "delta - aktiv") {
-        $teamstr = "delta";
-        $activeflag = 1;
-      }
-      if ($input == "delta - ehemalig") {
-        $teamstr = "delta";
-      }
-      if ($activeflag == 1) {
-        $sortactiv = " FIELD(
-          navy_squad, 
-          'Squad 1', 
-          'Squad 2', 
-          'Andere',
-          ''
-        ),";
-      }
-      $html_str = "";
-      $html_str  = "<div class='bl-platoon members_wrap'>
-      ";
-
-      $all_user_querie_str = "
-      SELECT CAST(SUBSTRING(navy_rufzeichen, 7, 2) AS UNSIGNED) as sort, u.uid, u.username, u.usergroup, u.avatar, uf.*, fields.* FROM " . TABLE_PREFIX . "users u 
-        LEFT JOIN " . TABLE_PREFIX . "userfields uf ON ufid = u.uid " .
-        application_ucp_buildsql("all") . " 
-        WHERE navy_team LIKE '%$input%' ORDER BY
-        " . $sortactiv . "
-        sort";
-      // echo "      SELECT CAST(SUBSTRING(navy_rufzeichen, 7, 2) AS UNSIGNED) as sort, u.uid, u.username, u.usergroup, u.avatar, uf.*, fields.* FROM " . TABLE_PREFIX . "users u 
-      //   LEFT JOIN " . TABLE_PREFIX . "userfields uf ON ufid = u.uid " .
-      //   application_ucp_buildsql("all") . " 
-      //   WHERE navy_team LIKE '%$input%' ORDER BY
-      //   " . $sortactiv . "
-      //   sort";
-      $all_user_querie = $db->write_query($all_user_querie_str);
-      $old = "";
-      while ($list_all = $db->fetch_array($all_user_querie)) {
-
-        if (strpos($input, "ehemalig")) {
-          $username = build_profile_link($list_all['username'], $list_all['uid']);
-          // echo "Hallooo  $username $teamstr";
-          $html_str .= "<li>
-          {$username} - <i>{$list_all["nickname"]}</i> <br> 
-          von " . $list_all["navy_{$teamstr}_formerly_since"] . " bis " . $list_all["navy_{$teamstr}_formerly_until"] . " - 
-          Position: " . $list_all["navy_position"] . "
-          </li>
-          ";
-        } else {
-          if ($list_all["navy_squad"] != $old) {
-            if ($old != "") {
-              $add_end = "</ul>";
-            } else {
-              $add_end = "";
-            }
-            $html_str .= " {$add_end}
-          <h2 class='bl-heading2'>{$list_all["navy_squad"]}</h2> 
-          <ul class='bl-list'>";
-          }
-
-          $username = build_profile_link($list_all['username'], $list_all['uid']);
-          $html_str .= "
-        <li>
-        {$username} - <i>{$list_all["nickname"]}</i> <span style='font-size:0.8em'>(" . $list_all["navy_rufzeichen"] . ")</span> <br> 
-        Seit: " . $list_all["navy_{$teamstr}_active"] . " - 
-        Position: " . $list_all["navy_position"] . "
-        </li>
-        ";
-
-          $old = $list_all["navy_squad"];
-        }
-      }
-      // echo $html_str;
-      $html_str  .= "
-      </div>
-      ";
-      if (strpos($input, "ehemalig")) {
-        $html_str_arr[$teamstr_arr] = array(
-          "replace-var" => $teamstr_arr . "-replace",
-          "replace-text" => "<ul class='bl-list'>" . $html_str . "</ul>"
-        );
-      } else {
-        $html_str_arr[$teamstr_arr] = array(
-          "replace-var" => $teamstr_arr . "-replace",
-          "replace-text" => $html_str
-        );
-      }
-    }
-
-    //Text im Lexicon ersetzen
-    foreach ($html_str_arr as $replace) {
-      // var_dump($replace);
-      $entrytext = str_replace($replace['replace-var'], $replace['replace-text'], $entrytext);
-    }
-    // var_dump($html_str_arr);
-  }
-}
-
 
 // Listen verwalten in ACP
 $plugins->add_hook("admin_load", "application_ucp_manage_lists");
@@ -7316,17 +7331,28 @@ function application_ucp_manage_lists()
 }
 
 
-$plugins->add_hook('admin_rpgstuff_update_plugin', "application_admin_update_plugin");
+$plugins->add_hook('admin_rpgstuff_update_plugin', "application_ucp_admin_update_plugin");
 // application_admin_update_plugin
-function application_admin_update_plugin(&$table)
+function application_ucp_admin_update_plugin(&$table)
 {
   global $db, $mybb, $lang;
 
   $lang->load('rpgstuff_plugin_updates');
   if ($mybb->input['action'] == 'add_update' and $mybb->get_input('plugin') == "application_ucp") {
-    application_ucp_add_settings("update");
+    //Einbinden der Updatefunktionen
+    require_once MYBB_ROOT . "inc/plugins/risuena_updates/risuena_updatefile.php";
+    $setting_array = application_ucp_setting_array();
+    risuenaupdatefile_update_settings($setting_array, "application_ucp");
+
+
+    //fügt nicht vorhandene templates hinzu
     application_ucp_add_templates("update");
-    application_ucp_replace_templates();
+
+    $update_template_all = application_ucp_updated_templates();
+    //templates bearbeiten wenn nötig
+    risuenaupdatefile_replace_templates($update_template_all);
+
+    // application_ucp_replace_templates();
     application_ucp_database("update");
     $update_data_all = application_ucp_stylesheet_update();
     //alle Themes bekommen
@@ -7367,7 +7393,7 @@ function application_admin_update_plugin(&$table)
               "lastmodified" => TIME_NOW
             );
             $db->update_query("themestylesheets", $updated_stylesheet, "name='application_ucp.css' AND tid = '{$theme['tid']}'");
-            echo "In Theme mit der ID {$theme['tid']} wurde CSS hinzugefügt -  $update_string <br>";
+            echo "AUCP: In Theme mit der ID {$theme['tid']} wurde CSS hinzugefügt -  $update_string <br>";
           }
         }
         update_theme_stylesheet_list($theme['tid']);
