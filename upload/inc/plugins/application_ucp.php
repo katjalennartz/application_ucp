@@ -5652,7 +5652,7 @@ function application_ucp_misc()
 
     $db->update_query("users", $updateuser, "uid = {$uid}");
     $db->delete_query("application_ucp_management", "uid = {$uid}");
-    application_ucp_webhook_discord($uid);
+    // application_ucp_webhook_discord($uid);
     redirect('misc.php?action=application_mods');
   }
 
@@ -6446,7 +6446,7 @@ function application_ucp_webhook_discord($uid)
 {
   global $mybb, $db;
 
-  $webhookurl = "https://discord.com/api/webhooks/1242121372449247272/wC6T2A8FwvrpKIWE9E_PRV1W9AZ4KIPdnyHwZCmMJoqf27_-j-U_Eq8VVzDPljyWn5eb";
+  $webhookurl = "";
   $text  = "";
 
   $user = get_user($uid);
