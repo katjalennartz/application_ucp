@@ -35,7 +35,7 @@ function application_ucp_info()
     "website" => "https://github.com/katjalennartz/application_ucp",
     "author" => "risuena",
     "authorsite" => "https://github.com/katjalennartz",
-    "version" => "1.1.4",
+    "version" => "1.2",
     "compatibility" => "18*"
   );
 }
@@ -257,44 +257,6 @@ function application_ucp_add_settings($type = 'install')
     }
   }
 
-  // if ($type == 'update') {
-
-  //   foreach ($setting_array as $name => $setting) {
-  //     $setting['name'] = $name;
-  //     $setting['gid'] = $gid;
-
-  //     //alte einstellung aus der db holen
-  //     $check = $db->write_query("SELECT * FROM `" . TABLE_PREFIX . "settings` WHERE name = '{$name}'");
-  //     $check2 = $db->write_query("SELECT * FROM `" . TABLE_PREFIX . "settings` WHERE name = '{$name}'");
-  //     $check = $db->num_rows($check);
-  //     if ($check == 0) {
-  //       $db->insert_query('settings', $setting);
-  //       echo "AUCP Setting: {$name} wurde hinzugefügt.";
-  //     } else {
-
-  //       //die einstellung gibt es schon, wir testen ob etwas verändert wurde
-  //       while ($setting_old = $db->fetch_array($check2)) {
-  //         if (
-  //           $setting_old['title'] != $setting['title'] ||
-  //           $setting_old['description'] != $setting['description'] ||
-  //           $setting_old['optionscode'] != $setting['optionscode'] ||
-  //           $setting_old['disporder'] != $setting['disporder']
-  //         ) {
-  //           //wir wollen den value nicht überspeichern, also nur die anderen werte aktualisieren
-  //           $update_array = array(
-  //             'title' => $setting['title'],
-  //             'description' => $setting['description'],
-  //             'optionscode' => $setting['optionscode'],
-  //             'disporder' => $setting['disporder']
-  //           );
-  //           $db->update_query('settings', $update_array, "name='{$name}'");
-  //           echo "AUCP Setting: {$name} wurde aktualisiert.<br>";
-  //         }
-  //       }
-  //     }
-  //   }
-  //   echo "<p>AUCP Einstellungen wurden aktualisiert</p>";
-  // }
   rebuild_settings();
 }
 
@@ -634,7 +596,7 @@ function application_ucp_templates()
       <td>{$aucp_mod_profillink}</td>
         <td>{$aucp_mod_date}{$aucp_mod_steckilink}</td>
       <td>{$aucp_mod_modlink}</td>
-        <td> {$correction}</td>
+      <td>{$aucp_mod_enddate}{$correction}</td>
     </tr>',
     "sid" => "-2",
     "version" => "1.0",
@@ -1063,7 +1025,6 @@ function application_ucp_activate()
   {$give_wob}
   ');
 
-
   find_replace_templatesets("member_profile", "#" . preg_quote('<td width="75%">') . "#i", '<td width="75%"> {$application_ucp_profile_trigger}');
 
 
@@ -1331,79 +1292,6 @@ function application_ucp_updated_templates()
   return $update_template;
 }
 
-/**
- * Funktion um alte Templates des Plugins bei Bedarf zu aktualisieren
-//  */
-// function application_ucp_replace_templates()
-// {
-//   global $db;
-//   //Wir wollen erst einmal die templates, die eventuellverändert werden müssen
-//   $update_template_all = application_ucp_updated_templates();
-//   if (!empty($update_template_all)) {
-//     //diese durchgehen
-//     foreach ($update_template_all as $update_template) {
-//       //anhand des templatenames holen
-//       $old_template_query = $db->simple_select("templates", "tid,sid, template", "title = '" . $update_template['templatename'] . "'");
-//       //in old template speichern
-//       while ($old_template = $db->fetch_array($old_template_query)) {
-//         //was soll gefunden werden? das mit pattern ersetzen (wir schmeißen leertasten, tabs, etc raus)
-
-//         if ($update_template['action'] == 'replace') {
-//           $pattern = application_ucp_createRegexPattern($update_template['action_string']);
-//         } elseif ($update_template['action'] == 'add') {
-//           //bei add wird etwas zum template hinzugefügt, wir müssen also testen ob das schon geschehen ist
-//           $pattern = application_ucp_createRegexPattern($update_template['action_string']);
-//         } elseif ($update_template['action'] == 'overwrite') {
-//           $pattern = application_ucp_createRegexPattern($update_template['change_string']);
-//         }
-
-//         //was soll gemacht werden -> momentan nur replace 
-//         if ($update_template['action'] == 'replace') {
-//           //wir ersetzen wenn pattern nicht gefunden wird
-//           if (!preg_match($pattern, $old_template['template'])) {
-//             //change string = zu suchender string 'xyz' ersetzen mit action_string abc
-//             $pattern_rep = application_ucp_createRegexPattern($update_template['change_string']);
-//             $template = preg_replace($pattern_rep, $update_template['action_string'], $old_template['template']);
-//             $update_query = array(
-//               "template" => $db->escape_string($template),
-//               "dateline" => TIME_NOW
-//             );
-//             $db->update_query("templates", $update_query, "tid='" . $old_template['tid'] . "'");
-//             echo ("Templates {$update_template['templatename']} in {$old_template['sid']} wurde aktualisiert und entsprechende inhalt ersetzt (replace) <br>");
-//           }
-//         }
-//         if ($update_template['action'] == 'add') { //hinzufügen nicht ersetzen
-//           //ist es schon einmal hinzugefügt wurden? nur ausführen, wenn es noch nicht im template gefunden wird
-//           if (!preg_match($pattern, $old_template['template'])) {
-//             //suche changestring und füge hinter ihn den action string ein (pattern)
-
-//             $pattern_rep = application_ucp_createRegexPattern($update_template['change_string']);
-//             $template = preg_replace($pattern_rep, $update_template['change_string'] . $update_template['action_string'], $old_template['template']);
-//             $update_query = array(
-//               "template" => $db->escape_string($template),
-//               "dateline" => TIME_NOW
-//             );
-//             $db->update_query("templates", $update_query, "tid='" . $old_template['tid'] . "'");
-//             echo ("Template {$update_template['templatename']} in {$old_template['sid']} wurde aktualisiert und der entsprechende inhalt hinzugefügt (add)<br>");
-//           }
-//         }
-//         if ($update_template['action'] == 'overwrite') { //komplett ersetzen
-//           //ist der test string im template, dann ist es schon aktuell
-//           if (!preg_match($pattern, $old_template['template'])) {
-//             //wenn nicht ersetzten wirs komplett
-//             $template = $update_template['action_string'];
-//             $update_query = array(
-//               "template" => $db->escape_string($template),
-//               "dateline" => TIME_NOW
-//             );
-//             $db->update_query("templates", $update_query, "tid='" . $old_template['tid'] . "'");
-//             echo ("Template -overwrite- {$update_template['templatename']} in  {$old_template['tid']} wurde aktualisiert <br>");
-//           }
-//         }
-//       }
-//     }
-//   }
-// }
 
 /**
  * Funktion um ein pattern für preg_replace zu erstellen
@@ -3450,7 +3338,7 @@ function application_ucp_usercp()
         $pre_allow_edit = 0;
         $userstatus = "has_prewob";
         $pre_wob = "";
-        $savebtn = "<input type=\"submit\" class=\"button\" name=\"application_ucp_ready\" value=\"{$lang->application_ucp_readybtn} test\" >";
+        $savebtn = "<input type=\"submit\" class=\"button\" name=\"application_ucp_ready\" value=\"{$lang->application_ucp_readybtn}\" >";
       }
     } else {
       //Kein Eintrag also 
@@ -4034,7 +3922,7 @@ $(document).ready(function () {
             //id des elements holen
             const cleanId = $(this).data('id-contentclean');
             // Buttons erstellen
-            const addBtns = `<div class=\"controls\" id=\"\${cleanId}_controls\"><button type=\"button\" class=\"{$type['fieldname']}_removebtn\" data-id-remove=\"\${cleanId}\"><i class=\"fa-sharp-duotone fa-solid fa-trash\"></i></button><button type=\"button\" class=\"{$type['fieldname']}_edit\" data-id-edit-clean=\"\${cleanId}\" data-id-edit-content=\"\${cleanId}_content\" data-id-edit-title=\"\${cleanId}_title\"><i class=\"fa-sharp-duotone fa-solid fa-file-pen\"></i></button><button type=\"button\" class=\"{$type['fieldname']}_up\" data-id-move-up=\"\${cleanId}\"><i class=\"fa-sharp-duotone fa-solid fa-arrow-up\"></i></button><button type=\"button\" class=\"{$type['fieldname']}_down\" data-id-move-down=\"\${cleanId}\"><i class=\"fa-sharp-duotone fa-solid fa-arrow-down\"></i></button></div>`;
+            const addBtns = `<div class=\"controls\" id=\"\${cleanId}_controls\"><button type=\"button\" class=\"{$type['fieldname']}_removebtn\" data-id-remove=\"\${cleanId}\"><i class=\"fa-solid fa-trash\"></i></button><button type=\"button\" class=\"{$type['fieldname']}_edit\" data-id-edit-clean=\"\${cleanId}\" data-id-edit-content=\"\${cleanId}_content\" data-id-edit-title=\"\${cleanId}_title\"><i class=\"fa-solid fa-file-pen\"></i></button><button type=\"button\" class=\"{$type['fieldname']}_up\" data-id-move-up=\"\${cleanId}\"><i class=\"fa-solid fa-arrow-up\"></i></button><button type=\"button\" class=\"{$type['fieldname']}_down\" data-id-move-down=\"\${cleanId}\"><i class=\"fa-solid fa-arrow-down\"></i></button></div>`;
             
             // Buttons einfügen
             $(this).after(addBtns);
@@ -4060,7 +3948,7 @@ $(document).ready(function () {
               const content = $('textarea[name=\"{$type['fieldname']}_content\"]').val();
               
               // HTML hinzufügen
-              container.append(`<div class=\"{$type['fieldname']}_item\" id=\"\${cleanId}\"><div class=\"title\" class=\"\${cleanId}_title\" data-id=\"\${cleanId}\" data-id-title=\"\${cleanId}_title\">\${title}</div><div class=\"content\" data-id-contentclean=\"\${cleanId}\" data-id-content=\"\${cleanId}_content\">\${content}</div><div class=\"controls\" id=\"\${cleanId}_controls\"><button type=\"button\" class=\"{$type['fieldname']}_removebtn\" data-id-remove=\"\${cleanId}\"><i class=\"fa-sharp-duotone fa-solid fa-trash\"></i></button><button type=\"button\" class=\"{$type['fieldname']}_edit\" data-id-edit-clean=\"\${cleanId}\" data-id-edit-content=\"\${cleanId}_content\" data-id-edit-title=\"\${cleanId}_title\"><i class=\"fa-sharp-duotone fa-solid fa-file-pen\"></i></button><button type=\"button\" class=\"{$type['fieldname']}_up\" data-id-move-up=\"\${cleanId}\"><i class=\"fa-sharp-duotone fa-solid fa-arrow-up\"></i></button><button type=\"button\" class=\"{$type['fieldname']}_down\" data-id-move-down=\"\${cleanId}\"><i class=\"fa-sharp-duotone fa-solid fa-arrow-down\"></i></button></div></div>`);
+              container.append(`<div class=\"{$type['fieldname']}_item\" id=\"\${cleanId}\"><div class=\"title\" class=\"\${cleanId}_title\" data-id=\"\${cleanId}\" data-id-title=\"\${cleanId}_title\">\${title}</div><div class=\"content\" data-id-contentclean=\"\${cleanId}\" data-id-content=\"\${cleanId}_content\">\${content}</div><div class=\"controls\" id=\"\${cleanId}_controls\"><button type=\"button\" class=\"{$type['fieldname']}_removebtn\" data-id-remove=\"\${cleanId}\"><i class=\"fa-solid fa-trash\"></i></button><button type=\"button\" class=\"{$type['fieldname']}_edit\" data-id-edit-clean=\"\${cleanId}\" data-id-edit-content=\"\${cleanId}_content\" data-id-edit-title=\"\${cleanId}_title\"><i class=\"fa-solid fa-file-pen\"></i></button><button type=\"button\" class=\"{$type['fieldname']}_up\" data-id-move-up=\"\${cleanId}\"><i class=\"fa-solid fa-arrow-up\"></i></button><button type=\"button\" class=\"{$type['fieldname']}_down\" data-id-move-down=\"\${cleanId}\"><i class=\"fa-solid fa-arrow-down\"></i></button></div></div>`);
 
               $('input[name=\"{$type['fieldname']}_title\"]').val('');
               $('textarea[name=\"{$type['fieldname']}_content\"]').val('');
@@ -4105,7 +3993,7 @@ $(document).ready(function () {
               var count = container.find('.{$type['fieldname']}_item').length;
               // Falls weniger als {$maxitems} Elemente vorhanden sind, das `a`-Element wieder hinzufügen
               if (count < {$maxitems} && container.find('.{$type['fieldname']}_controls a').length === 0) {
-                $('#{$type['fieldname']}_controls').append(`<a onclick=\"\$('#popup_lebenslauftext').modal({ fadeDuration: 250, keepelement: true, zIndex: (typeof modal_zindex !== 'undefined' ? modal_zindex : 9999) }); return false;\" style=\"cursor: pointer;\"><i class=\"fa-sharp-duotone fa-solid fa-file\" aria-hidden=\"true\"></i></a>`);
+                $('#{$type['fieldname']}_controls').append(`<a onclick=\"\$('#popup_lebenslauftext').modal({ fadeDuration: 250, keepelement: true, zIndex: (typeof modal_zindex !== 'undefined' ? modal_zindex : 9999) }); return false;\" style=\"cursor: pointer;\"><i class=\"fa-solid fa-file\" aria-hidden=\"true\"></i></a>`);
               
                 $('#{$type['fieldname']}_dynamisch_add').prop('disabled', false);
                 $('#{$type['fieldname']}_infomaxitems').remove();
@@ -4130,7 +4018,7 @@ $(document).ready(function () {
               const originalTitle = contentElementTitle.html();
               
               // Input-Feld + Save- und Cancel-Button einfügen
-              contentElement.html(`<textarea name=\"dyneditcontent\" class=\"editInput\" {$max_length_dyn} >\${originalText}</textarea><button type=\"button\" class=\"{$type['fieldname']}_saveButton\" data-id-save=\"\${cleanId}\"><i class=\"fa-sharp-duotone fa-solid fa-floppy-disk\"></i></button><button type=\"button\" class=\"{$type['fieldname']}_cancelButton\" data-id-cancel=\"\${contentId}\" data-id-clean=\"\${cleanId}\"><i class=\"fa-sharp-duotone fa-solid fa-xmark\"></i></button><input name=\"dynedittitle\" class=\"save_editInputTitle\" name=\"save_editInputTitle\" type=\"hidden\" value=\"\${originalTitle}\">
+              contentElement.html(`<textarea name=\"dyneditcontent\" class=\"editInput\" {$max_length_dyn} >\${originalText}</textarea><button type=\"button\" class=\"{$type['fieldname']}_saveButton\" data-id-save=\"\${cleanId}\"><i class=\"fa-solid fa-floppy-disk\"></i></button><button type=\"button\" class=\"{$type['fieldname']}_cancelButton\" data-id-cancel=\"\${contentId}\" data-id-clean=\"\${cleanId}\"><i class=\"fa-solid fa-xmark\"></i></button><input name=\"dynedittitle\" class=\"save_editInputTitle\" name=\"save_editInputTitle\" type=\"hidden\" value=\"\${originalTitle}\">
               <input class=\"save_editInput\" name=\"save_editInput\" type=\"hidden\" value=\"\${originalText}\">`);
               contentElementTitle.html(`<input type=\"text\" class=\"editInputTitle\" value=\"\${originalTitle}\">`);
               }
@@ -4698,8 +4586,7 @@ $(document).ready(function () {
         }
       }
 
-      //es handelt sich um eine Korrektur, also ist wob_needwork = 1 
-      $now = new DateTime();
+            $now = new DateTime();
       $time = $now->format('Y-m-d H:i:s');
       if (!$error_fields) {
         //es handelt sich um eine Korrektur, also ist wob_needwork = 1 
@@ -4929,6 +4816,12 @@ $(document).ready(function () {
         }
       }
 
+      if ($mybb->settings['application_ucp_prewob'] == 1) {
+        $pre_wob = 0;
+      } else {
+        $pre_wob = 1;
+      }
+
       $now = new DateTime();
       $time = $now->format('Y-m-d H:i:s');
       //und jetzt noch einen eintrag in der Management Tabelle
@@ -4936,7 +4829,7 @@ $(document).ready(function () {
         $insert = array(
           "uid" => $mybb->user['uid'],
           "wob" => 1,
-          "pre_wob" => 1,
+          "pre_wob" => $pre_wob,
           "submission_time" => $time,
           "tid" => $tid
         );
@@ -5375,7 +5268,8 @@ function application_ucp_check_save($query, $fields)
     } else {
       //feld ist kein Array.
       //Feld ist nicht ausgefüllt - also müssen wir die Abhängigkeit checken.
-      if ($fields[$key] === "") {
+      // if ($fields[$key] === "") {
+      if (!isset($fields[$key]) || $fields[$key] === "") {
         // Die daten vom Feld holen von dem das Pre Wob abhängig ist
         //hat das feld überhaupt eine abhängigkeit? 
         $dep_query = $db->simple_select("application_ucp_fields", "*", "fieldname = '{$checkfield['dependency']}'");
@@ -5614,7 +5508,8 @@ function application_ucp_misc()
     //daten die wir brauchen
     $textwelcome =  $mybb->settings['application_ucp_wobtext'];
     $textwelcome_flag =  $mybb->settings['application_ucp_wobtext_yesno'];
-    $threadauthor = $mybb->input['uid'];
+    $threadauthor = $mybb->get_input('uid');
+    // echo ($threadauthor);
     $newusergroup = $mybb->get_input('usergroups', MyBB::INPUT_INT);
     $subject = "RE: {$mybb->input['subject']}";
     $username = $mybb->user['username'];
@@ -5757,6 +5652,7 @@ function application_ucp_misc()
 
     $db->update_query("users", $updateuser, "uid = {$uid}");
     $db->delete_query("application_ucp_management", "uid = {$uid}");
+    application_ucp_webhook_discord($uid);
     redirect('misc.php?action=application_mods');
   }
 
@@ -5895,7 +5791,7 @@ function application_ucp_modoverview()
     if (!is_member($mods, $mybb->user['uid'])) {
       error_no_permission();
     }
-
+    $today = TIME_NOW;
 
     //Steckbriefe die Korrigiert werden müssen
     // $setting_prewob = $mybb->settings['application_ucp_prewob'];
@@ -5935,7 +5831,13 @@ function application_ucp_modoverview()
 
         $aucp_mod_date = $data['submission_date'];
 
-        $aucp_mod_enddate = "";
+        $mod_date = $data['modcorrection_time'];
+        if ($mod_date === NULL) {
+          $aucp_mod_enddate = "<br>Noch keine Korrektur";
+        } else {
+          $aucp_mod_enddate = "<br>Letzte Mod-Korrektur am {$mod_date}";
+        }
+
         $aucp_mod_profillink = build_profile_link($userdata['username'], $data['uid']);
         eval("\$application_ucp_prewob .= \"" . $templates->get("application_ucp_mods_bit") . "\";");
       }
@@ -5967,14 +5869,19 @@ function application_ucp_modoverview()
                 <a href=\"misc.php?action=take_application&uid={$userdata['uid']}\">Steckbrief übernehmen</a>";
         }
 
-        $correction = "<a href=\"misc.php?action=give_prewob&uid={$userdata['uid']}\">Pre Wob geben</a><br>
-              <a href=\"misc.php?action=reject_prewob&uid={$userdata['uid']}\">Korrektur anfordern</a>
-              ";
-
         $aucp_mod_date = $data['submission_date'];
         $correction = $data['modcorrection_time'];
 
         $aucp_mod_enddate = "";
+        $aucp_mod_enddate_timstamp = application_ucp_get_deadline($data['uid']);
+        $aucp_mod_enddate = date("d.m.Y", $aucp_mod_enddate_timstamp);
+        if ($aucp_mod_enddate_timstamp < $today) {
+          $aucp_mod_enddate = '<span class="expired">' . $aucp_mod_enddate . " (" . $userdata['aucp_extend'] . ")" . '</span>';
+        } else {
+          $aucp_mod_enddate = $aucp_mod_enddate . " (" . $userdata['aucp_extend'] . ")";
+        }
+        $aucp_mod_enddate = "<br>Deadline: " . $aucp_mod_enddate;
+
         $aucp_mod_profillink = build_profile_link($userdata['username'], $data['uid']);
         eval("\$application_ucp_prewob_incorrection .= \"" . $templates->get("application_ucp_mods_bit") . "\";");
       }
@@ -5999,74 +5906,19 @@ function application_ucp_modoverview()
 
         $aucp_mod_date = date("d.m.Y", $userdata['regdate']);
         $aucp_mod_modlink  = date("d.m.Y", $userdata['lastvisit']);
-
         $aucp_mod_enddate = ""; // Vorinitialisierung
 
-
-        if (!empty($data['aucp_extenddate'])) {
-          // Verlängerungsdatum aus der DB (Format: yyyy-mm-dd) in ein DateTime-Objekt umwandeln
-
-          $extendDateObj = DateTime::createFromFormat('Y-m-d', $data['aucp_extenddate']);
-
-          if ($extendDateObj) {
-            // Originalfrist: Registrierungsdatum + 14 Tage
-
-            $regDeadline = (new DateTime())->setTimestamp($userdata['regdate']);
-
-            $regDeadline->modify('+14 days');
-
-            // Berechne, wie viele Tage der regulären Frist bis zum Verlängerungsdatum noch übrig sind
-
-            if ($extendDateObj > $regDeadline) {
-
-              $remainingDays = 0;
-            } else {
-
-              $interval = $regDeadline->diff($extendDateObj);
-
-              $remainingDays = (int)$interval->format('%a');
-            }
-
-            // Neue Frist: Verlängerungsdatum + (verbleibende Tage + 14 Tage Verlängerungszeitraum)
-
-            $deadlineObject = clone $extendDateObj;
-
-            $daysToAdd = $remainingDays + 14;
-
-            $deadlineObject->modify('+' . $daysToAdd . ' days');
-
-            $formattedDate = $deadlineObject->format('d.m.Y');
-          } else {
-            // Fallback, falls das Verlängerungsdatum ungültig sein sollte
-
-            $deadlineObject = (new DateTime())->setTimestamp($userdata['regdate']);
-
-            $deadlineObject->modify('+14 days');
-
-            $formattedDate = $deadlineObject->format('d.m.Y');
-          }
-          // Den Wert aus aucp_extend in Klammern anhängen
-
-          $aucp_mod_enddate = $formattedDate . " (" . $data['aucp_extend'] . ")";
-        } else {
-          // Keine Verlängerung: 14 Tage vom Registrierungsdatum
-
-          $deadlineObject = (new DateTime())->setTimestamp($userdata['regdate']);
-
-          $deadlineObject->modify('+14 days');
-
-          $aucp_mod_enddate = $deadlineObject->format('d.m.Y');
-        }
+        $aucp_mod_enddate_timstamp = application_ucp_get_deadline($data['uid']);
+        $aucp_mod_enddate = date("d.m.Y", $aucp_mod_enddate_timstamp);
 
         // Wenn die Frist bereits abgelaufen ist (Deadline liegt vor dem heutigen Datum),
         // wird der ausgegebene Wert in einen span mit der Klasse "expired" eingebettet.
-
-        $today = new DateTime();
-
-        if ($deadlineObject < $today) {
-
-          $aucp_mod_enddate = '<span class="expired">' . $aucp_mod_enddate . '</span>';
+        if ($aucp_mod_enddate_timstamp < $today) {
+          $aucp_mod_enddate = '<span class="expired">' . $aucp_mod_enddate . " (" . $userdata['aucp_extend'] . ")" . '</span>';
+            } else {
+          $aucp_mod_enddate = $aucp_mod_enddate . " (" . $userdata['aucp_extend'] . ")";
         }
+
         $aucp_mod_profillink = build_profile_link($userdata['username'], $data['uid']);
         eval("\$application_ucp_prewob_notsend .= \"" . $templates->get("application_ucp_mods_bit") . "\";");
       }
@@ -6140,9 +5992,9 @@ function application_ucp_modoverview()
       $correction = $wobform . "<br><a href=\"misc.php?action=reject_wob&uid={$userdata['uid']}\">Korrektur anfordern</a>";
 
       $aucp_mod_date = $data['submission_date'];
-
-
-      $aucp_mod_enddate = "";
+      $mod_date = "";
+      $mod_date = $data['modcorrection_time'];
+      $aucp_mod_enddate = "<br>Letzte Mod-Korrektur am {$mod_date}";
       $aucp_mod_profillink = build_profile_link($userdata['username'], $data['uid']);
       eval("\$application_ucp_wob .= \"" . $templates->get("application_ucp_mods_bit") . "\";");
     }
@@ -6165,7 +6017,6 @@ function application_ucp_modoverview()
     }
 
     while ($data = $db->fetch_array($wob_users_wob_correction)) {
-
       $aucp_mod_modlink = $aucp_mod_profillink = $aucp_mod_date = $aucp_mod_steckilink = $correction = $wobform = "";
       $userdata = array();
 
@@ -6209,6 +6060,18 @@ function application_ucp_modoverview()
 
       $aucp_mod_date = $data['submission_date'];
 
+      $aucp_mod_enddate = "";
+      $aucp_mod_enddate_timstamp = application_ucp_get_deadline($data['uid']);
+      $aucp_mod_enddate = date("d.m.Y", $aucp_mod_enddate_timstamp);
+
+      if ($aucp_mod_enddate_timstamp < $today) {
+        $aucp_mod_enddate = '<span class="expired">' . $aucp_mod_enddate . " (" . $userdata['aucp_extend'] . ")" . '</span>';
+      } else {
+        $aucp_mod_enddate = $aucp_mod_enddate . " (" . $userdata['aucp_extend'] . ")";
+      }
+
+      $aucp_mod_enddate = "<br>Deadline: " . $aucp_mod_enddate;
+
       $aucp_mod_profillink = build_profile_link($userdata['username'], $data['uid']);
       eval("\$application_ucp_wob_incorrection .= \"" . $templates->get("application_ucp_mods_bit") . "\";");
     }
@@ -6217,7 +6080,9 @@ function application_ucp_modoverview()
     if ($mybb->settings['application_ucp_prewob']) {
 
       $get_new_wob = $db->write_query("
-          SELECT u.* 
+          SELECT u.*,
+          DATE_FORMAT(modcorrection_time, '%e.%m.%Y') AS modcorrection_time,
+          DATE_FORMAT(submission_time, '%e.%m.%Y') AS submission_time 
           FROM " . TABLE_PREFIX . "users u
           LEFT JOIN " . TABLE_PREFIX . "application_ucp_management a ON u.uid = a.uid
           WHERE a.pre_wob = 1
@@ -6226,7 +6091,9 @@ function application_ucp_modoverview()
       ");
     } else {
       $get_new_wob = $db->write_query("
-        SELECT u.* 
+        SELECT u.*,
+        DATE_FORMAT(modcorrection_time, '%e.%m.%Y') AS modcorrection_time,
+        DATE_FORMAT(submission_time, '%e.%m.%Y') AS submission_time 
         FROM " . TABLE_PREFIX . "users u
         LEFT JOIN " . TABLE_PREFIX . "application_ucp_management a ON u.uid = a.uid
         WHERE a.uid IS NULL
@@ -6237,79 +6104,39 @@ function application_ucp_modoverview()
     while ($data = $db->fetch_array($get_new_wob)) {
       $aucp_mod_modlink = $aucp_mod_profillink = $aucp_mod_date = $aucp_mod_steckilink = $correction = $wobform = "";
       $userdata = array();
+
       $userdata = get_user($data['uid']);
-      // if ($mybb->settings['application_ucp_steckithread'] == 1) {
-      //   $aucp_mod_steckilink = "";
-      // } else {
-      //   $aucp_mod_steckilink = "";
-      // }
+      if ($mybb->settings['application_ucp_steckithread'] == 1) {
       $aucp_mod_steckilink = date("d.m.Y", $userdata['regdate']);
+      } else {
+        $aucp_mod_steckilink = date("d.m.Y", $userdata['regdate']);
+      }
 
-
-      $aucp_mod_date = "frist";
+      $aucp_mod_date = "";
       $aucp_mod_modlink  = date("d.m.Y", $userdata['lastvisit']);
-
       $aucp_mod_enddate = ""; // Vorinitialisierung
 
-      //Bewerbungsfristende anzeigen
-      //regdate + application_ucp_applicationtime (reguläre frist ohne verlängerung)
-      $days_forapplication_withnoextend = $mybb->settings['application_ucp_applicationtime'];
-      $regDate = (new DateTime())->setTimestamp($userdata['regdate']);
-      $firstDeadline =  clone $regDate;
-      $firstDeadline->modify('+' . $days_forapplication_withnoextend . ' days');
-
-
-
-
-      if (!empty($data['aucp_extenddate'])) {
-
-        // $daysToAdd = $remainingDays + 14;
-        // Verlängerungsdatum aus der DB (Format: yyyy-mm-dd) in ein DateTime-Objekt umwandeln
-
-        $extendDateObj = DateTime::createFromFormat('Y-m-d', $data['aucp_extenddate']);
-
-        if ($extendDateObj) {
-          // Originalfrist: Registrierungsdatum + 14 Tage
-
-          $regDeadline = (new DateTime())->setTimestamp($userdata['regdate']);
-
-          $regDeadline->modify('+14 days');
-          // Berechne, wie viele Tage der regulären Frist bis zum Verlängerungsdatum noch übrig sind
-          if ($extendDateObj > $regDeadline) {
-
-            $remainingDays = 0;
-          } else {
-            $interval = $regDeadline->diff($extendDateObj);
-            $remainingDays = (int)$interval->format('%a');
-          }
-          // Neue Frist: Verlängerungsdatum + (verbleibende Tage + 14 Tage Verlängerungszeitraum)
-          $deadlineObject = clone $extendDateObj;
-          $daysToAdd = $remainingDays + 14;
-          $deadlineObject->modify('+' . $daysToAdd . ' days');
-          $formattedDate = $deadlineObject->format('d.m.Y');
-        } else {
-          // Fallback, falls das Verlängerungsdatum ungültig sein sollte
-          $deadlineObject = (new DateTime())->setTimestamp($userdata['regdate']);
-          $deadlineObject->modify('+14 days');
-          $formattedDate = $deadlineObject->format('d.m.Y');
-        }
-        // Den Wert aus aucp_extend in Klammern anhängen
-        $aucp_mod_enddate = $formattedDate . " (" . $data['aucp_extend'] . ")";
-      } else {
-        // Keine Verlängerung: 14 Tage vom Registrierungsdatum
-        $deadlineObject = (new DateTime())->setTimestamp($userdata['regdate']);
-        $deadlineObject->modify('+14 days');
-        $aucp_mod_enddate = $deadlineObject->format('d.m.Y');
-      }
+      $aucp_mod_enddate_timstamp = application_ucp_get_deadline($data['uid']);
+      $aucp_mod_enddate = date("d.m.Y", $aucp_mod_enddate_timstamp);
       // Wenn die Frist bereits abgelaufen ist (Deadline liegt vor dem heutigen Datum),
       // wird der ausgegebene Wert in einen span mit der Klasse "expired" eingebettet.
-      $today = new DateTime();
-      if ($deadlineObject < $today) {
-        $aucp_mod_enddate = '<span class="expired">' . $aucp_mod_enddate . '</span>';
+      if ($aucp_mod_enddate_timstamp < $today) {
+        $aucp_mod_enddate = '<span class="expired">' . $aucp_mod_enddate . " (" . $userdata['aucp_extend'] . ")" . '</span>';
+          } else {
+        $aucp_mod_enddate = $aucp_mod_enddate . " (" . $userdata['aucp_extend'] . ")";
       }
+
+      $mod_date = $data['modcorrection_time'];
+      if (empty($mod_date) || $mod_date === "0000-00-00 00:00:00") {
+        $aucp_mod_enddate .= "<br>Noch keine Korrektur";
+        } else {
+        $aucp_mod_enddate .= "<br>Letzte Mod-Korrektur am {$mod_date}";
+      }
+
       $aucp_mod_profillink = build_profile_link($userdata['username'], $data['uid']);
       eval("\$application_ucp_wob_notsend .= \"" . $templates->get("application_ucp_mods_bit") . "\";");
     }
+
     eval("\$application_ucp_mods = \"" . $templates->get("application_ucp_mods") . "\";");
     output_page($application_ucp_mods);
   }
@@ -6612,6 +6439,44 @@ function application_ucp_buildsql($type = "searchable")
     $selectstring = "LEFT JOIN (select um.uid as auid from `" . TABLE_PREFIX . "application_ucp_userfields` as um group by uid) as fields ON auid = uid";
   }
   return $selectstring;
+}
+
+
+function application_ucp_webhook_discord($uid)
+{
+  global $mybb, $db;
+
+  $webhookurl = "https://discord.com/api/webhooks/1242121372449247272/wC6T2A8FwvrpKIWE9E_PRV1W9AZ4KIPdnyHwZCmMJoqf27_-j-U_Eq8VVzDPljyWn5eb";
+  $text  = "";
+
+  $user = get_user($uid);
+
+  $text = "**{$user['username']}** hat soeben das WoB bekommen!";
+
+  $headers = ['Content-Type: application/json; charset=utf-8'];
+
+  $POST = [
+    'username' => $user['username'],
+    'avatar_url' => rtrim($mybb->settings['bburl'], '/') . '/' . ltrim($user['avatar'], '/'),
+    'embeds' => [
+      [
+        'description' => $text,
+        'color' => 16711680 // ROT
+      ]
+    ]
+  ];
+
+  $ch = curl_init();
+  curl_setopt($ch, CURLOPT_URL, $webhookurl);
+  curl_setopt($ch, CURLOPT_POST, true);
+  curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+  curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+  curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+  curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($POST));
+  $response   = curl_exec($ch);
+
+  echo $response;
+  curl_close($ch);
 }
 
 /**
@@ -7041,34 +6906,6 @@ function application_ucp_savefields($fields, $uid)
   }
 }
 
-// /**
-//  * Funktion um die Felder zu speichern
-//  */
-// function application_ucp_savefields($fields, $uid)
-// {
-//   global $db, $mybb, $lang;
-
-//   if (!verify_post_check($mybb->get_input('my_post_key'))) {
-//     error($lang->invalid_post_code);
-//   }
-//   foreach ($fields as $key => $value) {
-//     //key -> id des felds  //Value -> der wert
-//     //checkboxen kriegen wir als array, wir müssen es erst in einen string umwandeln, den wir speichern können
-//     if (is_array($value)) {
-//       $value = implode(",", $value);
-//     }
-//     //Weil wir nur infofelder haben, wir wollen nur die Felder mit einem numerischen wert, also einer ID und somit einem Steckbrieffeld absspeichern
-//     if (is_numeric($key)) {
-//       //Füge den Wert neu ein, wenn er noch nicht existiert
-//       //dabei einmal sonderzeichen escapen und leertasten vorne und hinten rauswerfen
-//       $value = trim($db->escape_string($value));
-//       $db->write_query("
-//         INSERT INTO " . TABLE_PREFIX . "application_ucp_userfields (uid, value, fieldid) 
-//         VALUES('{$uid}', '{$value}', {$key}) ON 
-//         DUPLICATE KEY UPDATE value='{$value}'");
-//     }
-//   }
-// }
 //GET USER
 function application_ucp_allchars($thisuser)
 {
@@ -7270,27 +7107,6 @@ function application_ucp_myalert()
 }
 
 
-// $plugins->add_hook('xmlhttp', 'application_ucp_xmlhttp', -1);
-// function application_ucp_xmlhttp()
-// {
-//   global $mybb;
-
-//   if ($mybb->get_input('action') == 'post_check') {
-//     $toReturn = array();
-//     if (!verify_post_check($mybb->get_input('my_post_key'), true)) {
-//       $toReturn = array(
-//         'errors' => array("Falscher Autorisierungscode. Hast du dich zwischen durch umgeloggt?"),
-//       );
-//       echo json_encode($toReturn);
-//     } else {
-//       $toReturn = array(
-//         'success'  => true,
-//       );
-//       echo json_encode($toReturn);
-//     }
-//   }
-// }
-
 /**
  * Was passiert wenn ein User gelöscht wird
  */
@@ -7415,4 +7231,33 @@ function application_ucp_admin_update_plugin(&$table)
 
 
   $table->construct_row();
+}
+
+
+/**
+ * Funktion um die Deadline des Steckbriefes zu bekommen
+ * @param int $uid UserID
+ * @return int timestamp der Deadline
+ */
+
+function application_ucp_get_deadline($uid)
+{
+  global $mybb, $db;
+  //settings
+  $friststecki = $mybb->settings['application_ucp_correctiontime'];
+  //userdata
+  $userdata = get_user($uid);
+  $deadline = strtotime("+{$friststecki} days", $userdata['regdate']);
+  // Verlängerungen sind erlaubt
+  if ($mybb->settings['application_ucp_extend'] > 0) {
+    //wie oft hat der User verlängert?
+    $extend_cnt = intval($userdata['aucp_extend']);
+    if ($extend_cnt > 0) {
+      //gab es verlängerungen? dann Frist von verlängern * wie oft wurder verlängert
+      $to_add = $mybb->settings['application_ucp_extend'] * $extend_cnt;
+      //auf die standardfrist draufrechnen
+      $deadline = strtotime("+{$to_add} days", $deadline);
+    }
+  }
+  return $deadline;
 }
