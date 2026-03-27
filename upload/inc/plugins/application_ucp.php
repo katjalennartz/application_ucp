@@ -892,7 +892,7 @@ function application_ucp_css()
         gap: 10px;
     }
 
-    /*tabstyling/*
+    /*tabstyling*/
     .cat_tabs {
       margin: 0px;
       padding: 0px;
