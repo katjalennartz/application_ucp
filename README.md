@@ -1,5 +1,6 @@
  # Steckbriefe im UCP
-Das Plugin ermöglicht es, unabhängig von Profilfeldern, Felder für den Steckbrief anzulegen. Diese werden in einem gesonderten Bereich im UCP angezeigt und können hier bearbeitet werden. Das Mitglied kann den Steckbrief bearbeiten und speichern und schließlich als fertig markieren und einreichen. Es wird automatisch ein Thread in der Steckbriefarea erstellt.       
+Das Plugin ermöglicht es, unabhängig von Profilfeldern, Felder für den Steckbrief anzulegen. Diese werden in einem gesonderten Bereich im UCP angezeigt und können hier bearbeitet werden. Das Mitglied kann den Steckbrief bearbeiten und speichern und schließlich als fertig markieren und einreichen. Es wird automatisch ein Thread in der Steckbriefarea erstellt.      
+Das Plugin verwendet das RPG Stuff Modul von Lara, die Verwaltung der Felder findet man im Bereich RPG Erweiterungen.
 
 **Ausfühlichere Erklärungen und Erweiterungen im Wiki!** 
 	
@@ -56,7 +57,6 @@ ersetzen mit:
 ```{$savebtn}```
 		
 		
-
 **version: 1.0.1**  
 10.02.2023
 - Möglichkeit mehr als eine Abhängigkeit hinzuzufügen
@@ -136,11 +136,13 @@ eingefügte Spalten
 * memberlist: {$applicationfilter} (anzeige suchfelder) , {$filterjs} (Javascript für Suchvorschläge)
 
 **Links**
-* ACP Übersicht der Felder: boardadresse/admin/index.php?module=config-application_ucp
-* Feld erstellen: boardadresse/admin/index.php?module=config-application_ucp&action=application_ucp_add
-* Steckbriefe verwalten: boardadresse/admin/index.php?module=config-application_ucp&action=application_ucp_manageusers
+* ACP Übersicht der Felder: boardadresse/admin/index.php?module=rpgstuff-application_ucp
+* Feld erstellen: boardadresse/admin/index.php?module=rpgstuff-application_ucp&action=application_ucp_add
+* Steckbriefe verwalten: boardadresse/admin/index.php?module=rpgstuff-application_ucp&action=application_ucp_manageusers
+* Kategoruen erstellen und verwalten: boardadresse/admin/index.php?module=rpgstuff-application_ucp&action=application_ucp_managecats
 * UCP: boardadresse/usercp.php?action=application_ucp
 * Mod Übersicht: boardadresse/misc.php?action=aplication_mods
+* 
 # Felder im ACP und ihre Funktionen    
 Hier werden die verschiedenen Einstellungen der Felder im ACP erklärt
 
