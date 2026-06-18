@@ -4560,52 +4560,52 @@ function application_ucp_usercp()
         //das Avatar ersetzen 
         $threadmessage = str_replace("\$avatar", "<img src=\"{$mybb->user['avatar']}\">", $threadmessage);
 
-        //blurred lines kram mit abfangen für den fall, dass ich es vergesse vorm upload ins gitlab rauszunehmen :D
-        //kann gerne als beispiel für eigenen ergänzungen genommen werden. Wir checken hier ob bestimmte Dinge eingetragen/ausgefüllt wurden
-        $firststeps_check = "";
-        //jobliste - abfangen ob es die Tabelle gibt oder nicht
-        if ($db->table_exists("jl_entry")) {
-          //gibt es einen Eintrag
-          $fetch_job = $db->simple_select("jl_entry", "*", "je_uid= {$mybb->user['uid']}");
-          if ($db->num_rows($fetch_job) > 0) {
-            //wenn ja mit Häkchen in den Thread schreiben
-            $firststeps_check .= "<li><i class=\"fa-solid fa-check\"></i> In Jobliste eingetragen</li>";
-          } else {
-            //wenn nein mit Kreuz
-            $firststeps_check .= "<li><i class=\"fa-solid fa-xmark\"></i> Nicht in Jobliste eingetragen</li>";
-          }
-        }
-        //wohnort
-        if ($db->table_exists("residences_user")) {
-          $fetch_job = $db->simple_select("residences_user", "*", "uid= {$mybb->user['uid']}");
-          if ($db->num_rows($fetch_job) > 0) {
-            $firststeps_check .= "<li><i class=\"fa-solid fa-check\"></i> In Residences eingetragen</li>";
-          } else {
-            $firststeps_check .= "<li><i class=\"fa-solid fa-xmark\"></i> Nicht in Residences eingetragen</li>";
-          }
-        }
-        //relas
-        //wohnort
-        if ($db->table_exists("relas_entries")) {
-          $fetch_job = $db->simple_select("relas_entries", "*", "r_from = {$mybb->user['uid']}");
-          if ($db->num_rows($fetch_job) > 0) {
-            $firststeps_check .= "<li><i class=\"fa-solid fa-check\"></i> Es sind Relations eingetragen</li>";
-          } else {
-            $firststeps_check .= "<li><i class=\"fa-solid fa-xmark\"></i> Keine Relations eingetragen</li>";
-          }
-        }
-        //Wir holen uns die Avaperson, weil wir die Info direkt im Thread sehen wollen (id für avatarperson bei uns = 20 )
-        $fetch_ava = $db->fetch_field($db->simple_select("application_ucp_userfields", "value", "uid= {$mybb->user['uid']} AND fieldid = '20'"), "value");
-        if ($fetch_ava != "") {
-          $firststeps_check .= "<li><strong>Avatarperson:</strong> {$fetch_ava}</li>";
-        } else {
-          $firststeps_check .= "<li><i class=\"fa-solid fa-xmark\"></i> Keine Avaperson eingetragen</li>";
-        }
-        //und wir holen uns noch den Spielernamen der bei uns im Profilfeld mit ID 4 gespeichert ist 
-        $firststeps_check .= "<li>gespielt von {$mybb->user['fid4']}</li>";
+        // //blurred lines kram mit abfangen für den fall, dass ich es vergesse vorm upload ins gitlab rauszunehmen :D
+        // //kann gerne als beispiel für eigenen ergänzungen genommen werden. Wir checken hier ob bestimmte Dinge eingetragen/ausgefüllt wurden
+        // $firststeps_check = "";
+        // //jobliste - abfangen ob es die Tabelle gibt oder nicht
+        // if ($db->table_exists("jl_entry")) {
+        //   //gibt es einen Eintrag
+        //   $fetch_job = $db->simple_select("jl_entry", "*", "je_uid= {$mybb->user['uid']}");
+        //   if ($db->num_rows($fetch_job) > 0) {
+        //     //wenn ja mit Häkchen in den Thread schreiben
+        //     $firststeps_check .= "<li><i class=\"fa-solid fa-check\"></i> In Jobliste eingetragen</li>";
+        //   } else {
+        //     //wenn nein mit Kreuz
+        //     $firststeps_check .= "<li><i class=\"fa-solid fa-xmark\"></i> Nicht in Jobliste eingetragen</li>";
+        //   }
+        // }
+        // //wohnort
+        // if ($db->table_exists("residences_user")) {
+        //   $fetch_job = $db->simple_select("residences_user", "*", "uid= {$mybb->user['uid']}");
+        //   if ($db->num_rows($fetch_job) > 0) {
+        //     $firststeps_check .= "<li><i class=\"fa-solid fa-check\"></i> In Residences eingetragen</li>";
+        //   } else {
+        //     $firststeps_check .= "<li><i class=\"fa-solid fa-xmark\"></i> Nicht in Residences eingetragen</li>";
+        //   }
+        // }
+        // //relas
+        // //wohnort
+        // if ($db->table_exists("relas_entries")) {
+        //   $fetch_job = $db->simple_select("relas_entries", "*", "r_from = {$mybb->user['uid']}");
+        //   if ($db->num_rows($fetch_job) > 0) {
+        //     $firststeps_check .= "<li><i class=\"fa-solid fa-check\"></i> Es sind Relations eingetragen</li>";
+        //   } else {
+        //     $firststeps_check .= "<li><i class=\"fa-solid fa-xmark\"></i> Keine Relations eingetragen</li>";
+        //   }
+        // }
+        // //Wir holen uns die Avaperson, weil wir die Info direkt im Thread sehen wollen (id für avatarperson bei uns = 20 )
+        // $fetch_ava = $db->fetch_field($db->simple_select("application_ucp_userfields", "value", "uid= {$mybb->user['uid']} AND fieldid = '20'"), "value");
+        // if ($fetch_ava != "") {
+        //   $firststeps_check .= "<li><strong>Avatarperson:</strong> {$fetch_ava}</li>";
+        // } else {
+        //   $firststeps_check .= "<li><i class=\"fa-solid fa-xmark\"></i> Keine Avaperson eingetragen</li>";
+        // }
+        // //und wir holen uns noch den Spielernamen der bei uns im Profilfeld mit ID 4 gespeichert ist 
+        // $firststeps_check .= "<li>gespielt von {$mybb->user['fid4']}</li>";
 
-        //das ganze wird in der Variable $firststeps_check gespeichert, schreiben wir diese nun ins ACP, wird in der Message der Inhalt eingefügt
-        $threadmessage = str_replace("\$firststeps_check", $firststeps_check, $threadmessage);
+        // //das ganze wird in der Variable $firststeps_check gespeichert, schreiben wir diese nun ins ACP, wird in der Message der Inhalt eingefügt
+        // $threadmessage = str_replace("\$firststeps_check", $firststeps_check, $threadmessage);
 
         //Wenn ihr den ganzen Steckbrief im Thread haben wollt, könnt ihr euch, die zwei Zeilen hier einfach einkommentieren
         // Im ACP dann einfach $aucp_fields einfügen.
