@@ -164,3 +164,6 @@ $l['application_ucp_err_dependency_value_wrong'] = 'Für dein ausewähltes Feld 
 $l['application_ucp_err_delete'] = "Das Feld konnte nicht gelöscht werden.";
 
 $l['application_ucp_success'] = 'Erfolgreich gespeichert.';
+
+$l['application_ucp_manageprewob'] = 'Verwaltung Zwischenwob';
+$l['application_ucp_manageprewob_dscr'] = 'Bestimme hier, welche Felder für das Zwischenwob ausgefüllt werden müssen.';
