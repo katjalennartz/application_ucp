@@ -508,6 +508,22 @@ function application_ucp_add_templates($type = 'install')
  */
 function application_ucp_templates()
 {
+  global $db;
+  $template[] = array(
+    "title" => 'application_ucp_field_dynamic_popup',
+    "template" => $db->escape_string('<div class="modal" id="popup_{$type[\'fieldname\']}" style="display: none; padding: 10px; margin: auto; text-align: center;">
+          <input type="text" placeholder="Titel" name="{$type[\'fieldname\']}_title" value="">
+          <br>
+          <textarea name="{$type[\'fieldname\']}_content" {$max_length_dyn}></textarea>
+          {$max_length_info}{$max_items_info}<br>
+          <button type="button" id="{$type[\'fieldname\']}_dynamisch_add">hinzufügen</button>
+        </div>
+      '),
+    "sid" => "-2",
+    "version" => "1.0",
+    "dateline" => TIME_NOW
+  );
+
   $template[] = array(
     "title" => 'application_ucp_index',
     "template" => '<div class="red_alert">
@@ -892,6 +908,7 @@ function application_ucp_css()
       
       .applucp-con__item {
           display: grid;
+          margin-block-end: 20px;
       }
       
       .applucp-con__item.applucp-buttons {
@@ -942,7 +959,7 @@ function application_ucp_css()
           gap: 10px;
       }
           
-      /* rangestyling-update */
+      /* rangestyling-update - kommentar nicht entfernen */
       .aucp_range {
           height: 20px;
           background-color: #a6a6a6;
@@ -951,6 +968,14 @@ function application_ucp_css()
       .aucp_range_bar {
           height: 20px;
           background-color: #f3f3f3;
+      }
+
+      /* dynamicfield-update -  kommentar nicht entfernen */
+      .aucp_dynamic_controls a {
+          display: inline-block;
+          padding: 5px 10px;
+          margin: 5px;
+          border: 1px solid black;
       }
 ',
     'cachefile' => $db->escape_string(str_replace('/', '', 'application_ucp.css')),
@@ -1078,7 +1103,6 @@ function application_ucp_deactivate()
   find_replace_templatesets("showthread", "#" . preg_quote('{$give_wob}') . "#i", '');
   find_replace_templatesets("showthread", "#" . preg_quote('{$aucp_responsible_mod}') . "#i", '');
   find_replace_templatesets("postbit", "#" . preg_quote('{$post[\'aucp_fields\']}') . "#i", '');
-  find_replace_templatesets("postbit_classic", "#" . preg_quote('{$post[\'aucp_fields\']}') . "#i", '');
   find_replace_templatesets("memberlist", "#" . preg_quote('<tr><td colspan="3">{$applicationfilter}</tr></td>') . "#i", '');
   find_replace_templatesets("memberlist", "#" . preg_quote('{$filterjs}') . "#i", '');
   find_replace_templatesets("index", "#" . preg_quote('{$application_ucp_index}') . "#i", '');
@@ -1196,6 +1220,17 @@ function application_ucp_stylesheet_update()
                 background-color: #f3f3f3;
             }",
     'update_string' => 'rangestyling-update'
+  );
+
+  $update_array_all[] = array(
+    'stylesheet' => "/* dynamicfield-update - kommentar nicht entfernen */
+               .aucp_dynamic_controls a {
+                  display: inline-block;
+                  padding: 5px 10px;
+                  margin: 5px;
+                  border: 1px solid black;
+              }",
+    'update_string' => 'dynamicfield-update'
   );
 
   return $update_array_all;
@@ -1617,7 +1652,7 @@ function application_ucp_admin_load()
           $start = 0;
           $current_page = 1;
         }
-      } 
+      }
       if ($mybb->settings['application_ucp_acp_pagination_fields'] != 0) {
         $get_field_pages = $db->write_query("SELECT f.*, cat_order FROM `mybb_application_ucp_fields` f left JOIN `mybb_application_ucp_categories` c on f.cat_id = c.id order by cat_order, cat_id, sorting
 			    LIMIT {$start}, {$per_page}");
@@ -3474,7 +3509,7 @@ function application_ucp_usercp()
 
   //start für javascript das wir brauchen
   $application_ucp_js .= "<script>
-$(document).ready(function () {
+    $(document).ready(function () {
     function updateDependencies() {
         $('[aria-dependson]').each(function () {
             var dependent = $(this);
@@ -3524,103 +3559,6 @@ $(document).ready(function () {
     updateDependencies();
 ";
 
-  // $application_ucp_js .= "
-
-
-  // <script>
-
-  // $(function() {
-  //   //initial alle abhängigen verstecken
-  //   // $('.depends').hide();
-  //   // $('.depends').children().hide();
-
-  //       $('[aria-dependson]').each(function() {
-  //         var dependsOnValue = $(this).attr('aria-dependson'); 
-  //         console.log(dependsOnValue);
-  //           var dependentElement = $('#' + dependsOnValue); 
-
-  //           if (dependentElement.length && dependentElement.is(':visible')) {
-  //             console.log('shopw');
-
-  //               if (dependentElement.is('select')) {
-  //                   $(this).parent().show();
-  //                   dependentElement.show();
-  //               }
-
-  //           //         if (dependentElement.prop('multiple')) {
-  //           //             // Multiselect zurücksetzen
-  //           //             dependentElement.val([]);
-  //           //         } else {
-  //           //             dependentElement.prop('selectedIndex', 0).val('');
-  //           //         }
-
-  //           //         setTimeout(function() {
-  //           //             dependentElement.trigger('change');
-  //           //         }, 0);
-
-  //           //         dependentElement.hide().parent().hide();
-  //           //     } else if (dependentElement.is(':radio') || dependentElement.is(':checkbox')) {
-  //           //         // Radiobuttons / Checkboxen zurücksetzen
-  //           //         dependentElement.prop('checked', false).trigger('change');
-  //           //     }
-  //           }
-  //       });
-
-  //   // $('select').each(function() {
-  //   //   var selectName = $(this).attr('name');
-  //   //   var selectID = $(this).attr('id');
-  //   //   var selectedOptions = $(this).find('option:selected');
-
-  //   //   var string = $(this).val();
-  //   //   // console.log(selectName + ' ausgewählt ist' +string + 'id ist' + selectID);
-  //   //   // // Durchlaufe jede ausgewählte Option des aktuellen Select-Elements
-  //   //   selectedOptions.each(function() {
-  //   //     var string = $(this).val();
-  //   //     var str = string.replace(/[^A-Za-z0-9]+/g, '');
-  //   //     var idStr = 'wrap_dep_' + selectID;
-  //   //     $('.dep_value_' + str).each(function() {
-  //   //     //wrap_dep_education_nav
-  //   //     // console.log('-- in each stringklasse ist ' +'.dep_value_' + str +'.' + idStr);
-  //   //       //checkbox ist aktiviert. - div box wrapper, label, hideinfo, etc. anzeigen
-  //   //       $('.'+ idStr +'.dep_value_' + str).show();
-  //   //       $('.'+ idStr +'.dep_value_' + str).children().show();
-  //   //     });
-  //   //   });
-  //   // });
-
-  //   // // Alle Inputs, Selects und Textareas in ausgeblendeten Elementen zurücksetzen
-  //   // // $(':hidden').find('input, select, textarea').each(function() {
-  //   // //     if ($(this).is('select')) {
-  //   // //         $(this).val('').trigger('change'); // Setzt Select auf leer und triggert Event
-  //   // //     } else if ($(this).is(':checkbox') || $(this).is(':radio')) {
-  //   // //         $(this).prop('checked', false).trigger('change'); // Uncheck Checkboxen und Radio-Buttons
-  //   // //     } else {
-  //   // //         $(this).val('').trigger('change'); // Setzt andere Inputs auf leer
-  //   // //     }
-  //   // // });
-
-  //   // $('[aria-dependson]:visible').each(function() { 
-  //   //     var dependsOnValue = $(this).attr('aria-dependson'); // Wert von aria-dependson holen
-  //   //     var dependentElement = $('#' + dependsOnValue); // Element mit der ID suchen
-
-  //   //     if (dependentElement.length && dependentElement.is(':hidden')) { 
-  //   //          if (dependentElement.is('select')) {
-  //   //          console.log(dependentElement);
-  //   //             dependentElement.parent().show();
-  //   //             dependentElement.show();
-  //   //             dependentElement.prop('selectedIndex', 0).val('');
-  //   //             setTimeout(function() {
-  //   //                 dependentElement.trigger('change');
-  //   //               }, 0);
-  //   //             dependentElement.hide();
-  //   //             dependentElement.parent().hide();
-  //   //         } 
-  //   //     }
-  //   // });
-
-  //   //Todo Auch für radiobuttons und multiselect
-  //   ";
-
   //Javascript und markup für Kategorien.
   $application_ucpcats_js = "";
   $cats_html = "";
@@ -3636,7 +3574,7 @@ $(document).ready(function () {
 
 
     if ($db->num_rows($get_fields_nocat) > 0) {
-      $cats_html_inner .= "<li class=\"cat_tabs__tab0\" data-tab=\"con_cat0\">{$mybb->settings['application_ucp_acp_cat_defaultname']}</li>";
+      $cats_html_inner .= "<li class=\"cat_tabs__tab0 cat_tab\" data-tab=\"con_cat0\">{$mybb->settings['application_ucp_acp_cat_defaultname']}</li>";
     }
     $get_cats = $db->simple_select("application_ucp_categories", "*", "", array("order_by" => "cat_order"));
     $catarray = array();
@@ -3714,7 +3652,6 @@ $(document).ready(function () {
       $get_value['value'] = "";
     }
 
-
     //wenn nein, gibt es eine vorlage für das feld?
     if ($type['template'] != "") {
       if ($get_value['value'] == "") {
@@ -3761,84 +3698,11 @@ $(document).ready(function () {
       $dep_classname = "has_dep dep_" . $type['dependency'];
       $dep_classname_wrap = "depends wrap_dep_" . preg_replace('/[^A-Za-z0-9\_]/', '', $type['dependency']) . $dep_classes;
       $hide = true;
-
-      // //javascript dynamisch zusammen bauen.
-      // //wenn dependency, von welchem feld und welchem wert? Entsprechend element ein oder ausblenden.
-      // $application_ucp_js .= "
-      // //checkbox wird aktiviert oder deaktiviert
-
-      // $('.{$type['dependency']}_check').off('change').on('change', function(){
-      //     //Hier testen wir, ob ein Feld versteckt / gezeigt werden muss, wenn eine Checkbox/Select aktiviert wird
-
-      //     //Es handelt sich um ein SELECT Feld
-      //     if(this.nodeName == 'SELECT') {
-      //     //  console.log('Es ist eine Select!');
-      //       if ($(this).prop('multiple')) {
-      //       }
-      //       //alle options bekommen
-      //       var selectedOptions = $(this).selectedValue;
-
-      //       //var string = $(this).val() || '';
-      //       var string = ($(this).val() != null) ? $(this).val() : '';
-
-      //         var str = string.replace(/[^A-Za-z0-9]+/g, '');
-      //       //erst einmal wieder ausblenden.
-      //       $('.wrap_dep_{$type['dependency']}').hide();
-      //       $('.wrap_dep_{$type['dependency']}').hide().find('select').prop('selectedIndex', 0).trigger('change');
-      //       $('.wrap_dep_{$type["dependency"]}').children().hide();
-
-      //           $('.wrap_dep_{$type['dependency']}.dep_value_'+str).each(function() {
-      //         // console.log('wieder einblenden initial:' +'.wrap_dep_{$type['dependency']}.dep_value_'+str );
-      //             //checkbox ist aktiviert. - div box wrapper, label, hideinfo, etc. anzeigen
-      //             $(this).show();
-      //             $(this).children().show();
-      //       });
-      //     }  else if(this.nodeName == 'INPUT') {
-      //       //kein select sondern Radio oder Checkbox
-      //       if (this.type == 'checkbox') {
-      //         // console.log('Es ist eine Checkbox!');
-      //         //wird es ausgewählt
-      //         if($(this).is(':checked')){
-      //         //wert bekommen
-      //         var string = $(this).val();
-      //           var str = string.replace(/[^A-Za-z0-9]+/g, '');
-      //           // console.log('inputtest on change' + string);
-      //         // ersetzen
-      //           //dann abhängige einblenden
-      //           $('.wrap_dep_{$type['dependency']}.dep_value_'+str).each(function() {
-      //           //checkbox ist aktiviert. - div box wrapper, label, hideinfo, etc. anzeigen
-      //           $(this).show();
-      //           $(this).children().show();
-      //           });
-      //         } else { //oder abgewählt - dann wieder verstecken
-      //           var string = $(this).val();
-
-      //          console.log('checkbox abgewählt on change' + string);
-      //           $('.wrap_dep_{$type['dependency']}.dep_value_'+string).each(function() {
-      //           $(this).hide();
-      //           $(this).children().hide();
-      //           });
-      //         }
-      //       } else if (this.type == 'radio') {
-      //           var string = $(this).val();
-      //           var str = string.replace(/[^A-Za-z0-9]+/g, '');
-      //           // console.log('Es ist ein Radio-Button!'+str);
-      //           $('.wrap_dep_{$type['dependency']}').hide();
-      //           $('.wrap_dep_{$type["dependency"]}').children().hide();
-
-      //           $('.wrap_dep_{$type['dependency']}.dep_value_'+str).each(function() {
-      //             //checkbox ist aktiviert. - div box wrapper, label, hideinfo, etc. anzeigen
-      //             $(this).show();
-      //             $(this).children().show();
-      //           });
-      //         }
-      //     }    
-      //   });   
-      // ";
     } else { //keine abhängigkeit
       $hidden = "";
       $hide = false;
     }
+
     //was für einen feldtyp haben wir
     $typ = $type['fieldtyp'];
     if ($hide == true) {
@@ -3924,13 +3788,13 @@ $(document).ready(function () {
       }
 
       $fields .= "
-      <label  class=\"app_ucp_label\" for=\"{$type['fieldname']}\" style=\"{$hidden}\" id=\"label_{$type['fieldname']}\">{$type['label']}{$requiredstar}{$pre_wob_label}:</label> <br>
+      <label  class=\"app_ucp_label\" for=\"{$type['fieldname']}\" style=\"{$hidden}\" id=\"label_{$type['fieldname']}\">{$type['label']}{$requiredstar}{$pre_wob_label}:</label>
       {$fielddescr} 
-      <div id=\"{$type['fieldname']}_wrap\">{$get_value['value']}</div>
-      <div id=\"{$type['fieldname']}_controls\">";
+      <div class=\"aucp_dynamic_wrap\" id=\"{$type['fieldname']}_wrap\">{$get_value['value']}</div>
+      <div class=\"aucp_dynamic_controls\" id=\"{$type['fieldname']}_controls\">";
       if ($can_be_edited) {
         $fields .= "<a onclick=\"$('#popup_{$type['fieldname']}').modal({ fadeDuration: 250, keepelement: true, zIndex: (typeof modal_zindex !== 'undefined' ? modal_zindex : 9999) }); return false;\" style=\"cursor: pointer;\">
-      <i class=\"fa-solid fa-calendar-plus\"></i> add</a>";
+      {$lang->application_ucp_dynamic_add}</a>";
       }
       $fields .= "</div>
       <input type=\"hidden\" class=\"{$type['fieldname']} $dep_classname \" value=\"" . htmlspecialchars($get_value['value']) . "\" name=\"{$type['id']}\" id=\"{$type['fieldname']}\" style=\"{$hidden}\" {$required} {$readonly}{$disabled}{$aria_help}/>";
@@ -4123,18 +3987,7 @@ $(document).ready(function () {
           });
         </script>";
 
-        $popups_dynamisch .= "
-        <div class=\"modal\" id=\"popup_{$type['fieldname']}\" 
-            style=\"display: none; padding: 10px; margin: auto; text-align: center;\">
-          
-          <input type=\"text\" placeholder=\"Datum\" name=\"{$type['fieldname']}_title\" value=\"\">
-          <br>
-          <textarea name=\"{$type['fieldname']}_content\" $max_length_dyn></textarea>
-          {$max_length_info}{$max_items_info}
-          <br>
-          <button type=\"button\" id=\"{$type['fieldname']}_dynamisch_add\">hinzufügen</button>
-     
-        </div>";
+        eval("\$popups_dynamisch .= \"" . $templates->get("application_ucp_field_dynamic_popup") . "\";");
       }
     } else if ($typ == "range" || $typ == "range_slider") {
       //Feld ist ein range Feld
