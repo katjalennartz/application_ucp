@@ -2110,19 +2110,19 @@ Stylen der einzelnen elemente also z.B. mit dem Selekor <b>.{$field['fieldname']
       $form_container->output_row(
         "Dynamisches Feld",
         "Der User kann dynamisch Inhalte hinzufügen (z.B. Timeline im Lebenslauf). Infos zur Benutzung im <a href=\"https://github.com/katjalennartz/application_ucp/wiki/5.-Dynamisches-Feld\" target=\"_blank\">Wiki</a>. Unbedingt vorher lesen!",
-        $form->generate_yes_no_radio('dynamisch', "0")
+        $form->generate_yes_no_radio('dynamisch', $mybb->get_input('dynamisch'))
       );
       //Dynamisch - Zeichenlänge
       $form_container->output_row(
         "Dynamisches Feld - Zeichenlänge",
         "Gibt es eine maximale Zeichenlänge für das Feld - Sonst -1 angeben?",
-        $form->generate_numeric_field('dyn_max', "0")
+        $form->generate_numeric_field('dyn_max', $mybb->get_input('dyn_max'))
       );
       //Dynamisch - Zeichenlänge
       $form_container->output_row(
         "Dynamisches Feld - Item Anzahl",
         "Gibt es eine maximale Item Anzahl, die hinzugefügt werden kann? - Sonst -1 angeben",
-        $form->generate_numeric_field('dyn_max_item', "0")
+        $form->generate_numeric_field('dyn_max_item', $mybb->get_input('dyn_max_item'))
       );
       //pflichtfeld
       $form_container->output_row(
@@ -2293,7 +2293,7 @@ Stylen der einzelnen elemente also z.B. mit dem Selekor <b>.{$field['fieldname']
         $page->output_inline_error($errors);
       }
       $get_users = $db->simple_select("users", "*");
-      $users = $db->num_rows($get_users, "unapprovedthreads");
+      $users = $db->num_rows($get_users);
 
       //Benutzer suchen 
       //Form erstellen
@@ -3805,7 +3805,7 @@ function application_ucp_usercp()
             //id des elements holen
             const cleanId = $(this).data('id-contentclean');
             // Buttons erstellen
-            const addBtns = `<div class=\"controls\" id=\"\${cleanId}_controls\"><button type=\"button\" class=\"{$type['fieldname']}_removebtn\" data-id-remove=\"\${cleanId}\"><i class=\"fa-solid fa-trash\"></i></button><button type=\"button\" class=\"{$type['fieldname']}_edit\" data-id-edit-clean=\"\${cleanId}\" data-id-edit-content=\"\${cleanId}_content\" data-id-edit-title=\"\${cleanId}_title\"><i class=\"fa-solid fa-file-pen\"></i></button><button type=\"button\" class=\"{$type['fieldname']}_up\" data-id-move-up=\"\${cleanId}\"><i class=\"fa-solid fa-arrow-up\"></i></button><button type=\"button\" class=\"{$type['fieldname']}_down\" data-id-move-down=\"\${cleanId}\"><i class=\"fa-solid fa-arrow-down\"></i></button></div>`;
+            const addBtns = `<div class=\"controls\" id=\"\${cleanId}_controls\"><button type=\"button\" class=\"{$type['fieldname']}_removebtn\" data-id-remove=\"\${cleanId}\">[delete]</button><button type=\"button\" class=\"{$type['fieldname']}_edit\" data-id-edit-clean=\"\${cleanId}\" data-id-edit-content=\"\${cleanId}_content\" data-id-edit-title=\"\${cleanId}_title\">[edit]<button type=\"button\" class=\"{$type['fieldname']}_up\" data-id-move-up=\"\${cleanId}\">▲</button><button type=\"button\" class=\"{$type['fieldname']}_down\" data-id-move-down=\"\${cleanId}\">▼</button></div>`;
             
             // Buttons einfügen
             $(this).after(addBtns);
@@ -3831,7 +3831,7 @@ function application_ucp_usercp()
               const content = $('textarea[name=\"{$type['fieldname']}_content\"]').val();
               
               // HTML hinzufügen
-              container.append(`<div class=\"{$type['fieldname']}_item\" id=\"\${cleanId}\"><div class=\"title\" class=\"\${cleanId}_title\" data-id=\"\${cleanId}\" data-id-title=\"\${cleanId}_title\">\${title}</div><div class=\"content\" data-id-contentclean=\"\${cleanId}\" data-id-content=\"\${cleanId}_content\">\${content}</div><div class=\"controls\" id=\"\${cleanId}_controls\"><button type=\"button\" class=\"{$type['fieldname']}_removebtn\" data-id-remove=\"\${cleanId}\"><i class=\"fa-solid fa-trash\"></i></button><button type=\"button\" class=\"{$type['fieldname']}_edit\" data-id-edit-clean=\"\${cleanId}\" data-id-edit-content=\"\${cleanId}_content\" data-id-edit-title=\"\${cleanId}_title\"><i class=\"fa-solid fa-file-pen\"></i></button><button type=\"button\" class=\"{$type['fieldname']}_up\" data-id-move-up=\"\${cleanId}\"><i class=\"fa-solid fa-arrow-up\"></i></button><button type=\"button\" class=\"{$type['fieldname']}_down\" data-id-move-down=\"\${cleanId}\"><i class=\"fa-solid fa-arrow-down\"></i></button></div></div>`);
+              container.append(`<div class=\"{$type['fieldname']}_item\" id=\"\${cleanId}\"><div class=\"title\" class=\"\${cleanId}_title\" data-id=\"\${cleanId}\" data-id-title=\"\${cleanId}_title\">\${title}</div><div class=\"content\" data-id-contentclean=\"\${cleanId}\" data-id-content=\"\${cleanId}_content\">\${content}</div><div class=\"controls\" id=\"\${cleanId}_controls\"><button type=\"button\" class=\"{$type['fieldname']}_removebtn\" data-id-remove=\"\${cleanId}\">[delete]</button><button type=\"button\" class=\"{$type['fieldname']}_edit\" data-id-edit-clean=\"\${cleanId}\" data-id-edit-content=\"\${cleanId}_content\" data-id-edit-title=\"\${cleanId}_title\">[edit]</button><button type=\"button\" class=\"{$type['fieldname']}_up\" data-id-move-up=\"\${cleanId}\">▲</button><button type=\"button\" class=\"{$type['fieldname']}_down\" data-id-move-down=\"\${cleanId}\">▼</button></div></div>`);
 
               $('input[name=\"{$type['fieldname']}_title\"]').val('');
               $('textarea[name=\"{$type['fieldname']}_content\"]').val('');
@@ -3876,7 +3876,7 @@ function application_ucp_usercp()
               var count = container.find('.{$type['fieldname']}_item').length;
               // Falls weniger als {$maxitems} Elemente vorhanden sind, das `a`-Element wieder hinzufügen
               if (count < {$maxitems} && container.find('.{$type['fieldname']}_controls a').length === 0) {
-                $('#{$type['fieldname']}_controls').append(`<a onclick=\"\$('#popup_lebenslauftext').modal({ fadeDuration: 250, keepelement: true, zIndex: (typeof modal_zindex !== 'undefined' ? modal_zindex : 9999) }); return false;\" style=\"cursor: pointer;\"><i class=\"fa-solid fa-file\" aria-hidden=\"true\"></i></a>`);
+                $('#{$type['fieldname']}_controls').append(`<a onclick=\"\$('#popup_lebenslauftext').modal({ fadeDuration: 250, keepelement: true, zIndex: (typeof modal_zindex !== 'undefined' ? modal_zindex : 9999) }); return false;\" style=\"cursor: pointer;\">[save]</a>`);
               
                 $('#{$type['fieldname']}_dynamisch_add').prop('disabled', false);
                 $('#{$type['fieldname']}_infomaxitems').remove();
@@ -3901,7 +3901,7 @@ function application_ucp_usercp()
               const originalTitle = contentElementTitle.html();
               
               // Input-Feld + Save- und Cancel-Button einfügen
-              contentElement.html(`<textarea name=\"dyneditcontent\" class=\"editInput\" {$max_length_dyn} >\${originalText}</textarea><button type=\"button\" class=\"{$type['fieldname']}_saveButton\" data-id-save=\"\${cleanId}\"><i class=\"fa-solid fa-floppy-disk\"></i></button><button type=\"button\" class=\"{$type['fieldname']}_cancelButton\" data-id-cancel=\"\${contentId}\" data-id-clean=\"\${cleanId}\"><i class=\"fa-solid fa-xmark\"></i></button><input name=\"dynedittitle\" class=\"save_editInputTitle\" name=\"save_editInputTitle\" type=\"hidden\" value=\"\${originalTitle}\">
+              contentElement.html(`<textarea name=\"dyneditcontent\" class=\"editInput\" {$max_length_dyn} >\${originalText}</textarea><button type=\"button\" class=\"{$type['fieldname']}_saveButton\" data-id-save=\"\${cleanId}\">[save]</i></button><button type=\"button\" class=\"{$type['fieldname']}_cancelButton\" data-id-cancel=\"\${contentId}\" data-id-clean=\"\${cleanId}\">[delete]</button><input name=\"dynedittitle\" class=\"save_editInputTitle\" name=\"save_editInputTitle\" type=\"hidden\" value=\"\${originalTitle}\">
               <input class=\"save_editInput\" name=\"save_editInput\" type=\"hidden\" value=\"\${originalText}\">`);
               contentElementTitle.html(`<input type=\"text\" class=\"editInputTitle\" value=\"\${originalTitle}\">`);
               }
