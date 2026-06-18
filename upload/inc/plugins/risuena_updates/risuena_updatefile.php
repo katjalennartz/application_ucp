@@ -19,7 +19,7 @@ if (!defined("IN_MYBB")) {
 
 /**
  * Funktion um alte Templates des Plugins bei Bedarf zu aktualisieren
- * @param array zu updatende Templates
+ * @param array $updated_templates - Array mit den Templates, die aktualisiert werden sollen, inklusive der Informationen was geändert werden soll und wie der neue Inhalt aussieht
  */
 function risuenaupdatefile_replace_templates($updated_templates)
 {
@@ -103,11 +103,12 @@ function risuenaupdatefile_replace_templates($updated_templates)
 /**
  * Funktion um ein pattern für preg_replace zu erstellen
  * und so templates zu vergleichen.
- * @return string - pattern für preg_replace zum vergleich
+ * @param string $html - der HTML String, aus dem ein regex pattern erstellt werden soll
+ * @return string - regex pattern, das für preg_replace genutzt werden kann
  */
 function risuenaupdatefile_createRegexPattern($html)
 {
-  // Entkomme alle Sonderzeichen und ersetze Leerzeichen mit flexiblen Platzhaltern
+  // escaped alle Sonderzeichen und ersetze Leerzeichen mit flexiblen Platzhaltern
   $pattern = preg_quote($html, '/');
 
   // Ersetze Leerzeichen in `class`-Attributen mit `\s+` (flexible Leerzeichen)
