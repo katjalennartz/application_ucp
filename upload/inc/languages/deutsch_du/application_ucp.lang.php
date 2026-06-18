@@ -42,6 +42,8 @@ $l['application_ucp_export'] = 'Steckbrief exportieren';
 $l['application_ucp_infoheader'] = 'Du bist seit dem {1} registriert. Du hast {2} verlängert und Zeit bis zum {3}.';
 $l['application_ucp_correction'] = 'Dein Steckbrief wurde eingereicht.';
 $l['application_ucp_notready'] = '<br><b>Du hast noch keinen Steckbrief eingereicht.</b>';
+$l['application_ucp_dynamic_add'] = '<i class="fa-solid fa-calendar-plus"></i> add';
+
 
 //Memberprofile
 $l['application_ucp_profile_trigger'] = "Inhaltswarnungen:";
