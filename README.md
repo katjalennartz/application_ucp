@@ -6,7 +6,7 @@ Das Plugin verwendet das RPG Stuff Modul von Lara, die Verwaltung der Felder fin
 	
 https://github.com/katjalennartz/application_ucp/wiki
 
-**Update: September 2025**  
+**Update: Juni 2026**  
 - version **1.2**
 - Hinzufügen Range Felder
 - Hinzufügen Zwischen WoB
@@ -14,7 +14,7 @@ https://github.com/katjalennartz/application_ucp/wiki
 - Integration Laras Rpg Stuff Modul (leichteres Updaten direkt im ACP)
 - Auslagern der Update Funktionen in eigene Dateien (-> neuer Ordner risuenas_updates ) 
 - Verschieben von der Steckbriefverwaltung in RPG Reiter im ACP
-- TODO Verwaltung bei Threads Steckbrief manager
+- Integration Webhook für Discord bei WoB
 
 **Update: September 2024**  
 - version 1.1.4
