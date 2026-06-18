@@ -1,6 +1,6 @@
 <?php
 //Info
-$l['application_ucp_info_name'] = 'Application in Risuena UCP';
+$l['application_ucp_info_name'] = 'Application in UCP';
 $l['application_ucp_info_descr'] = 'Allows users to fill out character sheets / profile information in the UCP.';
 
 $l['application_ucp_permission'] = 'Can create/manage profile fields?';
