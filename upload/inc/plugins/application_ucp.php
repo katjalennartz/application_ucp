@@ -1319,7 +1319,7 @@ function application_ucp_updated_templates()
 
 
   $update_template[] = array(
-    "templatename" => 'application_ucp_ucp_main',
+    "templatename" => 'application_ucp_mods_prewob',
     "change_string" => '{$application_ucp_mods_prewob}',
     "action" => 'overwrite',
     "action_string" => '<html>
@@ -1402,54 +1402,54 @@ function application_ucp_is_updated()
 {
   global $db, $mybb;
   $needupdate = 0;
-  echo '<div style="padding: 5px; margin-bottom:10px;max-height: 200px; overflow: auto; background: #efefef;"><h2>Steckbriefplugin updates:</h2>';
+  $text =  '<div class="border_wrapper" style="margin-bottom:10px;max-height: 200px; overflow: auto; background: #efefef; border-radius:6px; border: 1px solid #ccc;"><div class="title">Steckbriefplugin updates:</div><div class="inner_wrapper" style="padding:10px;">';
 
   if (!$db->table_exists("application_ucp_categories")) {
-    echo ("AUCP: Die tabelle application_ucp_categories muss erstellt werden <br>");
+    $text .= "AUCP: Die tabelle application_ucp_categories muss erstellt werden <br>";
     $needupdate = 1;
   }
   if (!$db->field_exists("cat_id", "application_ucp_fields")) {
-    echo ("AUCP: in der Tabelle application_ucp_fields muss das feld cat_id erstellt werden<br>");
+    $text .= "AUCP: in der Tabelle application_ucp_fields muss das feld cat_id erstellt werden<br>";
     $needupdate = 1;
   }
   if (!$db->field_exists("pre_wob", "application_ucp_fields")) {
-    echo ("AUCP: in der Tabelle application_ucp_fields muss das feld pre_wob erstellt werden<br>");
+    $text .= "AUCP: in der Tabelle application_ucp_fields muss das feld pre_wob erstellt werden<br>";
     $needupdate = 1;
   }
   if (!$db->field_exists("dynamisch", "application_ucp_fields")) {
-    echo ("AUCP:  in der Tabelle application_ucp_fields muss das feld dynamisch erstellt werden<br>");
+   $text .= "AUCP:  in der Tabelle application_ucp_fields muss das feld dynamisch erstellt werden<br>";
     $needupdate = 1;
   }
   if (!$db->field_exists("dyn_max", "application_ucp_fields")) {
-    echo ("AUCP: in der Tabelle application_ucp_fields muss das feld dyn_max erstellt werden<br>");
+    $text .= "AUCP: in der Tabelle application_ucp_fields muss das feld dyn_max erstellt werden<br>";
     $needupdate = 1;
   }
   if (!$db->field_exists("dyn_max_item", "application_ucp_fields")) {
-    echo ("AUCP: in der Tabelle application_ucp_fields muss das feld dyn_max_item erstellt werden<br>");
+    $text .= "AUCP: in der Tabelle application_ucp_fields muss das feld dyn_max_item erstellt werden<br>";
     $needupdate = 1;
   }
   if (!$db->field_exists("pre_wob", "application_ucp_management")) {
-    echo ("AUCP: in der Tabelle application_ucp_management muss das feld dyn_max_item erstellt werden<br>");
+    $text .= "AUCP: in der Tabelle application_ucp_management muss das feld dyn_max_item erstellt werden<br>";
     $needupdate = 1;
   }
   if (!$db->field_exists("wob", "application_ucp_management")) {
-    echo ("AUCP: in der Tabelle application_ucp_management muss das feld wob erstellt werden<br>");
+   $text .= "AUCP: in der Tabelle application_ucp_management muss das feld wob erstellt werden<br>";
     $needupdate = 1;
   }
   if (!$db->field_exists("pre_needwork", "application_ucp_management")) {
-    echo ("AUCP: in der Tabelle application_ucp_management muss das feld pre_needwork erstellt werden<br>");
+   $text .= "AUCP: in der Tabelle application_ucp_management muss das feld pre_needwork erstellt werden<br>";
     $needupdate = 1;
   }
   if (!$db->field_exists("wob_needwork", "application_ucp_management")) {
-    echo ("AUCP: in der Tabelle application_ucp_management muss das feld wob_needwork erstellt werden<br>");
+    $text .= "AUCP: in der Tabelle application_ucp_management muss das feld wob_needwork erstellt werden<br>";
     $needupdate = 1;
   }
   if (!$db->field_exists("range_left", "application_ucp_fields")) {
-    echo ("AUCP: in der Tabelle application_ucp_fields muss das feld range_left erstellt werden<br>");
+    $text .= "AUCP: in der Tabelle application_ucp_fields muss das feld range_left erstellt werden<br>";
     $needupdate = 1;
   }
   if (!$db->field_exists("range_right", "application_ucp_fields")) {
-    echo ("AUCP: in der Tabelle application_ucp_fields muss das feld range_right erstellt werden<br>");
+    $text .= "AUCP: in der Tabelle application_ucp_fields muss das feld range_right erstellt werden<br>";
     $needupdate = 1;
   }
   //Testen ob im CSS etwas fehlt
@@ -1461,7 +1461,7 @@ function application_ucp_is_updated()
     $templatequery = $db->write_query("SELECT * FROM `" . TABLE_PREFIX . "themestylesheets` where tid = '{$theme['tid']}' and name ='application_ucp.css'");
     //css ist in keinem style vorhanden
     if ($db->num_rows($templatequery) == 0) {
-      echo ("application css Nicht im {$theme['tid']} - {$theme['name']} vorhanden. evt manuell hinzufügen <br>");
+      $text .= "AUCP: CSS ist icht im {$theme['tid']} - {$theme['name']} vorhanden. evt manuell hinzufügen <br>";
       // $needupdate = 1;
     } else {
       //css ist vorhanden, testen ob alle updatestrings vorhanden sind
@@ -1476,7 +1476,7 @@ function application_ucp_is_updated()
           $test_ifin = $db->write_query("SELECT stylesheet FROM " . TABLE_PREFIX . "themestylesheets WHERE tid = '{$theme['tid']}' AND name = 'application_ucp.css' AND stylesheet LIKE '%" . $update_string . "%' ");
           //string war nicht vorhanden
           if ($db->num_rows($test_ifin) == 0) {
-            echo ("AUCP: Theme {$theme['tid']} (für steckbrief plugin) muss aktualisiert werden ($update_string)<br>");
+            $text .= "AUCP: Theme {$theme['tid']} (für steckbrief plugin) muss aktualisiert werden ($update_string)<br>";
             $needupdate = 1;
           }
         }
@@ -1511,7 +1511,7 @@ function application_ucp_is_updated()
       //wenn ja muss das template aktualisiert werden.
       if ($check) {
         $templateset = $db->fetch_field($db->simple_select("templatesets", "title", "sid = '{$old_template['sid']}'"), "title");
-        echo ("AUCP: Template {$update_template['templatename']} im Set '{$templateset}(SID: {$old_template['sid']}') muss aktualisiert werden. <div style=\"max-height: 100px; overflow:auto;\">" . htmlentities($update_template['change_string']) . "</div> <b>zu</b> <div style=\"max-height: 100px; overflow:auto;\">" . htmlentities($update_template['action_string']) . ")</div><br>");
+        $text .= "AUCP: Template {$update_template['templatename']} im Set '{$templateset}(SID: {$old_template['sid']}') muss aktualisiert werden. <div style=\"max-height: 100px; overflow:auto;\">" . htmlentities($update_template['change_string']) . "</div> <b>zu</b> <div style=\"max-height: 100px; overflow:auto;\">" . htmlentities($update_template['action_string']) . ")</div><br>";
         $needupdate = 1;
       }
     }
@@ -1523,7 +1523,7 @@ function application_ucp_is_updated()
   foreach ($all_templates as $template) {
     $query = $db->simple_select("templates", "tid, template", "title = '" . $template['title'] . "' AND sid = '-2'");
     if ($db->num_rows($query) == 0) {
-      echo ("AUCP: Template {$template['title']} fehlt komplett und muss hinzugefügt werden.<br>");
+     $text .= "AUCP: Template {$template['title']} fehlt komplett und muss hinzugefügt werden.<br>";
       $needupdate = 1;
     }
   }
@@ -1544,17 +1544,18 @@ function application_ucp_is_updated()
           $setting_old['optionscode'] != $setting['optionscode'] ||
           $setting_old['disporder'] != $setting['disporder']
         ) {
-          echo "Steckbriefplugin: Setting: {$name} muss aktualisiert werden.<br>";
+          $text .= "AUCP: Setting: {$name} muss aktualisiert werden.<br>";
           $needupdate = 1;
         }
       }
     } else {
-      echo "Steckbriefplugin: Setting: {$name} muss hinzugefügt werden.<br>";
+      $text .= "AUCP: Setting: {$name} muss hinzugefügt werden.<br>";
       $needupdate = 1;
     }
   }
-  echo "</div>";
+  $text .= "</div></div>";
   if ($needupdate == 1) {
+    echo $text;
     return false;
   }
   return true;
