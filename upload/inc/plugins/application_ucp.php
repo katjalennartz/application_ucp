@@ -509,6 +509,15 @@ function application_ucp_add_templates($type = 'install')
 function application_ucp_templates()
 {
   global $db;
+
+  $template[] = array(
+    "title" => 'application_ucp_exportbtn',
+    "template" => $db->escape_string('<a class="bl-profilecontact__item" href="misc.php?action=exp_app&uid={$mybb->input[\'uid\']}">[export]</a>'),
+    "sid" => "-2",
+    "version" => "1.0",
+    "dateline" => TIME_NOW
+  );
+
   $template[] = array(
     "title" => 'application_ucp_field_dynamic_popup',
     "template" => $db->escape_string('<div class="modal" id="popup_{$type[\'fieldname\']}" style="display: none; padding: 10px; margin: auto; text-align: center;">
@@ -788,7 +797,7 @@ function application_ucp_templates()
               </tr>
               <tr class="trow2">
                 <td class="aucp-tdhead">{$lang->application_ucp_temps_charakter}</td>
-                <td class="aucp-tdhead">eingereicht am</td>
+                <td class="aucp-tdhead">registriert seit</td>
                 <td class="aucp-tdhead">Korrektur übernommen von?</td>
                 <td class="aucp-tdhead">Pre Wob geben?</td>
               </tr>
@@ -798,7 +807,7 @@ function application_ucp_templates()
               </tr>
               <tr class="trow2">
                 <td class="aucp-tdhead">{$lang->application_ucp_temps_charakter}</td>
-                <td class="aucp-tdhead">eingereicht am</td>
+                <td class="aucp-tdhead">registriert seit/td>
                 <td class="aucp-tdhead">Korrektur übernommen von?</td>
                 <td class="aucp-tdhead">Mod Korrektur am</td>
               </tr>
@@ -810,7 +819,7 @@ function application_ucp_templates()
                 <td class="aucp-tdhead">{$lang->application_ucp_temps_charakter}</td>
                 <td class="aucp-tdhead">registriert seit</td>
                 <td class="aucp-tdhead">zuletzt online</td>
-                <td class="aucp-tdhead"></td>
+                <td class="aucp-tdhead">Fristende</td>
               </tr>
               {$application_ucp_prewob_notsend}
             </table>
@@ -1298,6 +1307,60 @@ function application_ucp_updated_templates()
       </html>'
   );
 
+
+  $update_template[] = array(
+    "templatename" => 'application_ucp_ucp_main',
+    "change_string" => '{$application_ucp_mods_prewob}',
+    "action" => 'overwrite',
+    "action_string" => '<html>
+      <head>
+      <title>{$mybb->settings[\\\'bbname\\\']} - {$lang->application_ucp_temps_title}</title>
+      {$headerinclude}
+      </head>
+      <body>
+      {$header}
+        <table border="0" class="aucp-modoverview tborder tfixed">
+          {$application_ucp_mods_prewob}
+          <tr><td>
+          <h2>Wob</h2>
+                <table class="tborder">
+          <tr>
+                    <td colspan="4" class="thead">Wartet auf Korrektur</td>
+                  </tr>
+                  <tr class="trow2">
+            <td class="aucp-tdhead">{$lang->application_ucp_temps_charakter}</td>
+                    <td class="aucp-tdhead">eingereicht am</td>
+                    <td class="aucp-tdhead">Korrektur übernommen von?</td>
+                    <td class="aucp-tdhead">Wob geben?</td>
+          </tr>
+                  {$application_ucp_wob}
+                  <tr>
+                    <td colspan="4" class="thead">Wird vom User korrigiert</td>
+      </tr>
+                  <tr class="trow2">
+            <td class="aucp-tdhead">{$lang->application_ucp_temps_charakter}</td>
+                    <td class="aucp-tdhead">eingereicht am</td>
+                    <td class="aucp-tdhead">Korrektur übernommen von?</td>
+                    <td class="aucp-tdhead">Mod Korrektur am</td>
+          </tr>
+                  {$application_ucp_wob_incorrection}
+                  <tr>
+                    <td colspan="4" class="thead">Noch nicht eingereicht</td>
+          </tr>
+                  <tr class="trow2">
+                    <td class="aucp-tdhead">{$lang->application_ucp_temps_charakter}</td>
+                    <td class="aucp-tdhead">registriert seit</td>
+                    <td class="aucp-tdhead">Korrektur übernommen von?</td>
+                    <td class="aucp-tdhead">zuletzt online</td>
+      </tr>
+                  {$application_ucp_wob_notsend}
+                </table>
+          </td></tr>
+      </table>
+      {$footer}
+      </body>
+      </html>'
+  );
   //Beispiele:
   // $update_template[] = array(
   //   "templatename" => 'templatename',
@@ -1318,24 +1381,6 @@ function application_ucp_updated_templates()
   //   "action_string" => 'der neue inhalt'
   // );
   return $update_template;
-}
-
-
-/**
- * Funktion um ein pattern für preg_replace zu erstellen
- * und so templates zu vergleichen.
- * @return string - pattern für preg_replace zum vergleich
- */
-function application_ucp_createRegexPattern($html)
-{
-  // Entkomme alle Sonderzeichen und ersetze Leerzeichen mit flexiblen Platzhaltern
-  $pattern = preg_quote($html, '/');
-
-  // Ersetze Leerzeichen in `class`-Attributen mit `\s+` (flexible Leerzeichen)
-  $pattern = preg_replace('/\s+/', '\\s+', $pattern);
-
-  // Passe das Muster an, um Anfang und Ende zu markieren
-  return '/' . $pattern . '/si';
 }
 
 /**
@@ -1373,7 +1418,6 @@ function application_ucp_is_updated()
     echo ("AUCP: in der Tabelle application_ucp_fields muss das feld dyn_max_item erstellt werden<br>");
     $needupdate = 1;
   }
-
   if (!$db->field_exists("pre_wob", "application_ucp_management")) {
     echo ("AUCP: in der Tabelle application_ucp_management muss das feld dyn_max_item erstellt werden<br>");
     $needupdate = 1;
@@ -1462,6 +1506,19 @@ function application_ucp_is_updated()
       }
     }
   }
+
+  //gibt es ein template das komplett fehlt? Dann fügen wir es hinzu.
+  //alle templates bekommen
+  $all_templates = application_ucp_templates();
+  foreach ($all_templates as $template) {
+    $query = $db->simple_select("templates", "tid, template", "title = '" . $template['title'] . "' AND sid = '-2'");
+    if ($db->num_rows($query) == 0) {
+      echo ("AUCP: Template {$template['title']} fehlt komplett und muss hinzugefügt werden.<br>");
+      $needupdate = 1;
+    }
+  }
+
+  //testen ob es settings gibt die aktualisiert werden müssen
   $setting_array = application_ucp_setting_array();
   $gid = $db->fetch_field($db->simple_select("settinggroups", "gid", "name = 'application_ucp'"), "gid");
 
@@ -5702,11 +5759,13 @@ function application_ucp_modoverview()
         $aucp_mod_modlink = $aucp_mod_profillink = $aucp_mod_date = $aucp_mod_steckilink = $correction = $wobform = "";
         $userdata = array();
 
+
         $userdata = get_user($data['uid']);
+        $regdate = date("d.m.Y", $userdata['regdate']);
         if ($mybb->settings['application_ucp_steckithread'] == 1) {
-          $aucp_mod_steckilink = "<a href=\"" . get_thread_link($data['tid']) . "\">Steckbrief</a>";
+          $aucp_mod_steckilink = "$regdate";
         } else {
-          $aucp_mod_steckilink = "";
+          $aucp_mod_steckilink = "$regdate";
         }
 
         if ($data['uid_mod'] != "0") {
@@ -5721,15 +5780,15 @@ function application_ucp_modoverview()
         <a href=\"misc.php?action=reject_prewob&uid={$userdata['uid']}\">Korrektur anfordern</a>
         ";
 
-        $aucp_mod_date = $data['submission_date'];
+        $aucp_mod_date = "<span>eingereicht am: " . $data['submission_date'] . "</span><br>";
 
         $mod_date = $data['modcorrection_time'];
         if ($mod_date === NULL) {
-          $aucp_mod_enddate = "<br>Noch keine Korrektur";
+          $aucp_mod_enddate = "<br>Noch keine Korrektur<br>";
         } else {
-          $aucp_mod_enddate = "<br>Letzte Mod-Korrektur am {$mod_date}";
+          $aucp_mod_enddate = "<br>Letzte Mod-Korrektur am {$mod_date}<br>";
         }
-
+        $aucp_mod_date .= $aucp_mod_enddate;
         $aucp_mod_profillink = build_profile_link($userdata['username'], $data['uid']);
         eval("\$application_ucp_prewob .= \"" . $templates->get("application_ucp_mods_bit") . "\";");
       }
@@ -5795,8 +5854,8 @@ function application_ucp_modoverview()
         } else {
           $aucp_mod_steckilink = "";
         }
-
-        $aucp_mod_date = date("d.m.Y", $userdata['regdate']);
+        //wir nutzen die variabke für die anzeige vom Registrierungsdatum
+        $aucp_mod_steckilink = date("d.m.Y", $userdata['regdate']);
         $aucp_mod_modlink  = date("d.m.Y", $userdata['lastvisit']);
         $aucp_mod_enddate = ""; // Vorinitialisierung
 
@@ -5810,7 +5869,7 @@ function application_ucp_modoverview()
         } else {
           $aucp_mod_enddate = $aucp_mod_enddate . " (" . $userdata['aucp_extend'] . ")";
         }
-
+        $aucp_mod_date = $aucp_mod_enddate;
         $aucp_mod_profillink = build_profile_link($userdata['username'], $data['uid']);
         eval("\$application_ucp_prewob_notsend .= \"" . $templates->get("application_ucp_mods_bit") . "\";");
       }
@@ -6200,11 +6259,18 @@ function application_ucp_indexalert()
       //Steckbrief wurde abgegeben
       $about = get_user($alert['uid']);
       $aboutuserlink = build_profile_link($about['username'], $about['uid'], "_blank");
+      $linktooverview = "<br><a href=\"misc.php?action=application_mods\">Zur Übersicht</a>";
 
       //Noch kein Mod zugeteilt - Mod kann ihn übernehmen
       if ($alert['uid_mod'] == "0") {
         $alertflag = 1;
-        $message = $lang->sprintf($lang->application_ucp_index_mod_steckialert, $aboutuserlink, $alert['uid']);
+        if ($alert['pre_wob'] == 0) {
+          $message = $lang->sprintf($lang->application_ucp_index_mod_steckialert, $aboutuserlink, $alert['uid'], "zum Zwischen WOB", $linktooverview);
+        } else if ($alert['wob'] == 1) {
+          $message = $lang->sprintf($lang->application_ucp_index_mod_steckialert, $aboutuserlink, $alert['uid'], "zum WOB", $linktooverview);
+        } else {
+          $message = $lang->sprintf($lang->application_ucp_index_mod_steckialert, $aboutuserlink, $alert['uid'], "", $linktooverview);
+        }
         eval("\$application_ucp_index_modbit .= \"" . $templates->get("application_ucp_index_modbit") . "\";");
       } else {
         //alle charas des mods bekommen
