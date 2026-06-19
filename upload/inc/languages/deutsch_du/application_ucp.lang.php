@@ -61,7 +61,7 @@ $l['application_ucp_index_prewobyes'] = 'Du hast dein Zwischen WoB erhalten. Fin
 $l['application_ucp_index_mod_not_final'] = '{1} hat den Steckbrief noch nicht zum finalen WOB eingereicht.';
 
 
-$l['application_ucp_index_mod_steckialert'] =  "{1} ist mit dem Steckbrief fertig. <a href=\"misc.php?action=take_application&uid={2}\">Korrektur übernehmen</a>";
+$l['application_ucp_index_mod_steckialert'] =  "{1} hat den Steckbrief {3} eingereicht. <a href=\"misc.php?action=take_application&uid={2}\">Korrektur übernehmen</a> {4}";
 $l['application_ucp_index_mod_steckialert_modturn_prewob'] = '{1} hat den Steckbrief zum Zwischen WoB eingereicht. Du hast ihn übernommen und musst ihn noch korrigieren.';
 
 $l['application_ucp_index_mod_steckialert_modturn'] =  "Du hast den Stecki von {1} übernommen. Du musst ihn noch korrigieren.";
