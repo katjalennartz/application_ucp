@@ -823,39 +823,6 @@ function application_ucp_templates()
               </tr>
               {$application_ucp_prewob_notsend}
             </table>
-            <h2>Wob</h2>
-            <table class="tborder">
-              <tr>
-                <td colspan="4" class="thead">Wartet auf Korrektur</td>
-              </tr>
-              <tr class="trow2">
-                <td class="aucp-tdhead">{$lang->application_ucp_temps_charakter}</td>
-                <td class="aucp-tdhead">eingereicht am</td>
-                <td class="aucp-tdhead">Korrektur übernommen von?</td>
-                <td class="aucp-tdhead">Wob geben?</td>
-              </tr>
-              {$application_ucp_wob}
-              <tr>
-                <td colspan="4" class="thead">Wird vom User korrigiert</td>
-              </tr>
-              <tr class="trow2">
-                <td class="aucp-tdhead">{$lang->application_ucp_temps_charakter}</td>
-                <td class="aucp-tdhead">eingereicht am</td>
-                <td class="aucp-tdhead">Korrektur übernommen von?</td>
-                <td class="aucp-tdhead">Mod Korrektur am</td>
-              </tr>
-              {$application_ucp_wob_incorrection}
-              <tr>
-                <td colspan="4" class="thead">Noch nicht eingereicht</td>
-              </tr>
-              <tr class="trow2">
-                <td class="aucp-tdhead">{$lang->application_ucp_temps_charakter}</td>
-                <td class="aucp-tdhead">registriert seit</td>
-                <td class="aucp-tdhead">Korrektur übernommen von?</td>
-                <td class="aucp-tdhead">zuletzt online</td>
-              </tr>
-              {$application_ucp_wob_notsend}
-            </table>
           </td>
         </tr>
     ',
@@ -942,7 +909,7 @@ function application_ucp_css()
       color:#FFF;
     }
     .cat_tabs li:hover {
-      background:#0072BC;
+      background: #0072BC;
     }
 
     .cat_tabs li.current{
@@ -976,7 +943,7 @@ function application_ucp_css()
 
       .aucp_range_bar {
           height: 20px;
-          background-color: #f3f3f3;
+          background-color: #0072BC;
       }
 
       /* dynamicfield-update -  kommentar nicht entfernen */
@@ -985,6 +952,27 @@ function application_ucp_css()
           padding: 5px 10px;
           margin: 5px;
           border: 1px solid black;
+      }
+      
+      /* rangelabels-update - kommentar nicht entfernen */
+      .aucp_range_wrap {
+        display: grid;
+        grid-template-areas:
+            "left right"
+            "range range";
+        justify-content: space-between
+      }
+
+      .aucp_range_labelleft {
+        grid-area: left;
+      }
+
+      .aucp_range_labelright {
+        grid-area: right;
+      }
+
+      .aucp_range {
+          grid-area: range;
       }
 ',
     'cachefile' => $db->escape_string(str_replace('/', '', 'application_ucp.css')),
@@ -1226,7 +1214,7 @@ function application_ucp_stylesheet_update()
 
             .aucp_range_bar {
                 height: 20px;
-                background-color: #f3f3f3;
+                background-color: #0072BC;
             }",
     'update_string' => 'rangestyling-update'
   );
@@ -1240,6 +1228,28 @@ function application_ucp_stylesheet_update()
                   border: 1px solid black;
               }",
     'update_string' => 'dynamicfield-update'
+  );
+
+  $update_array_all[] = array(
+    'stylesheet' => '/* rangelabels-update - kommentar nicht entfernen */
+      .aucp_range_wrap {
+        display: grid;
+        grid-template-areas:
+            "left right"
+            "range range";
+        justify-content: space-between
+      }
+
+      .aucp_range_labelleft {
+        grid-area: left;
+      }
+      .aucp_range {
+          grid-area: range;
+      }
+      .aucp_range_labelright {
+        grid-area: right;
+      }',
+    'update_string' => 'rangelabels-update'
   );
 
   return $update_array_all;
@@ -1777,8 +1787,11 @@ function application_ucp_admin_load()
         if ($field['postbit'] || $field['profile'] || $field['memberlist']) {
           if ($field['fieldtyp'] == "range" | $field['fieldtyp'] == "range_slider") {
             $viewinfo_range_postbit = "<li>Darstellung als Range: &#x007B;&dollar;post['value_{$field['fieldname']}_html']&#x007D;";
+            $viewinfo_range_postbit .= "<li>Darstellung als Range mit labels links und rechts: &#x007B;&dollar;post['value_{$field['fieldname']}_labels']&#x007D;";
             $viewinfo_range_profile = "<li>Darstellung als Range: &#x007B;&dollar;fields['value_{$field['fieldname']}_html']&#x007D;";
+            $viewinfo_range_profile .= "<li>Darstellung als Range mit labels links und rechts: &#x007B;&dollar;fields['value_{$field['fieldname']}_labels']&#x007D;";
             $viewinfo_range_memberlist = "<li>Darstellung als Range: &#x007B;&dollar;user['value_{$field['fieldname']}_html']&#x007D;";
+            $viewinfo_range_memberlist .= "<li>Darstellung als Range mit labels links und rechts: &#x007B;&dollar;user['value_{$field['fieldname']}_labels']&#x007D;";
           } else {
             $viewinfo_range_postbit = $viewinfo_range_profile = $viewinfo_range_memberlist = "";
           }
@@ -3680,7 +3693,7 @@ function application_ucp_usercp()
   //felder durchgehen
   while ($type = $db->fetch_array($get_fields)) {
     //ist das Feld editierbar? -> wenn mitglied berücksichtigen
-    if (($member &&  $type['editable'] == 0) || ($pre_allow_edit == 0 && $type['pre_wob'] == 1)) {
+    if (($member &&  $type['editable'] == 0) || ($pre_allow_edit == 0 && $type['pre_wob'] == 1) && $type['editable'] == 0) {
       $readonly = "readonly"; //für textfelder/textarea
       $disabled = "disabled"; //selects / checkboxen etc.
 
@@ -3958,7 +3971,7 @@ function application_ucp_usercp()
               const originalTitle = contentElementTitle.html();
               
               // Input-Feld + Save- und Cancel-Button einfügen
-              contentElement.html(`<textarea name=\"dyneditcontent\" class=\"editInput\" {$max_length_dyn} >\${originalText}</textarea><button type=\"button\" class=\"{$type['fieldname']}_saveButton\" data-id-save=\"\${cleanId}\">[save]</i></button><button type=\"button\" class=\"{$type['fieldname']}_cancelButton\" data-id-cancel=\"\${contentId}\" data-id-clean=\"\${cleanId}\">[delete]</button><input name=\"dynedittitle\" class=\"save_editInputTitle\" name=\"save_editInputTitle\" type=\"hidden\" value=\"\${originalTitle}\">
+              contentElement.html(`<textarea name=\"dyneditcontent\" class=\"editInput\" {$max_length_dyn} >\${originalText}</textarea><button type=\"button\" class=\"{$type['fieldname']}_saveButton\" data-id-save=\"\${cleanId}\">[save]</i></button><button type=\"button\" class=\"{$type['fieldname']}_cancelButton\" data-id-cancel=\"\${contentId}\" data-id-clean=\"\${cleanId}\">[cancel]</button><input name=\"dynedittitle\" class=\"save_editInputTitle\" name=\"save_editInputTitle\" type=\"hidden\" value=\"\${originalTitle}\">
               <input class=\"save_editInput\" name=\"save_editInput\" type=\"hidden\" value=\"\${originalText}\">`);
               contentElementTitle.html(`<input type=\"text\" class=\"editInputTitle\" value=\"\${originalTitle}\">`);
               }
@@ -4005,10 +4018,10 @@ function application_ucp_usercp()
             //Event Listener fpr [up]-Button
             $('#{$type['fieldname']}_wrap').on('click', '.{$type['fieldname']}_up', function(event) {
               event.preventDefault();  // Verhindert das Absenden des Formulars oder ein Neuladen der Seite
+              console.log('up');
 
               // Aktuelles Element holen (Eltern-Element von Button)
               const item = $(this).closest('.{$type['fieldname']}_item');
-
               // Prüfen, ob es ein vorheriges Geschwister-Element gibt
               const prevItem = item.prev('.{$type['fieldname']}_item');
               if (prevItem.length) {
@@ -4485,7 +4498,7 @@ function application_ucp_usercp()
     //Schauen ob es schon einen eintrag im managenent gibt
     $fetch_management = $db->simple_select("application_ucp_management", "*", "uid = '{$mybb->user['uid']}'");
 
-    //wenn ja, ist es die Verbesserung nach einer Korrektur
+    //wenn ja, ist es die Verbesserung nach einer Korrektur // oder nach prewob
     if ($db->num_rows($fetch_management) > 0) {
 
       //Es gibt einen Eintrag. Das Pre Wob muss schon geggeben sein, oder es wird keins verlangt.
@@ -4526,7 +4539,7 @@ function application_ucp_usercp()
         } else {
           $hasprewob = $managmentdata['pre_wob'];
         }
-
+        // user musste korrigieren
         if ($hasprewob == 1 && $management_data['wob_needwork'] == 1) {
           //wob_needwork wieder auf 0 setzen
           $update = array(
@@ -4538,203 +4551,43 @@ function application_ucp_usercp()
           // "submission_time" => $time,
           $db->update_query("application_ucp_management", $update, "uid = '{$mybb->user['uid']}'");
         }
-        // if ($management_data['pre_wob'] == 1 && $management_data['wob_needwork'] == 0) {
-        //   $update = array(
-        //     "wob" => 1,
-        //     "wob_needwork" => 0,
-        //     "pre_wob" => $hasprewob,
-        //     "usercorrection_time" => $time
-        //   );
-        //   $db->update_query("application_ucp_management", $update, "uid = '{$mybb->user['uid']}'");
-        // }
+        //Keine korrektur, aber es gab ein prewob, also jetzt wob anfordern
+        if ($management_data['pre_wob'] == 1 && $management_data['wob_needwork'] == 0) {
+          //gibt es schon einen Thread? Wenn nein, dann erstellen wir jetzt einen, wenn es in den Einstellungen gewünscht ist
+          if ($mybb->settings['application_ucp_steckithread'] == 1 && $managmentdata['tid'] == 0) {
+            $wanted = application_ucp_wanted();
+            $aff_array = application_ucp_affected();
+            $affected = $aff_array[0];
+            $tid = application_ucp_createthread($mybb->user['uid'], $wanted, $affected);
+          }
+          $update = array(
+            "wob" => 1,
+            "wob_needwork" => 0,
+            "pre_wob" => $hasprewob,
+            "usercorrection_time" => $time,
+            "tid" => $tid
+          );
+          $db->update_query("application_ucp_management", $update, "uid = '{$mybb->user['uid']}'");
+        }
       } else {
       }
       redirect("usercp.php?action=application_ucp");
     } else { //Der Steckbrief wird das erste Mal eingereicht
 
       //Wir schauen erst noch, ob angegeben wurde, ob der Charakter ein Gesuch ist. 
-      $get_wanted = $db->simple_select("application_ucp_userfields", "*", "uid = {$mybb->user['uid']} AND fieldid = -1 AND value = '1'");
-      $get_wanted_row = $db->num_rows($get_wanted);
-      if ($get_wanted_row) {
-        //Daten für URL des Gesuchs
-        $get_url_data = $db->fetch_field($db->simple_select("application_ucp_userfields", "value", "uid = {$mybb->user['uid']} AND fieldid = -2"), "value");
-        $wanted = "<a href=\"" . $get_url_data . "\">{$lang->application_ucp_thread_wantedurltitle}</a>";
-      } else {
-        $wanted = $lang->application_ucp_thread_nowanted;
-      }
+      $wanted = application_ucp_wanted();
 
       $get_affected_names = "";
       //Gibt es betroffene User?
-      $get_affected = $db->simple_select("application_ucp_userfields", "*", "uid = '{$mybb->user['uid']}' AND fieldid = '-3' AND value != ''");
-      $get_affected_row = $db->num_rows($get_affected);
-      if ($get_affected_row > 0) {
-        // Welche Mitglieder sind betroffen?
-        $get_affected_names = explode(",", $db->fetch_field($get_affected, "value"));
-        $affectedusers = "";
-        //Zu den betroffenen den Link bauen
-        foreach ($get_affected_names as $name) {
-          //Mention me oder nicht? 
-          if ($mybb->settings['application_ucp_stecki_affected_alert'] == 2) {
-            $affectedusers .= " @\"{$name}\", ";
-          } else {
-            $affectedusers .= "{$name}, ";
-          }
-        }
-        // das letzte Komma und leertase entfernen
-        $affectedusers = (substr($affectedusers, 0, -2));
-        $affected = "<strong>" . $lang->application_ucp_affected_label . "</strong> {$affectedusers}";
-      } else {
-        $affected = $lang->application_ucp_noaffected;
-      }
+      $aff_array = application_ucp_affected();
+      $affected = $aff_array[0];
       //Wir wollen einen Thread erstellen, wenn der Stecki fertig ist und nutzen dafür den Posthandler von MyBB
       if ($mybb->settings['application_ucp_steckithread'] == 1 && !$error_fields) {
-        $steckbriefarea = $mybb->settings['application_ucp_steckiarea'];
-        //Nachricht zusammenbauen
-        $trigger_div = "";
-        //Gibt es eine Trigger Warnung für den Steckbrief? 
-        //Wir schauen erst noch, ob angegeben wurde, ob der Charakter ein Gesuch ist. 
-        $get_trigger = $db->simple_select("application_ucp_userfields", "value", "uid = {$mybb->user['uid']} AND fieldid = -4");
-
-        $get_trigger_row = $db->num_rows($get_trigger);
-        if ($get_trigger_row && $mybb->settings['application_ucp_trigger']) {
-          //Trigger Div bauen
-          $trigger = $db->fetch_field($get_trigger, "value");
-          $trigger_div = "<div class=\"aucp_trigger--thread\"><strong>{$lang->application_ucp_thread_trigger}</strong> {$trigger}</div>";
-        }
-
-        $threadmessage = $trigger_div;
-
-        $threadmessage = $mybb->settings['application_ucp_stecki_message'];
-        //Die admin cp message holen und die variable $wanted ersetzen
-        $threadmessage = $threadmessage ? str_replace("\$wanted", $wanted, $threadmessage) : "";
-
-        //Die Variable affected ersetzen
-        $threadmessage =  $threadmessage ? str_replace("\$affected", $affected, $threadmessage) : "";
-        // $threadmessage = str_replace("\$affected", $affected, $threadmessage);
-
-        //Den usernamen ersetzen
-        $threadmessage = str_replace("\$username", build_profile_link($mybb->user['username'], $mybb->user['uid']), $threadmessage);
-        //das Avatar ersetzen 
-        $threadmessage = str_replace("\$avatar", "<img src=\"{$mybb->user['avatar']}\">", $threadmessage);
-
-        // //blurred lines kram mit abfangen für den fall, dass ich es vergesse vorm upload ins gitlab rauszunehmen :D
-        // //kann gerne als beispiel für eigenen ergänzungen genommen werden. Wir checken hier ob bestimmte Dinge eingetragen/ausgefüllt wurden
-        // $firststeps_check = "";
-        // //jobliste - abfangen ob es die Tabelle gibt oder nicht
-        // if ($db->table_exists("jl_entry")) {
-        //   //gibt es einen Eintrag
-        //   $fetch_job = $db->simple_select("jl_entry", "*", "je_uid= {$mybb->user['uid']}");
-        //   if ($db->num_rows($fetch_job) > 0) {
-        //     //wenn ja mit Häkchen in den Thread schreiben
-        //     $firststeps_check .= "<li><i class=\"fa-solid fa-check\"></i> In Jobliste eingetragen</li>";
-        //   } else {
-        //     //wenn nein mit Kreuz
-        //     $firststeps_check .= "<li><i class=\"fa-solid fa-xmark\"></i> Nicht in Jobliste eingetragen</li>";
-        //   }
-        // }
-        // //wohnort
-        // if ($db->table_exists("residences_user")) {
-        //   $fetch_job = $db->simple_select("residences_user", "*", "uid= {$mybb->user['uid']}");
-        //   if ($db->num_rows($fetch_job) > 0) {
-        //     $firststeps_check .= "<li><i class=\"fa-solid fa-check\"></i> In Residences eingetragen</li>";
-        //   } else {
-        //     $firststeps_check .= "<li><i class=\"fa-solid fa-xmark\"></i> Nicht in Residences eingetragen</li>";
-        //   }
-        // }
-        // //relas
-        // //wohnort
-        // if ($db->table_exists("relas_entries")) {
-        //   $fetch_job = $db->simple_select("relas_entries", "*", "r_from = {$mybb->user['uid']}");
-        //   if ($db->num_rows($fetch_job) > 0) {
-        //     $firststeps_check .= "<li><i class=\"fa-solid fa-check\"></i> Es sind Relations eingetragen</li>";
-        //   } else {
-        //     $firststeps_check .= "<li><i class=\"fa-solid fa-xmark\"></i> Keine Relations eingetragen</li>";
-        //   }
-        // }
-        // //Wir holen uns die Avaperson, weil wir die Info direkt im Thread sehen wollen (id für avatarperson bei uns = 20 )
-        // $fetch_ava = $db->fetch_field($db->simple_select("application_ucp_userfields", "value", "uid= {$mybb->user['uid']} AND fieldid = '20'"), "value");
-        // if ($fetch_ava != "") {
-        //   $firststeps_check .= "<li><strong>Avatarperson:</strong> {$fetch_ava}</li>";
-        // } else {
-        //   $firststeps_check .= "<li><i class=\"fa-solid fa-xmark\"></i> Keine Avaperson eingetragen</li>";
-        // }
-        // //und wir holen uns noch den Spielernamen der bei uns im Profilfeld mit ID 4 gespeichert ist 
-        // $firststeps_check .= "<li>gespielt von {$mybb->user['fid4']}</li>";
-
-        // //das ganze wird in der Variable $firststeps_check gespeichert, schreiben wir diese nun ins ACP, wird in der Message der Inhalt eingefügt
-        // $threadmessage = str_replace("\$firststeps_check", $firststeps_check, $threadmessage);
-
-        //Wenn ihr den ganzen Steckbrief im Thread haben wollt, könnt ihr euch, die zwei Zeilen hier einfach einkommentieren
-        // Im ACP dann einfach $aucp_fields einfügen.
-        $aucp_fields = application_ucp_build_view($mybb->user['uid'], "profile", "html");
-        // $threadmessage = str_replace("\$aucp_fields", $aucp_fields, $threadmessage);
-
-        // Kopiert aus newthread.php
-        // Set up posthandler. (Wir nutzen hier einfach komplett die funktion aus newthread.php)
-        // Post key
-        verify_post_check($mybb->get_input('my_post_key'));
-        require_once "./global.php";
-        require_once MYBB_ROOT . "inc/datahandlers/post.php";
-        $posthandler = new PostDataHandler("insert");
-        $posthandler->action = "thread";
-
-        // Set the thread data that came from the input to the $thread array.
-        $new_thread = array(
-          "fid" => $steckbriefarea,
-          "subject" => $mybb->user['username'],
-          "prefix" => "",
-          "icon" => "",
-          "uid" => $mybb->user['uid'],
-          "username" => $mybb->user['username'],
-          "message" => $threadmessage,
-          "ipaddress" => $session->packedip,
-          "posthash" => $mybb->get_input('posthash')
-        );
-
-        if ($pid != '') {
-          $new_thread['pid'] = $pid;
-        }
-
-        $new_thread['savedraft'] = 0;
-        // $new_thread['tid'] = $thread['tid'];
-        // Set up the thread options from the input.
-        $new_thread['options'] = array(
-          "signature" => 0,
-          "subscriptionmethod" => 0,
-          "disablesmilies" => 0
-        );
-
-        // Apply moderation options if we have them
-        $new_thread['modoptions'] = $mybb->get_input('modoptions', MyBB::INPUT_ARRAY);
-        // $new_thread['modoptions'] = "";
-        $posthandler->set_data($new_thread);
-        // Now let the post handler do all the hard work.
-        $valid_thread = $posthandler->validate_thread();
-
-        $post_errors = array();
-        // Fetch friendly error messages if this is an invalid thread
-        if (!$valid_thread) {
-          $post_errors = $posthandler->get_friendly_errors();
-        }
-        $thread_errors = inline_error($post_errors);
-
-        // One or more errors returned, fetch error list and throw to newthread page
-        if (count($post_errors) > 0) {
-          $thread_errors = inline_error($post_errors);
-          $mybb->input['action'] = "newthread";
-        }
-
-        $thread_info = $posthandler->insert_thread();
-        $tid = $thread_info['tid'];
-        // Mark thread as read
-        require_once MYBB_ROOT . "inc/functions_indicators.php";
-        mark_thread_read($tid, $steckbriefarea);
-        //Bis hier (abschnittsweise) kopiert aus new thread kopiert
-
+        $tid = application_ucp_createthread($mybb->user['uid'], $wanted, $affected);
       } else {
         $tid = 0;
       }
-
+      $get_affected_names = $aff_array[1];
       //user informieren
       if ($get_affected_names != "") {
         foreach ($get_affected_names as $name) {
@@ -5125,7 +4978,7 @@ function application_ucp_filter()
 function application_ucp_check_save($query, $fields)
 {
   global $db, $mybb;
-  $error_field = array();
+  $error_fields = array();
   // var_dump($fields);
   while ($checkfield = $db->fetch_array($query)) {
 
@@ -5247,8 +5100,6 @@ function application_ucp_check_save($query, $fields)
       }
     }
   }
-  // var_dump($error_fields);
-  // die();
   return $error_fields;
 }
 // Über diese Hook kriegen wir die daten für die Inputfelder 
@@ -6083,7 +5934,7 @@ function application_ucp_modoverview()
       } else {
         $aucp_mod_enddate .= "<br>Letzte Mod-Korrektur am {$mod_date}";
       }
-
+      $aucp_mod_date = $aucp_mod_enddate;
       $aucp_mod_profillink = build_profile_link($userdata['username'], $data['uid']);
       eval("\$application_ucp_wob_notsend .= \"" . $templates->get("application_ucp_mods_bit") . "\";");
     }
@@ -6265,12 +6116,13 @@ function application_ucp_indexalert()
       if ($alert['uid_mod'] == "0") {
         $alertflag = 1;
         if ($alert['pre_wob'] == 0) {
-          $message = $lang->sprintf($lang->application_ucp_index_mod_steckialert, $aboutuserlink, $alert['uid'], "zum Zwischen WOB", $linktooverview);
+          $message = $lang->sprintf($lang->application_ucp_index_mod_steckialert, $aboutuserlink, $alert['uid'], "zum Zwischen WOB");
         } else if ($alert['wob'] == 1) {
-          $message = $lang->sprintf($lang->application_ucp_index_mod_steckialert, $aboutuserlink, $alert['uid'], "zum WOB", $linktooverview);
+          $message = $lang->sprintf($lang->application_ucp_index_mod_steckialert, $aboutuserlink, $alert['uid'], "zum WOB");
         } else {
-          $message = $lang->sprintf($lang->application_ucp_index_mod_steckialert, $aboutuserlink, $alert['uid'], "", $linktooverview);
+          $message = $lang->sprintf($lang->application_ucp_index_mod_steckialert, $aboutuserlink, $alert['uid'], "");
         }
+        $message .= $linktooverview;
         eval("\$application_ucp_index_modbit .= \"" . $templates->get("application_ucp_index_modbit") . "\";");
       } else {
         //alle charas des mods bekommen
@@ -6293,17 +6145,20 @@ function application_ucp_indexalert()
           if ($alert['pre_wob'] == 0 && $alert['pre_needwork'] == 0) {
             $alertflag = 1;
             $message = $lang->sprintf($lang->application_ucp_index_mod_steckialert_modturn_prewob, $aboutuserlink);
+            $message .= $linktooverview;
             eval("\$application_ucp_index_modbit .= \"" . $templates->get("application_ucp_index_modbit") . "\";");
           }
           if ($alert['wob'] == 1 && $alert['wob_needwork'] == 0) {
             $alertflag = 1;
             $message = $lang->sprintf($lang->application_ucp_index_mod_steckialert_modturn, $aboutuserlink);
+            $message .= $linktooverview;
             eval("\$application_ucp_index_modbit .= \"" . $templates->get("application_ucp_index_modbit") . "\";");
           }
           //Korrektur wurde vorgenommen und der user muss noch korrigieren
           if (($alert['pre_wob'] == 0 && $alert['pre_needwork'] == 1) || ($alert['wob'] == 1 && $alert['wob_needwork'] == 1)) {
             $alertflag = 1;
             $message = $lang->sprintf($lang->application_ucp_index_mod_steckialert_userturn, $aboutuserlink);
+            $message .= $linktooverview;
             eval("\$application_ucp_index_modbit .= \"" . $templates->get("application_ucp_index_modbit") . "\";");
           }
         }
@@ -6401,6 +6256,203 @@ function application_ucp_buildsql($type = "searchable")
     $selectstring = "LEFT JOIN (select um.uid as auid from `" . TABLE_PREFIX . "application_ucp_userfields` as um group by uid) as fields ON auid = uid";
   }
   return $selectstring;
+}
+
+function application_ucp_affected()
+{
+  global $db, $mybb, $lang;
+  $lang->load('application_ucp');
+
+  $get_affected_names = array();
+
+  $get_affected = $db->simple_select("application_ucp_userfields", "*", "uid = '{$mybb->user['uid']}' AND fieldid = '-3' AND value != ''");
+  $get_affected_row = $db->num_rows($get_affected);
+  if ($get_affected_row > 0) {
+    // Welche Mitglieder sind betroffen?
+    $get_affected_names = explode(",", $db->fetch_field($get_affected, "value"));
+    $affectedusers = "";
+    //Zu den betroffenen den Link bauen
+    foreach ($get_affected_names as $name) {
+      //Mention me oder nicht? 
+      if ($mybb->settings['application_ucp_stecki_affected_alert'] == 2) {
+        $affectedusers .= " @\"{$name}\", ";
+      } else {
+        $affectedusers .= "{$name}, ";
+      }
+    }
+    // das letzte Komma und leertase entfernen
+    $affectedusers = (substr($affectedusers, 0, -2));
+    $affected = "<strong>" . $lang->application_ucp_affected_label . "</strong> {$affectedusers}";
+  } else {
+    $affected = $lang->application_ucp_noaffected;
+  }
+  return array($affected, $get_affected_names);
+}
+
+function application_ucp_wanted()
+{
+  global $db, $mybb, $lang;
+  $lang->load('application_ucp');
+
+  $get_wanted = $db->simple_select("application_ucp_userfields", "*", "uid = {$mybb->user['uid']} AND fieldid = -1 AND value = '1'");
+  $get_wanted_row = $db->num_rows($get_wanted);
+  if ($get_wanted_row) {
+    //Daten für URL des Gesuchs
+    $get_url_data = $db->fetch_field($db->simple_select("application_ucp_userfields", "value", "uid = {$mybb->user['uid']} AND fieldid = -2"), "value");
+    $wanted = "<a href=\"" . $get_url_data . "\">{$lang->application_ucp_thread_wantedurltitle}</a>";
+  } else {
+    $wanted = $lang->application_ucp_thread_nowanted;
+  }
+  return $wanted;
+}
+
+function application_ucp_createthread($uid, $wanted, $affected)
+{
+
+  global $mybb, $db, $lang, $session;
+  $steckbriefarea = $mybb->settings['application_ucp_steckiarea'];
+  //Nachricht zusammenbauen
+  $trigger_div = "";
+  //Gibt es eine Trigger Warnung für den Steckbrief? 
+  //Wir schauen erst noch, ob angegeben wurde, ob der Charakter ein Gesuch ist. 
+  $get_trigger = $db->simple_select("application_ucp_userfields", "value", "uid = {$mybb->user['uid']} AND fieldid = -4");
+
+  $get_trigger_row = $db->num_rows($get_trigger);
+  if ($get_trigger_row && $mybb->settings['application_ucp_trigger']) {
+    //Trigger Div bauen
+    $trigger = $db->fetch_field($get_trigger, "value");
+    $trigger_div = "<div class=\"aucp_trigger--thread\"><strong>{$lang->application_ucp_thread_trigger}</strong> {$trigger}</div>";
+  }
+
+  $threadmessage = $trigger_div;
+
+  $threadmessage = $mybb->settings['application_ucp_stecki_message'];
+  //Die admin cp message holen und die variable $wanted ersetzen
+  $threadmessage = $threadmessage ? str_replace("\$wanted", $wanted, $threadmessage) : "";
+
+  //Die Variable affected ersetzen
+  $threadmessage =  $threadmessage ? str_replace("\$affected", $affected, $threadmessage) : "";
+  // $threadmessage = str_replace("\$affected", $affected, $threadmessage);
+
+  //Den usernamen ersetzen
+  $threadmessage = str_replace("\$username", build_profile_link($mybb->user['username'], $mybb->user['uid']), $threadmessage);
+  //das Avatar ersetzen 
+  $threadmessage = str_replace("\$avatar", "<img src=\"{$mybb->user['avatar']}\">", $threadmessage);
+
+  // //blurred lines kram mit abfangen für den fall, dass ich es vergesse vorm upload ins gitlab rauszunehmen :D
+  // //kann gerne als beispiel für eigenen ergänzungen genommen werden. Wir checken hier ob bestimmte Dinge eingetragen/ausgefüllt wurden
+  // $firststeps_check = "";
+  // //jobliste - abfangen ob es die Tabelle gibt oder nicht
+  // if ($db->table_exists("jl_entry")) {
+  //   //gibt es einen Eintrag
+  //   $fetch_job = $db->simple_select("jl_entry", "*", "je_uid= {$mybb->user['uid']}");
+  //   if ($db->num_rows($fetch_job) > 0) {
+  //     //wenn ja mit Häkchen in den Thread schreiben
+  //     $firststeps_check .= "<li><i class=\"fa-solid fa-check\"></i> In Jobliste eingetragen</li>";
+  //   } else {
+  //     //wenn nein mit Kreuz
+  //     $firststeps_check .= "<li><i class=\"fa-solid fa-xmark\"></i> Nicht in Jobliste eingetragen</li>";
+  //   }
+  // }
+  // //wohnort
+  // if ($db->table_exists("residences_user")) {
+  //   $fetch_job = $db->simple_select("residences_user", "*", "uid= {$mybb->user['uid']}");
+  //   if ($db->num_rows($fetch_job) > 0) {
+  //     $firststeps_check .= "<li><i class=\"fa-solid fa-check\"></i> In Residences eingetragen</li>";
+  //   } else {
+  //     $firststeps_check .= "<li><i class=\"fa-solid fa-xmark\"></i> Nicht in Residences eingetragen</li>";
+  //   }
+  // }
+  // //relas
+  // //wohnort
+  // if ($db->table_exists("relas_entries")) {
+  //   $fetch_job = $db->simple_select("relas_entries", "*", "r_from = {$mybb->user['uid']}");
+  //   if ($db->num_rows($fetch_job) > 0) {
+  //     $firststeps_check .= "<li><i class=\"fa-solid fa-check\"></i> Es sind Relations eingetragen</li>";
+  //   } else {
+  //     $firststeps_check .= "<li><i class=\"fa-solid fa-xmark\"></i> Keine Relations eingetragen</li>";
+  //   }
+  // }
+  // //Wir holen uns die Avaperson, weil wir die Info direkt im Thread sehen wollen (id für avatarperson bei uns = 20 )
+  // $fetch_ava = $db->fetch_field($db->simple_select("application_ucp_userfields", "value", "uid= {$mybb->user['uid']} AND fieldid = '20'"), "value");
+  // if ($fetch_ava != "") {
+  //   $firststeps_check .= "<li><strong>Avatarperson:</strong> {$fetch_ava}</li>";
+  // } else {
+  //   $firststeps_check .= "<li><i class=\"fa-solid fa-xmark\"></i> Keine Avaperson eingetragen</li>";
+  // }
+  // //und wir holen uns noch den Spielernamen der bei uns im Profilfeld mit ID 4 gespeichert ist 
+  // $firststeps_check .= "<li>gespielt von {$mybb->user['fid4']}</li>";
+
+  // //das ganze wird in der Variable $firststeps_check gespeichert, schreiben wir diese nun ins ACP, wird in der Message der Inhalt eingefügt
+  // $threadmessage = str_replace("\$firststeps_check", $firststeps_check, $threadmessage);
+
+  //Wenn ihr den ganzen Steckbrief im Thread haben wollt, könnt ihr euch, die zwei Zeilen hier einfach einkommentieren
+  // Im ACP dann einfach $aucp_fields einfügen.
+  $aucp_fields = application_ucp_build_view($mybb->user['uid'], "profile", "html");
+  // $threadmessage = str_replace("\$aucp_fields", $aucp_fields, $threadmessage);
+
+  // Kopiert aus newthread.php
+  // Set up posthandler. (Wir nutzen hier einfach komplett die funktion aus newthread.php)
+  // Post key
+  verify_post_check($mybb->get_input('my_post_key'));
+  require_once "./global.php";
+  require_once MYBB_ROOT . "inc/datahandlers/post.php";
+  $posthandler = new PostDataHandler("insert");
+  $posthandler->action = "thread";
+
+  // Set the thread data that came from the input to the $thread array.
+  $new_thread = array(
+    "fid" => $steckbriefarea,
+    "subject" => $mybb->user['username'],
+    "prefix" => "",
+    "icon" => "",
+    "uid" => $mybb->user['uid'],
+    "username" => $mybb->user['username'],
+    "message" => $threadmessage,
+    "ipaddress" => $session->packedip,
+    "posthash" => $mybb->get_input('posthash')
+  );
+
+  if (!empty($pid)) {
+    $new_thread['pid'] = $pid;
+  }
+
+  $new_thread['savedraft'] = 0;
+  // $new_thread['tid'] = $thread['tid'];
+  // Set up the thread options from the input.
+  $new_thread['options'] = array(
+    "signature" => 0,
+    "subscriptionmethod" => 0,
+    "disablesmilies" => 0
+  );
+
+  // Apply moderation options if we have them
+  $new_thread['modoptions'] = $mybb->get_input('modoptions', MyBB::INPUT_ARRAY);
+  // $new_thread['modoptions'] = "";
+  $posthandler->set_data($new_thread);
+  // Now let the post handler do all the hard work.
+  $valid_thread = $posthandler->validate_thread();
+
+  $post_errors = array();
+  // Fetch friendly error messages if this is an invalid thread
+  if (!$valid_thread) {
+    $post_errors = $posthandler->get_friendly_errors();
+  }
+  $thread_errors = inline_error($post_errors);
+
+  // One or more errors returned, fetch error list and throw to newthread page
+  if (count($post_errors) > 0) {
+    $thread_errors = inline_error($post_errors);
+    $mybb->input['action'] = "newthread";
+  }
+
+  $thread_info = $posthandler->insert_thread();
+  $tid = $thread_info['tid'];
+  // Mark thread as read
+  require_once MYBB_ROOT . "inc/functions_indicators.php";
+  mark_thread_read($tid, $steckbriefarea);
+  //Bis hier (abschnittsweise) kopiert aus new thread kopiert
+  return $tid;
 }
 
 
@@ -6717,11 +6769,25 @@ function application_ucp_build_view($uid, $location, $kind, $pdf = false)
             $arraylabel = "value_{$field['fieldname']}";
             $array[$arraylabel] = ($fieldvalue + 100) / 2;
             $array[$arraylabel . "_html"] = "<div class=\"aucp_range\"><div class=\"aucp_range_bar\" style=\"width: " . ($fieldvalue + 100) / 2 . "%\"></div></div>";
+            $array[$arraylabel . "_html_labels"] = "
+            <div class=\"aucp_range_wrap\">
+            <div class=\"aucp_range_labelleft\">{$field['range_left']}</div>
+            <div class=\"aucp_range_labelright\">{$field['range_right']}</div>
+            <div class=\"aucp_range\">
+            <div class=\"aucp_range_bar\" style=\"width: " . $fieldvalue . "%\"></div></div></div>";
           }
           if ($field['fieldtyp'] == 'range_slider') {
             $arraylabel = "value_{$field['fieldname']}";
             $array[$arraylabel] = $fieldvalue;
             $array[$arraylabel . "_html"] = "<div class=\"aucp_range\"><div class=\"aucp_range_bar\" style=\"width: " . $fieldvalue . "%\"></div></div>";
+
+            $array[$arraylabel . "_html_labels"] = "
+            <div class=\"aucp_range_wrap\">
+            <div class=\"aucp_range_labelleft\">{$field['range_left']}</div>
+            <div class=\"aucp_range_labelright\">{$field['range_right']}</div>
+            <div class=\"aucp_range\">
+            <div class=\"aucp_range_bar\" style=\"width: " . $fieldvalue . "%\"></div></div>
+            </div>";
           }
 
           // Value in divbox: {$application['value_div_vorname']}
