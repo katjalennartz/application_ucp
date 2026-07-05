@@ -660,7 +660,7 @@ function application_ucp_templates()
         <input type="submit" name="wob" value="{$lang->application_ucp_wobbtn}" class="button" />
       </div>
       </div>    
-  </form>',
+      </form>',
     "sid" => "-2",
     "version" => "1.0",
     "dateline" => TIME_NOW
@@ -722,8 +722,8 @@ function application_ucp_templates()
     "title" => 'application_ucp_filtermemberlist_bit',
     "template" => '<div class="filterinput">
     <label for="{$searchfield[\\\'fieldname\\\']}">Nach {$searchfield[\\\'label\\\']}:</label> 
-  <input type="{$typ}" class="filterfield {$searchfield[\\\'fieldname\\\']}" name="{$searchfield[\\\'fieldname\\\']}" id="{$searchfield[\\\'fieldname\\\']}">
-  </div>',
+    <input type="{$typ}" class="filterfield {$searchfield[\\\'fieldname\\\']}" name="{$searchfield[\\\'fieldname\\\']}" id="{$searchfield[\\\'fieldname\\\']}">
+    </div>',
     "sid" => "-2",
     "version" => "1.0",
     "dateline" => TIME_NOW
@@ -974,7 +974,7 @@ function application_ucp_css()
       .aucp_range {
           grid-area: range;
       }
-',
+    ',
     'cachefile' => $db->escape_string(str_replace('/', '', 'application_ucp.css')),
     'lastmodified' => time()
   );
@@ -1099,6 +1099,7 @@ function application_ucp_deactivate()
   find_replace_templatesets("member_profile", "#" . preg_quote('{$exportbtn}') . "#i", '');
   find_replace_templatesets("showthread", "#" . preg_quote('{$give_wob}') . "#i", '');
   find_replace_templatesets("showthread", "#" . preg_quote('{$aucp_responsible_mod}') . "#i", '');
+  find_replace_templatesets("showthread", "#" . preg_quote('{$application_showthread_modbutton}') . "#i", '');
   find_replace_templatesets("postbit", "#" . preg_quote('{$post[\'aucp_fields\']}') . "#i", '');
   find_replace_templatesets("memberlist", "#" . preg_quote('<tr><td colspan="3">{$applicationfilter}</tr></td>') . "#i", '');
   find_replace_templatesets("memberlist", "#" . preg_quote('{$filterjs}') . "#i", '');
@@ -1417,7 +1418,7 @@ function application_ucp_is_updated()
     $needupdate = 1;
   }
   if (!$db->field_exists("dynamisch", "application_ucp_fields")) {
-   $text .= "AUCP:  in der Tabelle application_ucp_fields muss das feld dynamisch erstellt werden<br>";
+    $text .= "AUCP:  in der Tabelle application_ucp_fields muss das feld dynamisch erstellt werden<br>";
     $needupdate = 1;
   }
   if (!$db->field_exists("dyn_max", "application_ucp_fields")) {
@@ -1433,11 +1434,11 @@ function application_ucp_is_updated()
     $needupdate = 1;
   }
   if (!$db->field_exists("wob", "application_ucp_management")) {
-   $text .= "AUCP: in der Tabelle application_ucp_management muss das feld wob erstellt werden<br>";
+    $text .= "AUCP: in der Tabelle application_ucp_management muss das feld wob erstellt werden<br>";
     $needupdate = 1;
   }
   if (!$db->field_exists("pre_needwork", "application_ucp_management")) {
-   $text .= "AUCP: in der Tabelle application_ucp_management muss das feld pre_needwork erstellt werden<br>";
+    $text .= "AUCP: in der Tabelle application_ucp_management muss das feld pre_needwork erstellt werden<br>";
     $needupdate = 1;
   }
   if (!$db->field_exists("wob_needwork", "application_ucp_management")) {
@@ -1523,7 +1524,7 @@ function application_ucp_is_updated()
   foreach ($all_templates as $template) {
     $query = $db->simple_select("templates", "tid, template", "title = '" . $template['title'] . "' AND sid = '-2'");
     if ($db->num_rows($query) == 0) {
-     $text .= "AUCP: Template {$template['title']} fehlt komplett und muss hinzugefügt werden.<br>";
+      $text .= "AUCP: Template {$template['title']} fehlt komplett und muss hinzugefügt werden.<br>";
       $needupdate = 1;
     }
   }
@@ -2178,6 +2179,9 @@ Stylen der einzelnen elemente also z.B. mit dem Selekor <b>.{$field['fieldname']
         $form->generate_text_box('range_right', $mybb->get_input('range_right'))
       );
       //Dynamisch 
+      if (empty($mybb->input['dynamisch'])) {
+        $mybb->input['dynamisch'] = 0;
+      }
       $form_container->output_row(
         "Dynamisches Feld",
         "Der User kann dynamisch Inhalte hinzufügen (z.B. Timeline im Lebenslauf). Infos zur Benutzung im <a href=\"https://github.com/katjalennartz/application_ucp/wiki/5.-Dynamisches-Feld\" target=\"_blank\">Wiki</a>. Unbedingt vorher lesen!",
@@ -3861,8 +3865,8 @@ function application_ucp_usercp()
       $fields .= "
       <label  class=\"app_ucp_label\" for=\"{$type['fieldname']}\" style=\"{$hidden}\" id=\"label_{$type['fieldname']}\">{$type['label']}{$requiredstar}{$pre_wob_label}:</label>
       {$fielddescr} 
-      <div class=\"aucp_dynamic_wrap\" id=\"{$type['fieldname']}_wrap\">{$get_value['value']}</div>
-      <div class=\"aucp_dynamic_controls\" id=\"{$type['fieldname']}_controls\">";
+      <div id=\"{$type['fieldname']}_wrap aucp_dynamic_wrap\">{$get_value['value']}</div>
+      <div id=\"{$type['fieldname']}_controls aucp_dynamic_controls\">";
       if ($can_be_edited) {
         $fields .= "<a onclick=\"$('#popup_{$type['fieldname']}').modal({ fadeDuration: 250, keepelement: true, zIndex: (typeof modal_zindex !== 'undefined' ? modal_zindex : 9999) }); return false;\" style=\"cursor: pointer;\">
       {$lang->application_ucp_dynamic_add}</a>";
@@ -4019,7 +4023,6 @@ function application_ucp_usercp()
             //Event Listener fpr [up]-Button
             $('#{$type['fieldname']}_wrap').on('click', '.{$type['fieldname']}_up', function(event) {
               event.preventDefault();  // Verhindert das Absenden des Formulars oder ein Neuladen der Seite
-              console.log('up');
 
               // Aktuelles Element holen (Eltern-Element von Button)
               const item = $(this).closest('.{$type['fieldname']}_item');
@@ -4541,7 +4544,7 @@ function application_ucp_usercp()
           $hasprewob = $managmentdata['pre_wob'];
         }
         // user musste korrigieren
-        if ($hasprewob == 1 && $management_data['wob_needwork'] == 1) {
+        if ($hasprewob == 1 && $managmentdata['wob_needwork'] == 1) {
           //wob_needwork wieder auf 0 setzen
           $update = array(
             "wob" => 1,
@@ -4553,7 +4556,7 @@ function application_ucp_usercp()
           $db->update_query("application_ucp_management", $update, "uid = '{$mybb->user['uid']}'");
         }
         //Keine korrektur, aber es gab ein prewob, also jetzt wob anfordern
-        if ($management_data['pre_wob'] == 1 && $management_data['wob_needwork'] == 0) {
+        if ($managmentdata['pre_wob'] == 1 && $managmentdata['wob_needwork'] == 0) {
           //gibt es schon einen Thread? Wenn nein, dann erstellen wir jetzt einen, wenn es in den Einstellungen gewünscht ist
           if ($mybb->settings['application_ucp_steckithread'] == 1 && $managmentdata['tid'] == 0) {
             $wanted = application_ucp_wanted();
@@ -5286,7 +5289,6 @@ function application_ucp_misc()
   $mybb->input['action'] = $mybb->get_input('action');
   //wob in showthread vergeben 
   if ($mybb->input['action']  == 'wob') {
-
     //daten die wir brauchen
     $textwelcome =  $mybb->settings['application_ucp_wobtext'];
     $textwelcome_flag =  $mybb->settings['application_ucp_wobtext_yesno'];
