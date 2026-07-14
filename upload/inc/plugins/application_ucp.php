@@ -4792,7 +4792,7 @@ function application_ucp_showinmemberlist(&$user)
   } else {
     // nicht automatisch -> wir basteln ein array, damit man auf die einzelnen sachen zugreifen kann
     // Wir stellen uns ein Array zusammen
-    $fields = application_ucp_build_view($uid, "postbit", "array");
+    $fields = application_ucp_build_view($uid, "memberlist", "array");
     $user = array_merge($user, $fields);
   }
 }
