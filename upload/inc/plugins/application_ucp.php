@@ -4787,7 +4787,7 @@ function application_ucp_showinmemberlist(&$user)
   $user['aucp_fields'] = "";
   $uid = $user['uid'];
   // die Felder sollen automatisch zusammengebaut werden
-  if ($mybb->settings['application_ucp_postbit_view']) {
+  if ($mybb->settings['application_ucp_memberlist_view']) {
     $user['aucp_fields'] = application_ucp_build_view($uid, "memberlist", "html");
   } else {
     // nicht automatisch -> wir basteln ein array, damit man auf die einzelnen sachen zugreifen kann
