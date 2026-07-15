@@ -1059,7 +1059,7 @@ function application_ucp_activate()
   find_replace_templatesets("member_profile", "#" . preg_quote('<td width="75%">') . "#i", '<td width="75%"> {$application_ucp_profile_trigger}');
 
 
-  find_replace_templatesets("showthread", "#" . preg_quote('{$thread[\'subject\']}') . "#i", '{$thread[\'subject\']} {$aucp_responsible_mod} {$application_showthread_modbutton}');
+  find_replace_templatesets("showthread", "#" . preg_quote('{$thread['displayprefix']}{$thread[\'subject\']}') . "#i", '{$thread['displayprefix']}{$thread[\'subject\']} {$aucp_responsible_mod} {$application_showthread_modbutton}');
   //postbit classic 
   find_replace_templatesets("postbit_classic", "#" . preg_quote('{$post[\'user_details\']}') . "#i", '{$post[\'user_details\']}{$post[\'aucp_fields\']}');
   //postbit
