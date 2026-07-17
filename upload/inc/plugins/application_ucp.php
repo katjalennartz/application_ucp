@@ -3865,8 +3865,8 @@ function application_ucp_usercp()
       $fields .= "
       <label  class=\"app_ucp_label\" for=\"{$type['fieldname']}\" style=\"{$hidden}\" id=\"label_{$type['fieldname']}\">{$type['label']}{$requiredstar}{$pre_wob_label}:</label>
       {$fielddescr} 
-      <div id=\"{$type['fieldname']}_wrap aucp_dynamic_wrap\">{$get_value['value']}</div>
-      <div id=\"{$type['fieldname']}_controls aucp_dynamic_controls\">";
+      <div id=\"{$type['fieldname']}_wrap\" class=\"aucp_dynamic_wrap\">{$get_value['value']}</div>
+      <div id=\"{$type['fieldname']}_controls\" class=\"aucp_dynamic_controls\">";
       if ($can_be_edited) {
         $fields .= "<a onclick=\"$('#popup_{$type['fieldname']}').modal({ fadeDuration: 250, keepelement: true, zIndex: (typeof modal_zindex !== 'undefined' ? modal_zindex : 9999) }); return false;\" style=\"cursor: pointer;\">
       {$lang->application_ucp_dynamic_add}</a>";
