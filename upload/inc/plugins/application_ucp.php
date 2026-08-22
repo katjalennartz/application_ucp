@@ -1723,12 +1723,12 @@ function application_ucp_admin_load()
         }
       }
       if ($mybb->settings['application_ucp_acp_pagination_fields'] != 0) {
-        $get_field_pages = $db->write_query("SELECT f.*, cat_order FROM `mybb_application_ucp_fields` f left JOIN `mybb_application_ucp_categories` c on f.cat_id = c.id order by cat_order, cat_id, sorting
+        $get_field_pages = $db->write_query("SELECT f.*, cat_order FROM `" . TABLE_PREFIX . "application_ucp_fields` f left JOIN `" . TABLE_PREFIX . "application_ucp_categories` c on f.cat_id = c.id order by cat_order, cat_id, sorting
 			    LIMIT {$start}, {$per_page}");
         $pagination = draw_admin_pagination($current_page, $per_page, $fields_acp, "index.php?module=rpgstuff-application_ucp&amp;page={page}");
         echo $pagination;
       } else {
-        $get_field_pages = $db->write_query("SELECT f.*, cat_order FROM `mybb_application_ucp_fields` f left JOIN `mybb_application_ucp_categories` c on f.cat_id = c.id order by cat_order, cat_id, sorting");
+        $get_field_pages = $db->write_query("SELECT f.*, cat_order FROM `" . TABLE_PREFIX . "application_ucp_fields` f left JOIN `" . TABLE_PREFIX . "application_ucp_categories` c on f.cat_id = c.id order by cat_order, cat_id, sorting");
       }
 
       //Alle existierenden Felder bekommen
